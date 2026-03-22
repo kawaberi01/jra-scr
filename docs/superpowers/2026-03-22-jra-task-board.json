@@ -1,0 +1,185 @@
+{
+  "title": "JRA Data Retrieval Task Board",
+  "goal": "JRA API 基盤の現在地を task 状態で再開可能にする",
+  "updated_at": "2026-03-22 22:38:13 +0900",
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "JRA navigation layer",
+      "status": "done",
+      "agent": "restoration",
+      "depends_on": [],
+      "paths": [
+        "src/jra_srb/navigation.py",
+        "src/jra_srb/provider.py",
+        "tests/test_navigation.py"
+      ],
+      "notes": [
+        "2026-03-22 22:38:12 +0900 completed by restoration: navigation layer is implemented and covered by tests/test_navigation.py"
+      ]
+    },
+    {
+      "id": "T2",
+      "title": "Meeting-level race index API",
+      "status": "done",
+      "agent": "restoration",
+      "depends_on": [
+        "T1"
+      ],
+      "paths": [
+        "src/jra_srb/service.py",
+        "src/jra_srb/app.py",
+        "tests/test_service.py",
+        "tests/test_api.py"
+      ],
+      "notes": [
+        "2026-03-22 22:38:12 +0900 completed by restoration: meeting API is implemented and covered by tests/test_service.py and tests/test_api.py"
+      ]
+    },
+    {
+      "id": "T3",
+      "title": "Race card by meeting coordinates",
+      "status": "done",
+      "agent": "restoration",
+      "depends_on": [
+        "T2"
+      ],
+      "paths": [
+        "src/jra_srb/service.py",
+        "src/jra_srb/app.py"
+      ],
+      "notes": [
+        "2026-03-22 22:38:13 +0900 completed by restoration: race card by meeting coordinates is implemented"
+      ]
+    },
+    {
+      "id": "T4",
+      "title": "Initial JRA odds support for win and trifecta",
+      "status": "done",
+      "agent": "restoration",
+      "depends_on": [
+        "T2"
+      ],
+      "paths": [
+        "src/jra_srb/service.py",
+        "src/jra_srb/extractors.py",
+        "src/jra_srb/models.py"
+      ],
+      "notes": [
+        "2026-03-22 22:38:13 +0900 completed by restoration: initial live JRA odds support is implemented for win and trifecta only"
+      ]
+    },
+    {
+      "id": "T5",
+      "title": "Meeting-coordinate odds endpoint",
+      "status": "done",
+      "agent": "restoration",
+      "depends_on": [
+        "T4"
+      ],
+      "paths": [
+        "src/jra_srb/service.py",
+        "src/jra_srb/app.py"
+      ],
+      "notes": [
+        "2026-03-22 22:38:13 +0900 completed by restoration: meeting-coordinate odds endpoint is implemented"
+      ]
+    },
+    {
+      "id": "T6",
+      "title": "Results and payouts by meeting coordinates",
+      "status": "done",
+      "agent": "restoration",
+      "depends_on": [
+        "T2"
+      ],
+      "paths": [
+        "src/jra_srb/service.py",
+        "src/jra_srb/extractors.py",
+        "src/jra_srb/app.py"
+      ],
+      "notes": [
+        "2026-03-22 22:38:13 +0900 completed by restoration: result and payout endpoint by meeting coordinates is implemented"
+      ]
+    },
+    {
+      "id": "T7",
+      "title": "Past result batch collector skeleton",
+      "status": "done",
+      "agent": "restoration",
+      "depends_on": [
+        "T2"
+      ],
+      "paths": [
+        "src/jra_srb/batch.py",
+        "tests/test_batch.py"
+      ],
+      "notes": [
+        "2026-03-22 22:38:13 +0900 completed by restoration: past result collector skeleton exists in src/jra_srb/batch.py"
+      ]
+    },
+    {
+      "id": "T8",
+      "title": "Formal docs restoration and current-state sync",
+      "status": "done",
+      "agent": "restoration",
+      "depends_on": [
+        "T1",
+        "T2",
+        "T3",
+        "T4",
+        "T5",
+        "T6",
+        "T7"
+      ],
+      "paths": [
+        "docs/jra/00_成果物計画.md",
+        "docs/jra/07_現在地と次の一手.md"
+      ],
+      "notes": [
+        "2026-03-22 22:38:13 +0900 completed by restoration: formal docs under docs/jra were restored and synced from working docs"
+      ]
+    },
+    {
+      "id": "T9",
+      "title": "Expand supported odds bet types",
+      "status": "ready",
+      "agent": null,
+      "depends_on": [
+        "T5"
+      ],
+      "paths": [
+        "src/jra_srb/extractors.py",
+        "src/jra_srb/service.py",
+        "tests/test_service.py",
+        "tests/test_api.py"
+      ],
+      "notes": []
+    },
+    {
+      "id": "T10",
+      "title": "Persist past results and retries in batch",
+      "status": "ready",
+      "agent": null,
+      "depends_on": [
+        "T7"
+      ],
+      "paths": [
+        "src/jra_srb/batch.py",
+        "src/jra_srb/service.py"
+      ],
+      "notes": []
+    }
+  ],
+  "log": [
+    "2026-03-22 22:37:49 +0900 board initialized with 10 tasks",
+    "2026-03-22 22:38:12 +0900 restoration completed T1",
+    "2026-03-22 22:38:12 +0900 restoration completed T2",
+    "2026-03-22 22:38:13 +0900 restoration completed T3",
+    "2026-03-22 22:38:13 +0900 restoration completed T4",
+    "2026-03-22 22:38:13 +0900 restoration completed T5",
+    "2026-03-22 22:38:13 +0900 restoration completed T6",
+    "2026-03-22 22:38:13 +0900 restoration completed T7",
+    "2026-03-22 22:38:13 +0900 restoration completed T8"
+  ]
+}
