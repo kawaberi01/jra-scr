@@ -1,0 +1,22 @@
+{
+  "race_name_selector": "h1.race-name",
+  "results": {
+    "selector": "table.results tbody tr"
+  },
+  "result_fields": {
+    "rank": {"selector": ".rank"},
+    "horse_no": {"selector": ".horse-no"},
+    "horse_name": {"selector": ".horse-name"},
+    "jockey": {"selector": ".jockey"},
+    "time": {"selector": ".time"}
+  },
+  "payouts": {
+    "selector": "table.payouts tbody tr"
+  },
+  "payout_fields": {
+    "bet_type": {"selector": ".bet-type"},
+    "combination": {"selector": ".combination"},
+    "payout": {"selector": ".payout"},
+    "popularity": {"selector": ".popularity"}
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "collection": {
+    "selector": "ul.race-list > li.race"
+  },
+  "fields": {
+    "race_id": {"selector": "a", "attr": "data-race-id"},
+    "race_number": {"selector": ".race-number"},
+    "name": {"selector": ".race-name"},
+    "course": {"selector": ".course"},
+    "start_time": {"selector": ".start-time"},
+    "url": {"selector": "a", "attr": "href"}
+  }
+}

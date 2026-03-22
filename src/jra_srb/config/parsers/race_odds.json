@@ -1,0 +1,22 @@
+{
+  "bet_types": {
+    "win": {
+      "collection": {"selector": "#odds-win tbody tr"},
+      "combination_selectors": [".horse-no"],
+      "odds_selector": ".odds",
+      "popularity_selector": ".popularity"
+    },
+    "quinella": {
+      "collection": {"selector": "#odds-quinella tbody tr"},
+      "combination_selectors": [".horse-no-1", ".horse-no-2"],
+      "odds_selector": ".odds",
+      "popularity_selector": ".popularity"
+    },
+    "trifecta": {
+      "collection": {"selector": "#odds-trifecta tbody tr"},
+      "combination_selectors": [".horse-no-1", ".horse-no-2", ".horse-no-3"],
+      "odds_selector": ".odds",
+      "popularity_selector": ".popularity"
+    }
+  }
+}

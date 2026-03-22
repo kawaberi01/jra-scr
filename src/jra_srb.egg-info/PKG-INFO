@@ -1,0 +1,47 @@
+Metadata-Version: 2.4
+Name: jra-srb
+Version: 0.1.0
+Summary: JRA race information retrieval SDK and local HTTP API
+Requires-Python: >=3.12
+Description-Content-Type: text/markdown
+Requires-Dist: beautifulsoup4>=4.12
+Requires-Dist: fastapi>=0.115
+Requires-Dist: httpx>=0.28
+Requires-Dist: pydantic>=2.10
+Requires-Dist: uvicorn>=0.34
+Provides-Extra: dev
+Requires-Dist: pytest>=8.3; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.25; extra == "dev"
+
+# jra-srb
+
+JRA race information retrieval SDK and local HTTP API.
+
+## Features
+
+- Config-driven HTML extraction rules
+- Short-lived in-memory cache by endpoint
+- Fixture-friendly provider abstraction
+- FastAPI endpoints for races, card, odds, and result
+
+## Quick start
+
+```bash
+uv venv
+uv pip install -e .[dev]
+uv run uvicorn jra_srb.app:app --reload
+```
+
+## Endpoints
+
+- `GET /health`
+- `GET /races?date=YYYY-MM-DD&course=optional`
+- `GET /races/{race_id}/card`
+- `GET /races/{race_id}/odds?bet_types=win,place,quinella,exacta,trio,trifecta`
+- `GET /races/{race_id}/result`
+
+## Notes
+
+The default implementation ships with generic parser definitions and fixture-backed tests.
+Live JRA selectors and URL templates can be refined by editing the JSON parser configs and
+the URL builder in `jra_srb.provider`.

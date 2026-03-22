@@ -1,0 +1,23 @@
+{
+  "metadata": {
+    "race_name": "h1.race-name",
+    "course": ".race-meta .course",
+    "distance": ".race-meta .distance",
+    "surface": ".race-meta .surface",
+    "start_time": ".race-meta .start-time"
+  },
+  "runners": {
+    "selector": "table.runners tbody tr"
+  },
+  "runner_fields": {
+    "frame_no": {"selector": ".frame-no"},
+    "horse_no": {"selector": ".horse-no"},
+    "horse_name": {"selector": ".horse-name"},
+    "sex_age": {"selector": ".sex-age"},
+    "weight_carried": {"selector": ".weight-carried"},
+    "jockey": {"selector": ".jockey"},
+    "trainer": {"selector": ".trainer"},
+    "odds": {"selector": ".odds"},
+    "popularity": {"selector": ".popularity"}
+  }
+}
