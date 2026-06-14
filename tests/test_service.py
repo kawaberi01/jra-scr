@@ -36,6 +36,35 @@ async def test_get_race_odds_for_single_bet_type(service):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("bet_type", "combination", "expected_odds"),
+    [
+        ("quinella", ["10", "11"], "84.5"),
+        ("exacta", ["10", "11"], "139.9"),
+        ("wide", ["4", "10"], "16.1"),
+        ("trio", ["4", "10", "11"], "331.2"),
+    ],
+)
+async def test_get_race_odds_for_expanded_bet_types(service, bet_type, combination, expected_odds):
+    odds = await service.get_race_odds(
+        "202603220611",
+        bet_type=bet_type,
+        combination=combination,
+    )
+    assert odds.bet_type == bet_type
+    assert len(odds.entries) == 1
+    assert odds.entries[0].combination == combination
+    assert odds.entries[0].odds == expected_odds
+
+
+@pytest.mark.asyncio
+async def test_get_race_odds_for_requested_bet_types_includes_new_table_odds(service):
+    odds = await service.get_race_odds("202603220611", bet_types=["wide"])
+    assert odds.odds.keys() == {"wide"}
+    assert any(entry.combination == ["4", "10"] and entry.odds == "16.1" for entry in odds.odds["wide"])
+
+
+@pytest.mark.asyncio
 async def test_filter_odds_by_exact_combination(service):
     odds = await service.get_race_odds(
         "202603220611",

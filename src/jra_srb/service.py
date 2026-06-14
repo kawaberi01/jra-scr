@@ -8,6 +8,7 @@ from .config import load_parser_config
 from .extractors import (
     parse_meeting_races,
     parse_meeting_payout_result,
+    parse_jra_table_odds,
     parse_jra_trifecta_odds,
     parse_jra_win_place_odds,
     parse_odds_navigation,
@@ -33,6 +34,8 @@ COURSE_CODE_TO_NAME = {
     "09": "hanshin",
     "10": "kokura",
 }
+
+SUPPORTED_BULK_BET_TYPES = {"win", "quinella", "trifecta"}
 
 
 class JraService:
@@ -87,6 +90,32 @@ class JraService:
         cached = self.cache.get(cache_key)
         if cached is not None:
             return cached.model_copy(update={"cache_hit": True})
+        if requested and not set(requested).issubset(SUPPORTED_BULK_BET_TYPES):
+            target_date, course, race_no = self._split_race_id(race_id)
+            meeting = await self.get_meeting(target_date, course)
+            race = next((item for item in meeting.races if item.race_no == race_no), None)
+            if race is None:
+                raise LookupError(f"race not found for race_id={race_id}")
+            if race.odds_cname is None:
+                raise LookupError(f"odds entry cname not found for race_id={race_id}")
+            odds = {}
+            for requested_bet_type in requested:
+                item = await self._get_jra_race_odds(
+                    race_id=race_id,
+                    bet_type=requested_bet_type,
+                    combination=None,
+                    refresh=refresh,
+                    initial_cname=race.odds_cname,
+                )
+                odds[requested_bet_type] = item.entries
+            result = RaceOdds(
+                race_id=race_id,
+                odds=odds,
+                fetched_at=datetime.now(UTC),
+                source=meeting.source,
+            )
+            self.cache.set(cache_key, result, ttl_seconds=45)
+            return result
         page = await self.provider.fetch_race_odds(race_id)
         odds = parse_race_odds(page.content, load_parser_config("race_odds"))
         if requested:
@@ -233,6 +262,14 @@ class JraService:
         page = await self.provider.post_jradb("/JRADB/accessO.html", target_cname)
         if bet_type == "win":
             entries = parse_jra_win_place_odds(page.content)
+        elif bet_type == "quinella":
+            entries = parse_jra_table_odds(page.content, bet_type="quinella", leg_count=2)
+        elif bet_type == "wide":
+            entries = parse_jra_table_odds(page.content, bet_type="wide", leg_count=2)
+        elif bet_type == "exacta":
+            entries = parse_jra_table_odds(page.content, bet_type="exacta", leg_count=2)
+        elif bet_type == "trio":
+            entries = parse_jra_table_odds(page.content, bet_type="trio", leg_count=3)
         elif bet_type == "trifecta":
             entries = parse_jra_trifecta_odds(page.content)
         else:
