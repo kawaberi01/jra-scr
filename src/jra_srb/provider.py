@@ -39,7 +39,7 @@ class BaseProvider:
 
 
 class HttpProvider(BaseProvider):
-    def __init__(self, base_url: str = "https://www.jra.jp", timeout: float = 10.0) -> None:
+    def __init__(self, base_url: str = "https://www.jra.go.jp", timeout: float = 10.0) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
 
@@ -65,7 +65,7 @@ class HttpProvider(BaseProvider):
             response = await client.post(url, data={"cname": cname})
         if response.status_code >= 400:
             raise ProviderError(f"failed to fetch {url}: HTTP {response.status_code}")
-        return PageContent(source=url, content=response.text)
+        return PageContent(source=url, content=self._decode_jra_content(response))
 
     async def fetch_jradb(self, path: str, cname: str) -> PageContent:
         url = f"{self.base_url}{path}"
@@ -73,7 +73,7 @@ class HttpProvider(BaseProvider):
             response = await client.get(url, params={"CNAME": cname})
         if response.status_code >= 400:
             raise ProviderError(f"failed to fetch {url}: HTTP {response.status_code}")
-        return PageContent(source=str(response.url), content=response.text)
+        return PageContent(source=str(response.url), content=self._decode_jra_content(response))
 
     async def _get(self, path: str) -> PageContent:
         url = f"{self.base_url}{path}"
@@ -82,6 +82,10 @@ class HttpProvider(BaseProvider):
         if response.status_code >= 400:
             raise ProviderError(f"failed to fetch {url}: HTTP {response.status_code}")
         return PageContent(source=url, content=response.text)
+
+    @staticmethod
+    def _decode_jra_content(response: httpx.Response) -> str:
+        return response.content.decode("shift_jis", errors="ignore")
 
 
 class FixtureProvider(BaseProvider):
@@ -109,6 +113,14 @@ class FixtureProvider(BaseProvider):
             return self._load("jradb_accessD_meeting_nakayama_20260322.html")
         if path.endswith("accessO.html") and cname == "pw151ouS306202602081120260322Z/95":
             return self._load("jradb_accessO_race_202603220611.html")
+        if path.endswith("accessO.html") and cname == "pw154ouS306202602081120260322Z/21":
+            return self._load("jradb_accessO_quinella_202603220611.html")
+        if path.endswith("accessO.html") and cname == "pw155ouS306202602081120260322Z/A5":
+            return self._load("jradb_accessO_wide_202603220611.html")
+        if path.endswith("accessO.html") and cname == "pw156ouS306202602081120260322Z/29":
+            return self._load("jradb_accessO_exacta_202603220611.html")
+        if path.endswith("accessO.html") and cname == "pw157ouS306202602081120260322Z99/0F":
+            return self._load("jradb_accessO_trio_202603220611.html")
         if path.endswith("accessO.html") and cname == "pw158ouS306202602081120260322Z/31":
             return self._load("jradb_accessO_trifecta_202603220611.html")
         if path.endswith("accessO.html") and cname == "pw15oli00/6D":

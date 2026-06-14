@@ -19,7 +19,7 @@ from .extractors import (
 )
 from .models import MeetingSnapshot, RaceCard, RaceOdds, RaceResult, RaceSummary
 from .navigation import JraNavigation
-from .provider import BaseProvider, HttpProvider
+from .provider import BaseProvider, FixtureProvider, HttpProvider
 
 
 COURSE_CODE_TO_NAME = {
@@ -36,6 +36,7 @@ COURSE_CODE_TO_NAME = {
 }
 
 SUPPORTED_BULK_BET_TYPES = {"win", "quinella", "trifecta"}
+SUPPORTED_JRA_BET_TYPES = ("win", "quinella", "wide", "exacta", "trio", "trifecta")
 
 
 class JraService:
@@ -49,12 +50,30 @@ class JraService:
         cached = self.cache.get(cache_key)
         if cached is not None:
             return cached
+        if not self._is_fixture_provider():
+            meetings = [await self.get_meeting(target_date, course)] if course else await self._get_meetings_for_date(target_date)
+            races = [
+                RaceSummary(
+                    race_id=race.race_id,
+                    race_number=f"{race.race_no}R",
+                    name=race.race_name or f"{race.race_no}R",
+                    course=meeting.course,
+                    start_time=race.start_time,
+                )
+                for meeting in meetings
+                for race in meeting.races
+            ]
+            self.cache.set(cache_key, races, ttl_seconds=60)
+            return races
         page = await self.provider.fetch_races(target_date, course=course)
         races = parse_race_summaries(page.content, load_parser_config("races"))
         self.cache.set(cache_key, races, ttl_seconds=60)
         return races
 
     async def get_race_card(self, race_id: str) -> RaceCard:
+        if not self._is_fixture_provider():
+            target_date, course, race_no = self._split_race_id(race_id)
+            return await self.get_race_card_by_number(target_date, course, race_no)
         cache_key = f"card:{race_id}"
         cached = self.cache.get(cache_key)
         if cached is not None:
@@ -86,6 +105,10 @@ class JraService:
                 refresh=refresh,
             )
         requested = list(bet_types or [])
+        if not self._is_fixture_provider():
+            if not requested:
+                requested = list(SUPPORTED_JRA_BET_TYPES)
+            return await self._get_jra_race_odds_bundle(race_id, requested, refresh=refresh)
         cache_key = f"odds:{race_id}:{','.join(requested) if requested else '*'}"
         cached = self.cache.get(cache_key)
         if cached is not None:
@@ -130,6 +153,9 @@ class JraService:
         return result
 
     async def get_race_result(self, race_id: str) -> RaceResult:
+        if not self._is_fixture_provider():
+            target_date, course, race_no = self._split_race_id(race_id)
+            return await self.get_race_result_by_number(target_date, course, race_no)
         cache_key = f"result:{race_id}"
         cached = self.cache.get(cache_key)
         if cached is not None:
@@ -294,6 +320,68 @@ class JraService:
             return odds.model_copy(update={"cache_hit": cache_hit})
         filtered = [entry for entry in odds.entries if entry.combination == combination]
         return odds.model_copy(update={"entries": filtered, "cache_hit": cache_hit})
+
+    async def _get_meetings_for_date(self, target_date: date) -> list[MeetingSnapshot]:
+        select_page = await self.provider.post_jradb("/JRADB/accessD.html", "pw01dli00/F3")
+        meetings: list[MeetingSnapshot] = []
+        for resolved in self.navigation.list_meetings_from_selection(select_page, target_date, kind="card"):
+            cache_key = f"meeting:{target_date.isoformat()}:{resolved.course}"
+            cached = self.cache.get(cache_key)
+            if cached is not None:
+                meetings.append(cached.model_copy(update={"cache_hit": True}))
+                continue
+            meeting_page = await self.provider.post_jradb("/JRADB/accessD.html", resolved.cname)
+            meeting = MeetingSnapshot(
+                date=target_date,
+                course=resolved.course,
+                races=parse_meeting_races(meeting_page.content),
+                fetched_at=datetime.now(UTC),
+                source=meeting_page.source,
+            )
+            self.cache.set(cache_key, meeting, ttl_seconds=60)
+            meetings.append(meeting)
+        return meetings
+
+    async def _get_jra_race_odds_bundle(
+        self,
+        race_id: str,
+        requested_bet_types: list[str],
+        refresh: bool = False,
+    ) -> RaceOdds:
+        cache_key = f"odds:{race_id}:{','.join(requested_bet_types)}"
+        cached = self.cache.get(cache_key)
+        if cached is not None and not refresh:
+            return cached.model_copy(update={"cache_hit": True})
+        target_date, course, race_no = self._split_race_id(race_id)
+        meeting = await self.get_meeting(target_date, course)
+        race = next((item for item in meeting.races if item.race_no == race_no), None)
+        if race is None:
+            raise LookupError(f"race not found for race_id={race_id}")
+        if race.odds_cname is None:
+            raise LookupError(f"odds entry cname not found for race_id={race_id}")
+        odds = {}
+        source = meeting.source
+        for requested_bet_type in requested_bet_types:
+            item = await self._get_jra_race_odds(
+                race_id=race_id,
+                bet_type=requested_bet_type,
+                combination=None,
+                refresh=refresh,
+                initial_cname=race.odds_cname,
+            )
+            odds[requested_bet_type] = item.entries
+            source = item.source
+        result = RaceOdds(
+            race_id=race_id,
+            odds=odds,
+            fetched_at=datetime.now(UTC),
+            source=source,
+        )
+        self.cache.set(cache_key, result, ttl_seconds=45)
+        return result
+
+    def _is_fixture_provider(self) -> bool:
+        return isinstance(self.provider, FixtureProvider)
 
     @staticmethod
     def _split_race_id(race_id: str) -> tuple[date, str, int]:

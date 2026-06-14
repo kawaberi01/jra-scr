@@ -34,20 +34,20 @@ KIND_PREFIXES = {
 class ResolvedTransition:
     label: str
     cname: str
+    course: str
 
 
 class JraNavigation:
-    def resolve_meeting_from_selection(
+    def list_meetings_from_selection(
         self,
         page: PageContent,
         target_date: date,
-        course: str,
         kind: str,
-    ) -> ResolvedTransition:
+    ) -> list[ResolvedTransition]:
         prefix = KIND_PREFIXES[kind]
-        course_name = COURSE_NAMES[course]
         target_day = target_date.strftime("%Y%m%d")
         soup = BeautifulSoup(page.content, "html.parser")
+        resolved: list[ResolvedTransition] = []
 
         for link in soup.select("a[onclick*='doAction']"):
             onclick = link.get("onclick", "")
@@ -56,11 +56,34 @@ class JraNavigation:
             if match is None:
                 continue
             cname = match.group(1)
-            if prefix in cname and course_name in text and target_day in cname:
-                return ResolvedTransition(label=text, cname=cname)
+            if prefix not in cname or target_day not in cname:
+                continue
+            course = self._resolve_course_from_label(text)
+            if course is None:
+                continue
+            resolved.append(ResolvedTransition(label=text, cname=cname, course=course))
+        return resolved
+
+    def resolve_meeting_from_selection(
+        self,
+        page: PageContent,
+        target_date: date,
+        course: str,
+        kind: str,
+    ) -> ResolvedTransition:
+        for resolved in self.list_meetings_from_selection(page, target_date, kind):
+            if resolved.course == course:
+                return resolved
 
         raise LookupError(f"meeting not found for course={course} date={target_date} kind={kind}")
 
     @staticmethod
     def _normalize_label(text: str) -> str:
         return text.replace(" 馬番確定", "").strip()
+
+    @staticmethod
+    def _resolve_course_from_label(text: str) -> str | None:
+        for course, course_name in COURSE_NAMES.items():
+            if course_name in text:
+                return course
+        return None
