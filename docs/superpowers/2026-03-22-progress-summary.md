@@ -11,6 +11,72 @@
 
 ## 今回やったこと
 
+### 2026-03-27 追記: JRA 実オッズの券種を拡張
+
+変更ファイル:
+
+- `src/jra_srb/extractors.py`
+- `src/jra_srb/service.py`
+- `src/jra_srb/provider.py`
+- `tests/test_service.py`
+- `tests/test_api.py`
+
+実装内容:
+
+- `parse_odds_navigation()` を文字化けしたラベル依存から `cname` prefix ベースの解決に変更
+- JRA 実オッズ向けに次の bet_type を追加
+  - `quinella`
+  - `exacta`
+  - `wide`
+  - `trio`
+- 4 券種は `#odds_list table.odds_table` を読む最小 parser で対応
+- fixture provider と fixture HTML を拡張し、service / API テストを追加
+
+補足:
+
+- `win` と `trifecta` の既存挙動はそのまま維持
+- `wakuren` はまだ API surface に出していない
+
+### 2026-03-29 追記: 過去結果 batch を JSONL 保存対応へ拡張
+
+変更ファイル:
+
+- `src/jra_srb/batch.py`
+- `tests/test_batch.py`
+
+実装内容:
+
+- `JsonlRaceResultStorage` を追加
+- 1 レース 1 行の JSONL 形式で結果・払戻を永続化
+- 既存ファイルから `race_id` を読み込み、収集済みレースは skip
+- `PastResultCollector` に固定回数 retry を追加
+- meeting ごとに各 race の `get_race_result_by_number()` を呼び、保存まで行うように変更
+
+補足:
+
+- 保存先 abstraction は `ResultStorage` として切ったが、実体はまだ JSONL のみ
+- backoff や失敗ログ蓄積はまだ未対応
+
+### 2026-03-29 追記: FastAPI API に MCP HTTP 入口を追加
+
+変更ファイル:
+
+- `pyproject.toml`
+- `uv.lock`
+- `src/jra_srb/app.py`
+- `tests/test_api.py`
+
+実装内容:
+
+- `fastapi-mcp` を依存に追加
+- `FastApiMCP(app).mount_http(mount_path="/mcp")` で MCP HTTP 入口を公開
+- `/mcp` が 404 ではないことを API テストで確認
+
+補足:
+
+- 現状は既存 FastAPI endpoint をそのまま MCP tool 化する段階
+- `course` や `bet_type` の自然言語正規化はまだ未実装
+
 ### 1. JRA 固有のナビゲーション層を追加
 
 追加ファイル:

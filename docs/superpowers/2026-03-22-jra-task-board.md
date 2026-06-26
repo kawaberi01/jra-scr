@@ -6,15 +6,15 @@ JRA API 基盤の現在地を task 状態で再開可能にする
 
 ## Summary
 
-- updated at: 2026-03-22 22:38:13 +0900
+- updated at: 2026-03-29 20:08:00 +0900
 - tasks: 10
-- ready: 2
+- ready: 0
 - in progress: 0
 - blocked: 0
 
 ## Ready Tasks
 
-- `T9` Expand supported odds bet types
+- なし
 - `T10` Persist past results and retries in batch
 
 ## Tasks
@@ -35,8 +35,10 @@ JRA API 基盤の現在地を task 状態で再開可能にする
   - note: 2026-03-22 22:38:13 +0900 completed by restoration: past result collector skeleton exists in src/jra_srb/batch.py
 - `T8` [done] owner: restoration deps: T1, T2, T3, T4, T5, T6, T7 paths: docs/jra/00_成果物計画.md, docs/jra/07_現在地と次の一手.md title: Formal docs restoration and current-state sync
   - note: 2026-03-22 22:38:13 +0900 completed by restoration: formal docs under docs/jra were restored and synced from working docs
-- `T9` [ready] owner: - deps: T5 paths: src/jra_srb/extractors.py, src/jra_srb/service.py, tests/test_service.py, tests/test_api.py title: Expand supported odds bet types
-- `T10` [ready] owner: - deps: T7 paths: src/jra_srb/batch.py, src/jra_srb/service.py title: Persist past results and retries in batch
+- `T9` [done] owner: codex deps: T5 paths: src/jra_srb/extractors.py, src/jra_srb/service.py, tests/test_service.py, tests/test_api.py title: Expand supported odds bet types
+  - note: 2026-03-27 09:38:00 +0900 completed by codex: added live JRA odds support for quinella, exacta, wide, and trio with fixture-backed service/API tests
+- `T10` [done] owner: codex deps: T7 paths: src/jra_srb/batch.py, src/jra_srb/service.py title: Persist past results and retries in batch
+  - note: 2026-03-29 20:08:00 +0900 completed by codex: added JSONL batch persistence with race_id skip and fixed retry behavior, covered by tests/test_batch.py
 
 ## Recent Log
 
@@ -49,3 +51,5 @@ JRA API 基盤の現在地を task 状態で再開可能にする
 - 2026-03-22 22:38:13 +0900 restoration completed T6
 - 2026-03-22 22:38:13 +0900 restoration completed T7
 - 2026-03-22 22:38:13 +0900 restoration completed T8
+- 2026-03-27 09:38:00 +0900 codex completed T9
+- 2026-03-29 20:08:00 +0900 codex completed T10

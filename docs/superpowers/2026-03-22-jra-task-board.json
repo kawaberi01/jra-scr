@@ -1,7 +1,7 @@
 {
   "title": "JRA Data Retrieval Task Board",
   "goal": "JRA API 基盤の現在地を task 状態で再開可能にする",
-  "updated_at": "2026-03-22 22:38:13 +0900",
+  "updated_at": "2026-03-29 20:08:00 +0900",
   "tasks": [
     {
       "id": "T1",
@@ -143,8 +143,8 @@
     {
       "id": "T9",
       "title": "Expand supported odds bet types",
-      "status": "ready",
-      "agent": null,
+      "status": "done",
+      "agent": "codex",
       "depends_on": [
         "T5"
       ],
@@ -154,13 +154,15 @@
         "tests/test_service.py",
         "tests/test_api.py"
       ],
-      "notes": []
+      "notes": [
+        "2026-03-27 09:38:00 +0900 completed by codex: added live JRA odds support for quinella, exacta, wide, and trio with fixture-backed service/API tests"
+      ]
     },
     {
       "id": "T10",
       "title": "Persist past results and retries in batch",
-      "status": "ready",
-      "agent": null,
+      "status": "done",
+      "agent": "codex",
       "depends_on": [
         "T7"
       ],
@@ -168,7 +170,9 @@
         "src/jra_srb/batch.py",
         "src/jra_srb/service.py"
       ],
-      "notes": []
+      "notes": [
+        "2026-03-29 20:08:00 +0900 completed by codex: added JSONL batch persistence with race_id skip and fixed retry behavior, covered by tests/test_batch.py"
+      ]
     }
   ],
   "log": [
@@ -180,6 +184,8 @@
     "2026-03-22 22:38:13 +0900 restoration completed T5",
     "2026-03-22 22:38:13 +0900 restoration completed T6",
     "2026-03-22 22:38:13 +0900 restoration completed T7",
-    "2026-03-22 22:38:13 +0900 restoration completed T8"
+    "2026-03-22 22:38:13 +0900 restoration completed T8",
+    "2026-03-27 09:38:00 +0900 codex completed T9",
+    "2026-03-29 20:08:00 +0900 codex completed T10"
   ]
 }

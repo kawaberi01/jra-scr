@@ -30,10 +30,15 @@ Open `http://127.0.0.1:8010` to use the counter UI.
 ## Endpoints
 
 - `GET /health`
+- `POST /mcp`
 - `GET /races?date=YYYY-MM-DD&course=optional`
 - `GET /meetings/{date}/{course}`
 - `GET /meetings/{date}/{course}/races/{race_no}/card`
 - `GET /meetings/{date}/{course}/races/{race_no}/odds?bet_type=trifecta&combination=1,2,3&refresh=true`
+- `GET /meetings/{date}/{course}/races/{race_no}/odds?bet_type=quinella&combination=10,11`
+- `GET /meetings/{date}/{course}/races/{race_no}/odds?bet_type=exacta&combination=10,11`
+- `GET /meetings/{date}/{course}/races/{race_no}/odds?bet_type=wide&combination=4,10`
+- `GET /meetings/{date}/{course}/races/{race_no}/odds?bet_type=trio&combination=4,10,11`
 - `GET /meetings/{date}/{course}/races/{race_no}/result`
 - `GET /races/{race_id}/card`
 - `GET /races/{race_id}/odds?bet_type=trifecta&combination=1,2,3&refresh=true`
@@ -45,3 +50,9 @@ Open `http://127.0.0.1:8010` to use the counter UI.
 The default implementation ships with generic parser definitions and fixture-backed tests.
 Live JRA selectors and URL templates can be refined by editing the JSON parser configs and
 the URL builder in `jra_srb.provider`.
+
+Live JRA meeting-coordinate odds currently support `win`, `quinella`, `exacta`, `wide`, `trio`, and `trifecta`.
+
+Past results batch collection can now persist one race per line to JSONL with skip-by-`race_id` and fixed-count retry behavior via `jra_srb.batch`.
+
+The FastAPI app now exposes an MCP HTTP endpoint at `/mcp` via `fastapi-mcp`.

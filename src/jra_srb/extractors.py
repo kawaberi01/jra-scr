@@ -193,18 +193,23 @@ def parse_race_odds(html: str, config: dict[str, Any]) -> dict[str, list[OddsEnt
 def parse_odds_navigation(html: str) -> dict[str, str]:
     soup = BeautifulSoup(html, "html.parser")
     mapping: dict[str, str] = {}
-    labels = {
-        "単勝・複勝": "win",
-        "3連単": "trifecta",
+    prefixes = {
+        "pw151": "win",
+        "pw154": "quinella",
+        "pw155": "wide",
+        "pw156": "exacta",
+        "pw157": "trio",
+        "pw158": "trifecta",
     }
     for link in soup.select("ul.nav.pills a[onclick*='doAction']"):
-        text = link.get_text(" ", strip=True)
-        bet_type = labels.get(text)
-        if bet_type is None:
-            continue
         match = re.search(r"doAction\(\s*'[^']+'\s*,\s*'([^']+)'", link.get("onclick", ""))
-        if match is not None:
-            mapping[bet_type] = match.group(1)
+        if match is None:
+            continue
+        cname = match.group(1)
+        for prefix, bet_type in prefixes.items():
+            if cname.startswith(prefix):
+                mapping[bet_type] = cname
+                break
     return mapping
 
 
@@ -250,6 +255,27 @@ def parse_jra_trifecta_odds(html: str) -> list[OddsEntry]:
                         odds=odds,
                     )
                 )
+    return entries
+
+
+def parse_jra_table_odds(html: str, bet_type: str, leg_count: int) -> list[OddsEntry]:
+    soup = BeautifulSoup(html, "html.parser")
+    entries: list[OddsEntry] = []
+    for row in soup.select("#odds_list table.odds_table tbody tr"):
+        combination = [node.get_text(" ", strip=True) for node in row.select(".num")]
+        if len(combination) != leg_count:
+            continue
+        odds = _select_text(row, ".odds")
+        if odds in (None, ""):
+            continue
+        entries.append(
+            OddsEntry(
+                bet_type=bet_type,
+                combination=combination,
+                odds=odds,
+                popularity=_select_text(row, ".popularity"),
+            )
+        )
     return entries
 
 
