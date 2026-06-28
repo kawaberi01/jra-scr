@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from datetime import date
 
+from fastapi import Depends, FastAPI, Query, Request
+from fastapi.responses import JSONResponse
 from fastapi_mcp import FastApiMCP
-from fastapi import Depends, FastAPI, Query
 
+from .errors import JraApiError
+from .provider import ProviderError
 from .service import JraService
 
 app = FastAPI(
@@ -28,6 +31,21 @@ service = JraService()
 
 def get_service() -> JraService:
     return service
+
+
+@app.exception_handler(JraApiError)
+async def handle_jra_api_error(_: Request, exc: JraApiError) -> JSONResponse:
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+
+@app.exception_handler(LookupError)
+async def handle_lookup_error(_: Request, exc: LookupError) -> JSONResponse:
+    return JSONResponse(status_code=404, content={"detail": str(exc)})
+
+
+@app.exception_handler(ProviderError)
+async def handle_provider_error(_: Request, exc: ProviderError) -> JSONResponse:
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
 
 @app.get("/health", tags=["health"], summary="ヘルスチェック", description="API プロセスが起動しているか確認します。")

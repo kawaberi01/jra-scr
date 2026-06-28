@@ -5,6 +5,7 @@ from typing import Iterable
 
 from .cache import TTLCache
 from .config import load_parser_config
+from .errors import BadRequestError, ResourceNotFoundError
 from .extractors import (
     parse_meeting_races,
     parse_meeting_payout_result,
@@ -118,9 +119,9 @@ class JraService:
             meeting = await self.get_meeting(target_date, course)
             race = next((item for item in meeting.races if item.race_no == race_no), None)
             if race is None:
-                raise LookupError(f"race not found for race_id={race_id}")
+                raise ResourceNotFoundError(f"race not found for race_id={race_id}")
             if race.odds_cname is None:
-                raise LookupError(f"odds entry cname not found for race_id={race_id}")
+                raise ResourceNotFoundError(f"odds entry cname not found for race_id={race_id}")
             odds = {}
             for requested_bet_type in requested:
                 item = await self._get_jra_race_odds(
@@ -222,7 +223,7 @@ class JraService:
         meeting = await self.get_meeting(target_date, course)
         race = next((item for item in meeting.races if item.race_no == race_no), None)
         if race is None or race.card_cname is None:
-            raise LookupError(f"race not found: {course} {target_date} {race_no}")
+            raise ResourceNotFoundError(f"race not found: {course} {target_date} {race_no}")
         cache_key = f"card-by-number:{target_date.isoformat()}:{course}:{race_no}"
         cached = self.cache.get(cache_key)
         if cached is not None:
@@ -250,7 +251,7 @@ class JraService:
         meeting = await self.get_meeting(target_date, course)
         race = next((item for item in meeting.races if item.race_no == race_no), None)
         if race is None:
-            raise LookupError(f"race not found: {course} {target_date} {race_no}")
+            raise ResourceNotFoundError(f"race not found: {course} {target_date} {race_no}")
         return await self._get_jra_race_odds(
             race_id=race.race_id,
             bet_type=bet_type,
@@ -276,15 +277,15 @@ class JraService:
             meeting = await self.get_meeting(target_date, course)
             race = next((item for item in meeting.races if item.race_no == race_no), None)
             if race is None:
-                raise LookupError(f"race not found for race_id={race_id}")
+                raise ResourceNotFoundError(f"race not found for race_id={race_id}")
             initial_cname = race.odds_cname
         if initial_cname is None:
-            raise LookupError(f"odds entry cname not found for race_id={race_id}")
+            raise ResourceNotFoundError(f"odds entry cname not found for race_id={race_id}")
         root_page = await self.provider.post_jradb("/JRADB/accessO.html", initial_cname)
         navigation = parse_odds_navigation(root_page.content)
         target_cname = navigation.get(bet_type, initial_cname if bet_type == "win" else None)
         if target_cname is None:
-            raise LookupError(f"unsupported bet_type={bet_type}")
+            raise BadRequestError(f"unsupported bet_type={bet_type}")
         page = await self.provider.post_jradb("/JRADB/accessO.html", target_cname)
         if bet_type == "win":
             entries = parse_jra_win_place_odds(page.content)
@@ -299,7 +300,7 @@ class JraService:
         elif bet_type == "trifecta":
             entries = parse_jra_trifecta_odds(page.content)
         else:
-            raise LookupError(f"unsupported bet_type={bet_type}")
+            raise BadRequestError(f"unsupported bet_type={bet_type}")
         result = RaceOdds(
             race_id=race_id,
             bet_type=bet_type,
@@ -356,9 +357,9 @@ class JraService:
         meeting = await self.get_meeting(target_date, course)
         race = next((item for item in meeting.races if item.race_no == race_no), None)
         if race is None:
-            raise LookupError(f"race not found for race_id={race_id}")
+            raise ResourceNotFoundError(f"race not found for race_id={race_id}")
         if race.odds_cname is None:
-            raise LookupError(f"odds entry cname not found for race_id={race_id}")
+            raise ResourceNotFoundError(f"odds entry cname not found for race_id={race_id}")
         odds = {}
         source = meeting.source
         for requested_bet_type in requested_bet_types:

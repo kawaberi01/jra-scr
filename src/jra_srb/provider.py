@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -7,8 +8,10 @@ from urllib.parse import urlencode
 
 import httpx
 
+from .errors import UpstreamServiceError
 
-class ProviderError(RuntimeError):
+
+class ProviderError(UpstreamServiceError):
     pass
 
 
@@ -39,9 +42,17 @@ class BaseProvider:
 
 
 class HttpProvider(BaseProvider):
-    def __init__(self, base_url: str = "https://www.jra.go.jp", timeout: float = 10.0) -> None:
+    def __init__(
+        self,
+        base_url: str = "https://www.jra.go.jp",
+        timeout: float = 10.0,
+        retries: int = 2,
+        backoff_seconds: float = 0.5,
+    ) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
+        self.retries = retries
+        self.backoff_seconds = backoff_seconds
 
     async def fetch_races(self, target_date: date, course: str | None = None) -> PageContent:
         params = {"date": target_date.isoformat()}
@@ -61,27 +72,46 @@ class HttpProvider(BaseProvider):
 
     async def post_jradb(self, path: str, cname: str) -> PageContent:
         url = f"{self.base_url}{path}"
-        async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
-            response = await client.post(url, data={"cname": cname})
-        if response.status_code >= 400:
-            raise ProviderError(f"failed to fetch {url}: HTTP {response.status_code}")
+        response = await self._request_with_retry("post", url, data={"cname": cname})
         return PageContent(source=url, content=self._decode_jra_content(response))
 
     async def fetch_jradb(self, path: str, cname: str) -> PageContent:
         url = f"{self.base_url}{path}"
-        async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
-            response = await client.get(url, params={"CNAME": cname})
-        if response.status_code >= 400:
-            raise ProviderError(f"failed to fetch {url}: HTTP {response.status_code}")
+        response = await self._request_with_retry("get", url, params={"CNAME": cname})
         return PageContent(source=str(response.url), content=self._decode_jra_content(response))
 
     async def _get(self, path: str) -> PageContent:
         url = f"{self.base_url}{path}"
-        async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
-            response = await client.get(url)
-        if response.status_code >= 400:
-            raise ProviderError(f"failed to fetch {url}: HTTP {response.status_code}")
+        response = await self._request_with_retry("get", url)
         return PageContent(source=url, content=response.text)
+
+    async def _request_with_retry(self, method: str, url: str, **kwargs) -> httpx.Response:
+        last_error: ProviderError | None = None
+        for attempt in range(self.retries + 1):
+            try:
+                async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
+                    response = await getattr(client, method)(url, **kwargs)
+            except httpx.TimeoutException as exc:
+                last_error = ProviderError(f"failed to fetch {url}: timeout")
+                if attempt == self.retries:
+                    raise last_error from exc
+            except httpx.RequestError as exc:
+                last_error = ProviderError(f"failed to fetch {url}: {exc.__class__.__name__}")
+                if attempt == self.retries:
+                    raise last_error from exc
+            else:
+                if response.status_code < 400:
+                    return response
+                last_error = ProviderError(f"failed to fetch {url}: HTTP {response.status_code}")
+                if not self._should_retry_status(response.status_code) or attempt == self.retries:
+                    raise last_error
+            await asyncio.sleep(self.backoff_seconds * (2**attempt))
+        assert last_error is not None
+        raise last_error
+
+    @staticmethod
+    def _should_retry_status(status_code: int) -> bool:
+        return status_code >= 500
 
     @staticmethod
     def _decode_jra_content(response: httpx.Response) -> str:
