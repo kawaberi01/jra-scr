@@ -210,6 +210,40 @@ job status:
 
 job の記録は in-memory です。API サーバーを再起動すると job 一覧と状態は消えます。
 
+## 分析用 SQLite DB
+
+分析用の一次保存は CLI の `collect-analysis` で行います。API endpoint はまだありません。
+
+```bash
+jra-srb collect-analysis \
+  --from-date 2026-03-22 \
+  --to-date 2026-03-22 \
+  --courses nakayama \
+  --db data/analysis.sqlite \
+  --include-card \
+  --include-odds \
+  --include-results \
+  --bet-types wide,trio,trifecta
+```
+
+主な保存先:
+
+- `races`
+- `runners`
+- `odds_snapshots`
+- `odds_entries`
+- `race_results`
+- `result_entries`
+- `payouts`
+- `collection_errors`
+- `predictions`
+- `prediction_tickets`
+- `evaluations`
+- `evaluation_ticket_results`
+- `theory_versions`
+
+発走前 snapshot は `races`, `runners`, `odds_snapshots`, `odds_entries` から構成し、結果・払戻・評価結果を含めません。Prediction Agent へ渡す入力はこの発走前 snapshot に限定します。
+
 ## エラーレスポンス
 
 API エラーは次の形式で返します。
@@ -232,6 +266,7 @@ API エラーは次の形式で返します。
 | --- | --- |
 | `JRA_SRB_RESULTS_STORAGE` | 保存済み結果 API の backend。`jsonl` または `sqlite`。既定値は `jsonl` |
 | `JRA_SRB_RESULTS_PATH` | 保存済み結果 API が読む JSONL パス。既定値は `data/results.jsonl` |
+| `JRA_SRB_ANALYSIS_DB_PATH` | 分析用 SQLite DB の既定パス。既定値は `data/analysis.sqlite` |
 | `JRA_SRB_CACHE_PATH` | 指定時に SQLite 永続 cache を使う |
 | `JRA_SRB_UPSTREAM_MAX_CONCURRENCY` | JRA upstream への最大同時 request 数。既定値は `5` |
 | `JRA_SRB_UPSTREAM_MIN_INTERVAL_SECONDS` | JRA upstream への request 開始間隔の最小秒数。既定値は `0` |
