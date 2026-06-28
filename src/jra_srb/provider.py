@@ -3,12 +3,16 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 from datetime import date
+import logging
 from pathlib import Path
+import time
 from urllib.parse import urlencode
 
 import httpx
 
 from .errors import UpstreamServiceError
+
+logger = logging.getLogger(__name__)
 
 
 class ProviderError(UpstreamServiceError):
@@ -22,6 +26,9 @@ class PageContent:
 
 
 class BaseProvider:
+    async def check_upstream(self) -> PageContent:
+        raise NotImplementedError
+
     async def fetch_jradb(self, path: str, cname: str) -> PageContent:
         raise NotImplementedError
 
@@ -48,11 +55,18 @@ class HttpProvider(BaseProvider):
         timeout: float = 10.0,
         retries: int = 2,
         backoff_seconds: float = 0.5,
+        max_concurrency: int = 5,
+        min_interval_seconds: float = 0.0,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.retries = retries
         self.backoff_seconds = backoff_seconds
+        self.max_concurrency = max_concurrency
+        self.min_interval_seconds = min_interval_seconds
+        self._semaphore = asyncio.Semaphore(max_concurrency)
+        self._throttle_lock = asyncio.Lock()
+        self._last_request_started_at = 0.0
 
     async def fetch_races(self, target_date: date, course: str | None = None) -> PageContent:
         params = {"date": target_date.isoformat()}
@@ -85,29 +99,72 @@ class HttpProvider(BaseProvider):
         response = await self._request_with_retry("get", url)
         return PageContent(source=url, content=response.text)
 
+    async def check_upstream(self) -> PageContent:
+        url = f"{self.base_url}/"
+        response = await self._request_with_retry("get", url)
+        return PageContent(source=str(response.url), content="ok")
+
     async def _request_with_retry(self, method: str, url: str, **kwargs) -> httpx.Response:
         last_error: ProviderError | None = None
         for attempt in range(self.retries + 1):
             try:
-                async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
-                    response = await getattr(client, method)(url, **kwargs)
+                async with self._semaphore:
+                    await self._wait_for_min_interval()
+                    async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
+                        response = await getattr(client, method)(url, **kwargs)
             except httpx.TimeoutException as exc:
                 last_error = ProviderError(f"failed to fetch {url}: timeout")
+                logger.warning(
+                    "provider_request_failed",
+                    extra={"method": method, "url": url, "attempt": attempt + 1, "error": "timeout"},
+                )
                 if attempt == self.retries:
                     raise last_error from exc
             except httpx.RequestError as exc:
                 last_error = ProviderError(f"failed to fetch {url}: {exc.__class__.__name__}")
+                logger.warning(
+                    "provider_request_failed",
+                    extra={"method": method, "url": url, "attempt": attempt + 1, "error": exc.__class__.__name__},
+                )
                 if attempt == self.retries:
                     raise last_error from exc
             else:
                 if response.status_code < 400:
+                    logger.info(
+                        "provider_request_succeeded",
+                        extra={
+                            "method": method,
+                            "url": str(response.url),
+                            "status_code": response.status_code,
+                            "attempt": attempt + 1,
+                        },
+                    )
                     return response
                 last_error = ProviderError(f"failed to fetch {url}: HTTP {response.status_code}")
+                logger.warning(
+                    "provider_request_failed",
+                    extra={
+                        "method": method,
+                        "url": str(response.url),
+                        "status_code": response.status_code,
+                        "attempt": attempt + 1,
+                    },
+                )
                 if not self._should_retry_status(response.status_code) or attempt == self.retries:
                     raise last_error
             await asyncio.sleep(self.backoff_seconds * (2**attempt))
         assert last_error is not None
         raise last_error
+
+    async def _wait_for_min_interval(self) -> None:
+        if self.min_interval_seconds <= 0:
+            return
+        async with self._throttle_lock:
+            now = time.monotonic()
+            wait_seconds = self._last_request_started_at + self.min_interval_seconds - now
+            if wait_seconds > 0:
+                await asyncio.sleep(wait_seconds)
+            self._last_request_started_at = time.monotonic()
 
     @staticmethod
     def _should_retry_status(status_code: int) -> bool:
@@ -126,6 +183,9 @@ class FixtureProvider(BaseProvider):
         suffix = f"_{course}" if course else ""
         name = f"races_{target_date.isoformat()}{suffix}.html"
         return self._load(name)
+
+    async def check_upstream(self) -> PageContent:
+        return PageContent(source=str(self.fixture_dir), content="ok")
 
     async def fetch_race_card(self, race_id: str) -> PageContent:
         return self._load(f"race_card_{race_id}.html")

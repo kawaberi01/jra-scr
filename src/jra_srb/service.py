@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, date, datetime
+import logging
 from typing import Iterable
 
 from .cache import TTLCache
@@ -21,6 +22,8 @@ from .extractors import (
 from .models import MeetingSnapshot, RaceCard, RaceOdds, RaceResult, RaceSummary
 from .navigation import JraNavigation
 from .provider import BaseProvider, FixtureProvider, HttpProvider
+
+logger = logging.getLogger(__name__)
 
 
 COURSE_CODE_TO_NAME = {
@@ -46,7 +49,12 @@ class JraService:
         self.cache = cache or TTLCache()
         self.navigation = JraNavigation()
 
+    async def check_upstream(self) -> dict[str, str]:
+        page = await self.provider.check_upstream()
+        return {"status": "ok", "source": page.source}
+
     async def get_races(self, target_date: date, course: str | None = None) -> list[RaceSummary]:
+        logger.info("get_races", extra={"target_date": target_date.isoformat(), "course": course})
         cache_key = f"races:{target_date.isoformat()}:{course or '*'}"
         cached = self.cache.get(cache_key)
         if cached is not None:
@@ -72,6 +80,7 @@ class JraService:
         return races
 
     async def get_race_card(self, race_id: str) -> RaceCard:
+        logger.info("get_race_card", extra={"race_id": race_id})
         if not self._is_fixture_provider():
             target_date, course, race_no = self._split_race_id(race_id)
             return await self.get_race_card_by_number(target_date, course, race_no)
@@ -98,6 +107,10 @@ class JraService:
         combination: list[str] | None = None,
         refresh: bool = False,
     ) -> RaceOdds:
+        logger.info(
+            "get_race_odds",
+            extra={"race_id": race_id, "bet_type": bet_type, "bet_types": list(bet_types or [])},
+        )
         if bet_type is not None:
             return await self._get_jra_race_odds(
                 race_id=race_id,
@@ -154,6 +167,7 @@ class JraService:
         return result
 
     async def get_race_result(self, race_id: str) -> RaceResult:
+        logger.info("get_race_result", extra={"race_id": race_id})
         if not self._is_fixture_provider():
             target_date, course, race_no = self._split_race_id(race_id)
             return await self.get_race_result_by_number(target_date, course, race_no)
@@ -173,6 +187,10 @@ class JraService:
         return result
 
     async def get_race_result_by_number(self, target_date: date, course: str, race_no: int) -> RaceResult:
+        logger.info(
+            "get_race_result_by_number",
+            extra={"target_date": target_date.isoformat(), "course": course, "race_no": race_no},
+        )
         cache_key = f"result-by-number:{target_date.isoformat()}:{course}:{race_no}"
         cached = self.cache.get(cache_key)
         if cached is not None:
@@ -197,6 +215,7 @@ class JraService:
         return result
 
     async def get_meeting(self, target_date: date, course: str) -> MeetingSnapshot:
+        logger.info("get_meeting", extra={"target_date": target_date.isoformat(), "course": course})
         cache_key = f"meeting:{target_date.isoformat()}:{course}"
         cached = self.cache.get(cache_key)
         if cached is not None:
@@ -220,6 +239,10 @@ class JraService:
         return meeting
 
     async def get_race_card_by_number(self, target_date: date, course: str, race_no: int) -> RaceCard:
+        logger.info(
+            "get_race_card_by_number",
+            extra={"target_date": target_date.isoformat(), "course": course, "race_no": race_no},
+        )
         meeting = await self.get_meeting(target_date, course)
         race = next((item for item in meeting.races if item.race_no == race_no), None)
         if race is None or race.card_cname is None:
@@ -248,6 +271,15 @@ class JraService:
         combination: list[str] | None = None,
         refresh: bool = False,
     ) -> RaceOdds:
+        logger.info(
+            "get_race_odds_by_number",
+            extra={
+                "target_date": target_date.isoformat(),
+                "course": course,
+                "race_no": race_no,
+                "bet_type": bet_type,
+            },
+        )
         meeting = await self.get_meeting(target_date, course)
         race = next((item for item in meeting.races if item.race_no == race_no), None)
         if race is None:

@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from jra_srb.batch import JsonlRaceResultStorage, PastResultCollector
+from jra_srb.batch import JsonlRaceResultStorage, PastResultCollector, SQLiteRaceResultStorage
 from jra_srb.models import MeetingRace, MeetingSnapshot, PayoutEntry, RaceResult, ResultEntry
 
 
@@ -139,3 +139,48 @@ async def test_collect_retries_temporary_result_fetch_failure(tmp_path):
     ]
     lines = (tmp_path / "results.jsonl").read_text(encoding="utf-8").splitlines()
     assert len(lines) == 2
+
+
+@pytest.mark.asyncio
+async def test_jsonl_storage_reads_results_and_skips_broken_lines(tmp_path):
+    service = FakeService()
+    path = tmp_path / "results.jsonl"
+    storage = JsonlRaceResultStorage(path)
+    collector = PastResultCollector(service=service, storage=storage)  # type: ignore[arg-type]
+
+    await collector.collect(date(2026, 3, 21), date(2026, 3, 21), ["nakayama"])
+    path.write_text(path.read_text(encoding="utf-8") + "{broken\n", encoding="utf-8")
+
+    record = storage.get_result("202603210601")
+    records = storage.list_results(from_date=date(2026, 3, 21), to_date=date(2026, 3, 21), course="nakayama")
+    page = storage.list_results_page(
+        from_date=date(2026, 3, 21),
+        to_date=date(2026, 3, 21),
+        course="nakayama",
+        limit=1,
+        offset=1,
+    )
+
+    assert record is not None
+    assert record.race_id == "202603210601"
+    assert len(records) == 2
+    assert page.total == 2
+    assert page.limit == 1
+    assert page.offset == 1
+    assert len(page.items) == 1
+
+
+@pytest.mark.asyncio
+async def test_sqlite_storage_persists_and_reads_results(tmp_path):
+    service = FakeService()
+    storage = SQLiteRaceResultStorage(tmp_path / "results.sqlite")
+    collector = PastResultCollector(service=service, storage=storage)  # type: ignore[arg-type]
+
+    await collector.collect(date(2026, 3, 21), date(2026, 3, 21), ["nakayama"])
+
+    assert storage.has_race("202603210601") is True
+    assert storage.get_result("202603210601") is not None
+    assert len(storage.list_results(course="nakayama")) == 2
+    page = storage.list_results_page(course="nakayama", limit=1, offset=0)
+    assert page.total == 2
+    assert len(page.items) == 1

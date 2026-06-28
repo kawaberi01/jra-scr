@@ -17,3 +17,6 @@ __pycache__/
 # Build artifacts
 build/
 dist/
+
+# Local runtime outputs
+data/

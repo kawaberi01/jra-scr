@@ -1,11 +1,33 @@
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
 
+import pytest
 
-SCRIPT = Path("/home/main/.codex/skills/addon-superpowers-auto-progress/scripts/update_progress_summary.py")
+
+def _resolve_script() -> Path:
+    candidates = [
+        os.environ.get("AUTO_PROGRESS_SCRIPT"),
+        "/home/main/.codex/skills/addon-superpowers-auto-progress/scripts/update_progress_summary.py",
+        r"C:\Users\main\.codex\skills\addon-superpowers-auto-progress\scripts\update_progress_summary.py",
+        r"C:\Users\main\skills\addon-superpowers-auto-progress\scripts\update_progress_summary.py",
+    ]
+    for candidate in candidates:
+        if not candidate:
+            continue
+        path = Path(candidate)
+        if path.exists():
+            return path
+    pytest.skip(
+        "addon-superpowers-auto-progress script is not installed in this environment",
+        allow_module_level=True,
+    )
+
+
+SCRIPT = _resolve_script()
 
 
 def _run_update(target: Path, agent: str, status: str) -> None:

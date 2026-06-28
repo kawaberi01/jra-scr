@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 import httpx
 import pytest
@@ -49,6 +50,53 @@ class SequencedAsyncClient:
 def test_http_provider_defaults_to_jra_go_jp():
     provider = HttpProvider()
     assert provider.base_url == "https://www.jra.go.jp"
+
+
+def test_http_provider_accepts_access_control_settings():
+    provider = HttpProvider(max_concurrency=1, min_interval_seconds=0.25)
+
+    assert provider.max_concurrency == 1
+    assert provider.min_interval_seconds == 0.25
+
+
+@pytest.mark.asyncio
+async def test_provider_logs_successful_request(monkeypatch, caplog):
+    response = httpx.Response(
+        200,
+        content="ok".encode("shift_jis"),
+        request=httpx.Request("GET", "https://www.jra.go.jp/JRADB/accessD.html?CNAME=test"),
+    )
+
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **kwargs: DummyAsyncClient(response))
+
+    provider = HttpProvider()
+    with caplog.at_level(logging.INFO, logger="jra_srb.provider"):
+        await provider.fetch_jradb("/JRADB/accessD.html", "test")
+
+    assert any(record.message == "provider_request_succeeded" for record in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_provider_respects_min_interval_between_requests(monkeypatch):
+    response = httpx.Response(
+        200,
+        content="ok".encode("shift_jis"),
+        request=httpx.Request("GET", "https://www.jra.go.jp/JRADB/accessD.html?CNAME=test"),
+    )
+    sleeps: list[float] = []
+
+    async def record_sleep(seconds: float) -> None:
+        sleeps.append(seconds)
+
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **kwargs: DummyAsyncClient(response))
+    monkeypatch.setattr(asyncio, "sleep", record_sleep)
+
+    provider = HttpProvider(min_interval_seconds=1.0, backoff_seconds=0)
+    await provider.fetch_jradb("/JRADB/accessD.html", "test")
+    await provider.fetch_jradb("/JRADB/accessD.html", "test")
+
+    assert sleeps
+    assert sleeps[0] > 0
 
 
 @pytest.mark.asyncio

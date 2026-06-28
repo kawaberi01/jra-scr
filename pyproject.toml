@@ -23,6 +23,9 @@ dev = [
   "pytest-asyncio>=0.25",
 ]
 
+[project.scripts]
+jra-srb = "jra_srb.cli:main"
+
 [tool.setuptools]
 package-dir = {"" = "src"}
 
