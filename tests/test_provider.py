@@ -17,10 +17,10 @@ class DummyAsyncClient:
     async def __aexit__(self, exc_type, exc, tb):
         return None
 
-    async def get(self, url, params=None):
+    async def get(self, url, params=None, **kwargs):
         return self._response
 
-    async def post(self, url, data=None):
+    async def post(self, url, data=None, **kwargs):
         return self._response
 
 
@@ -34,13 +34,13 @@ class SequencedAsyncClient:
     async def __aexit__(self, exc_type, exc, tb):
         return None
 
-    async def get(self, url, params=None):
+    async def get(self, url, params=None, **kwargs):
         result = self._responses.pop(0)
         if isinstance(result, Exception):
             raise result
         return result
 
-    async def post(self, url, data=None):
+    async def post(self, url, data=None, **kwargs):
         result = self._responses.pop(0)
         if isinstance(result, Exception):
             raise result
@@ -146,32 +146,21 @@ async def test_fetch_jradb_retries_timeout_then_succeeds(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_post_jradb_retries_http_503_then_succeeds(monkeypatch):
-    error_response = httpx.Response(
-        503,
-        content=b"",
-        request=httpx.Request("POST", "https://www.jra.go.jp/JRADB/accessO.html"),
-    )
-    success_response = httpx.Response(
-        200,
-        content="ok".encode("shift_jis"),
-        request=httpx.Request("POST", "https://www.jra.go.jp/JRADB/accessO.html"),
-    )
-    attempts: list[httpx.Response | Exception] = [error_response, success_response]
+async def test_post_jradb_uses_curl_form_post(monkeypatch):
+    calls: list[tuple[str, dict[str, str]]] = []
+    provider = HttpProvider()
 
-    monkeypatch.setattr(httpx, "AsyncClient", lambda **kwargs: SequencedAsyncClient(attempts))
+    async def fake_curl_post_form(url: str, data: dict[str, str]) -> str:
+        calls.append((url, data))
+        return "ok"
 
-    async def no_sleep(_: float) -> None:
-        return None
+    monkeypatch.setattr(provider, "_curl_post_form", fake_curl_post_form)
 
-    monkeypatch.setattr(asyncio, "sleep", no_sleep)
-
-    provider = HttpProvider(retries=1, backoff_seconds=0)
     page = await provider.post_jradb("/JRADB/accessO.html", "test")
 
     assert page.source == "https://www.jra.go.jp/JRADB/accessO.html"
     assert page.content == "ok"
-    assert attempts == []
+    assert calls == [("https://www.jra.go.jp/JRADB/accessO.html", {"cname": "test"})]
 
 
 @pytest.mark.asyncio

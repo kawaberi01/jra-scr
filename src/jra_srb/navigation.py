@@ -56,7 +56,7 @@ class JraNavigation:
             if match is None:
                 continue
             cname = match.group(1)
-            if prefix not in cname or target_day not in cname:
+            if prefix not in cname or self._extract_race_date(cname, prefix) != target_day:
                 continue
             course = self._resolve_course_from_label(text)
             if course is None:
@@ -87,3 +87,10 @@ class JraNavigation:
             if course_name in text:
                 return course
         return None
+
+    @staticmethod
+    def _extract_race_date(cname: str, prefix: str) -> str | None:
+        match = re.search(rf"{re.escape(prefix)}\d{{2}}\d{{2}}\d{{4}}\d{{2}}\d{{2}}(?P<race_date>\d{{8}})/", cname)
+        if match is None:
+            return None
+        return match.group("race_date")

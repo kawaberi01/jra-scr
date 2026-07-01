@@ -14,6 +14,18 @@ from .errors import UpstreamServiceError
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/137.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "ja,en-US;q=0.9,en;q=0.8",
+    "Cache-Control": "no-cache",
+    "Pragma": "no-cache",
+}
+
 
 class ProviderError(UpstreamServiceError):
     pass
@@ -45,6 +57,9 @@ class BaseProvider:
         raise NotImplementedError
 
     async def fetch_race_result(self, race_id: str) -> PageContent:
+        raise NotImplementedError
+
+    async def fetch_calendar_month(self, year: int, month: int) -> PageContent:
         raise NotImplementedError
 
 
@@ -84,10 +99,13 @@ class HttpProvider(BaseProvider):
     async def fetch_race_result(self, race_id: str) -> PageContent:
         return await self._get(f"/race/{race_id}/result")
 
+    async def fetch_calendar_month(self, year: int, month: int) -> PageContent:
+        return await self._get(f"/keiba/common/calendar/json/{year}{month:02d}.json")
+
     async def post_jradb(self, path: str, cname: str) -> PageContent:
         url = f"{self.base_url}{path}"
-        response = await self._request_with_retry("post", url, data={"cname": cname})
-        return PageContent(source=url, content=self._decode_jra_content(response))
+        content = await self._curl_post_form(url, {"cname": cname})
+        return PageContent(source=url, content=content)
 
     async def fetch_jradb(self, path: str, cname: str) -> PageContent:
         url = f"{self.base_url}{path}"
@@ -96,8 +114,15 @@ class HttpProvider(BaseProvider):
 
     async def _get(self, path: str) -> PageContent:
         url = f"{self.base_url}{path}"
-        response = await self._request_with_retry("get", url)
-        return PageContent(source=url, content=response.text)
+        try:
+            response = await self._request_with_retry("get", url)
+            return PageContent(source=url, content=response.text)
+        except ProviderError as exc:
+            if "HTTP 403" not in str(exc):
+                raise
+            logger.info("provider_httpx_fallback_to_curl", extra={"url": url})
+            content = await self._curl_get(url)
+            return PageContent(source=url, content=content)
 
     async def check_upstream(self) -> PageContent:
         url = f"{self.base_url}/"
@@ -110,8 +135,9 @@ class HttpProvider(BaseProvider):
             try:
                 async with self._semaphore:
                     await self._wait_for_min_interval()
+                    headers = {**DEFAULT_HEADERS, **kwargs.pop("headers", {})}
                     async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
-                        response = await getattr(client, method)(url, **kwargs)
+                        response = await getattr(client, method)(url, headers=headers, **kwargs)
             except httpx.TimeoutException as exc:
                 last_error = ProviderError(f"failed to fetch {url}: timeout")
                 logger.warning(
@@ -174,6 +200,39 @@ class HttpProvider(BaseProvider):
     def _decode_jra_content(response: httpx.Response) -> str:
         return response.content.decode("shift_jis", errors="ignore")
 
+    async def _curl_get(self, url: str) -> str:
+        return await self._run_curl(["-L", "-A", DEFAULT_HEADERS["User-Agent"], "--silent", "--show-error", url], url)
+
+    async def _curl_post_form(self, url: str, data: dict[str, str]) -> str:
+        args = ["-L", "-A", DEFAULT_HEADERS["User-Agent"], "--silent", "--show-error"]
+        for key, value in data.items():
+            args.extend(["-d", f"{key}={value}"])
+        args.append(url)
+        return await self._run_curl(args, url)
+
+    async def _run_curl(self, args: list[str], url: str) -> str:
+        process = await asyncio.create_subprocess_exec(
+            "curl.exe",
+            *args,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await process.communicate()
+        if process.returncode != 0:
+            detail = stderr.decode("utf-8", errors="ignore").strip() or f"curl exit {process.returncode}"
+            raise ProviderError(f"failed to fetch {url}: {detail}")
+        encoding = self._sniff_encoding(url, stdout)
+        return stdout.decode(encoding, errors="ignore")
+
+    @staticmethod
+    def _sniff_encoding(url: str, content: bytes) -> str:
+        if url.endswith(".json"):
+            return "utf-8"
+        head = content[:512].lower()
+        if b"charset=shift_jis" in head or b"charset=\"shift_jis\"" in head:
+            return "shift_jis"
+        return "utf-8"
+
 
 class FixtureProvider(BaseProvider):
     def __init__(self, fixture_dir: str | Path) -> None:
@@ -194,7 +253,16 @@ class FixtureProvider(BaseProvider):
         return self._load(f"race_odds_{race_id}.html")
 
     async def fetch_race_result(self, race_id: str) -> PageContent:
-        return self._load(f"race_result_{race_id}.html")
+        primary = self.fixture_dir / f"race_result_{race_id}.html"
+        if primary.exists():
+            return self._load(primary.name)
+        fallback = self.fixture_dir / f"jradb_accessS_race_{race_id}.html"
+        if fallback.exists():
+            return self._load(fallback.name)
+        return self._load(primary.name)
+
+    async def fetch_calendar_month(self, year: int, month: int) -> PageContent:
+        return self._load(f"calendar_{year}{month:02d}.json")
 
     async def post_jradb(self, path: str, cname: str) -> PageContent:
         if path.endswith("accessD.html") and cname == "pw01dli00/F3":

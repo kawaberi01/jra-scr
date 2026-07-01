@@ -8,19 +8,22 @@ from .cache import TTLCache
 from .config import load_parser_config
 from .errors import BadRequestError, ResourceNotFoundError
 from .extractors import (
+    parse_calendar_meetings,
     parse_meeting_races,
-    parse_meeting_payout_result,
     parse_jra_table_odds,
     parse_jra_trifecta_odds,
     parse_jra_win_place_odds,
     parse_odds_navigation,
     parse_race_card,
     parse_race_odds,
+    parse_result_page_as_race_card,
+    parse_result_month_navigation,
+    parse_result_race_navigation,
     parse_race_result,
     parse_race_summaries,
 )
-from .models import MeetingSnapshot, RaceCard, RaceOdds, RaceResult, RaceSummary
-from .navigation import JraNavigation
+from .models import MeetingRace, MeetingSnapshot, RaceCard, RaceOdds, RaceResult, RaceSummary
+from .navigation import COURSE_NAMES, JraNavigation
 from .provider import BaseProvider, FixtureProvider, HttpProvider
 
 logger = logging.getLogger(__name__)
@@ -38,6 +41,8 @@ COURSE_CODE_TO_NAME = {
     "09": "hanshin",
     "10": "kokura",
 }
+
+COURSE_NAME_TO_CODE = {value: key for key, value in COURSE_CODE_TO_NAME.items()}
 
 SUPPORTED_BULK_BET_TYPES = {"win", "quinella", "trifecta"}
 SUPPORTED_JRA_BET_TYPES = ("win", "quinella", "wide", "exacta", "trio", "trifecta")
@@ -195,22 +200,19 @@ class JraService:
         cached = self.cache.get(cache_key)
         if cached is not None:
             return cached.model_copy(update={"cache_hit": True})
-        select_page = await self.provider.post_jradb("/JRADB/accessH.html", "pw01hli00/03")
-        resolved = self.navigation.resolve_meeting_from_selection(
-            page=select_page,
-            target_date=target_date,
-            course=course,
-            kind="payout",
-        )
-        meeting_page = await self.provider.post_jradb("/JRADB/accessH.html", resolved.cname)
-        parsed = parse_meeting_payout_result(meeting_page.content, race_no)
         race_id = self._join_race_id(target_date, course, race_no)
+        if self._is_fixture_provider():
+            page = await self.provider.fetch_race_result(race_id)
+        else:
+            page = await self._load_result_race_page(target_date, course, race_no)
+        parsed = parse_race_result(page.content, load_parser_config("race_result"))
         result = RaceResult(
             race_id=race_id,
             fetched_at=datetime.now(UTC),
-            source=meeting_page.source,
+            source=page.source,
             **parsed,
         )
+        result = await self._enrich_result_with_card_jockeys(result, target_date, course, race_no)
         self.cache.set(cache_key, result, ttl_seconds=3600)
         return result
 
@@ -220,23 +222,25 @@ class JraService:
         cached = self.cache.get(cache_key)
         if cached is not None:
             return cached.model_copy(update={"cache_hit": True})
-        select_page = await self.provider.post_jradb("/JRADB/accessD.html", "pw01dli00/F3")
-        resolved = self.navigation.resolve_meeting_from_selection(
-            page=select_page,
-            target_date=target_date,
-            course=course,
-            kind="card",
-        )
-        meeting_page = await self.provider.post_jradb("/JRADB/accessD.html", resolved.cname)
-        meeting = MeetingSnapshot(
-            date=target_date,
-            course=course,
-            races=parse_meeting_races(meeting_page.content),
-            fetched_at=datetime.now(UTC),
-            source=meeting_page.source,
-        )
+        meeting = await self._load_meeting_for_date(target_date, course)
         self.cache.set(cache_key, meeting, ttl_seconds=60)
         return meeting
+
+    async def get_meetings_for_date(self, target_date: date) -> list[MeetingSnapshot]:
+        logger.info("get_meetings_for_date", extra={"target_date": target_date.isoformat()})
+        if self._is_fixture_provider():
+            courses = {summary.course for summary in await self.get_races(target_date) if summary.course}
+            return [await self.get_meeting(target_date, course) for course in sorted(courses)]
+        meetings = await self._get_meetings_for_date(target_date)
+        if meetings:
+            return meetings
+        meetings = await self._get_meetings_for_date_from_kind(target_date, kind="payout")
+        if meetings:
+            return meetings
+        meetings = await self._get_meetings_for_date_from_result_selection(target_date)
+        if meetings:
+            return meetings
+        return await self._get_meetings_for_date_from_calendar(target_date)
 
     async def get_race_card_by_number(self, target_date: date, course: str, race_no: int) -> RaceCard:
         logger.info(
@@ -245,14 +249,18 @@ class JraService:
         )
         meeting = await self.get_meeting(target_date, course)
         race = next((item for item in meeting.races if item.race_no == race_no), None)
-        if race is None or race.card_cname is None:
+        if race is None:
             raise ResourceNotFoundError(f"race not found: {course} {target_date} {race_no}")
         cache_key = f"card-by-number:{target_date.isoformat()}:{course}:{race_no}"
         cached = self.cache.get(cache_key)
         if cached is not None:
             return cached.model_copy(update={"cache_hit": True})
-        page = await self.provider.fetch_jradb("/JRADB/accessD.html", race.card_cname)
-        parsed = parse_race_card(page.content, load_parser_config("race_card"))
+        if race.card_cname is None:
+            page = await self._load_result_race_page(target_date, course, race_no)
+            parsed = parse_result_page_as_race_card(page.content)
+        else:
+            page = await self.provider.fetch_jradb("/JRADB/accessD.html", race.card_cname)
+            parsed = parse_race_card(page.content, load_parser_config("race_card"))
         card = RaceCard(
             race_id=race.race_id,
             fetched_at=datetime.now(UTC),
@@ -355,15 +363,19 @@ class JraService:
         return odds.model_copy(update={"entries": filtered, "cache_hit": cache_hit})
 
     async def _get_meetings_for_date(self, target_date: date) -> list[MeetingSnapshot]:
-        select_page = await self.provider.post_jradb("/JRADB/accessD.html", "pw01dli00/F3")
+        return await self._get_meetings_for_date_from_kind(target_date, kind="card")
+
+    async def _get_meetings_for_date_from_kind(self, target_date: date, kind: str) -> list[MeetingSnapshot]:
+        path, select_cname = self._get_selection_endpoint(kind)
+        select_page = await self.provider.post_jradb(path, select_cname)
         meetings: list[MeetingSnapshot] = []
-        for resolved in self.navigation.list_meetings_from_selection(select_page, target_date, kind="card"):
+        for resolved in self.navigation.list_meetings_from_selection(select_page, target_date, kind=kind):
             cache_key = f"meeting:{target_date.isoformat()}:{resolved.course}"
             cached = self.cache.get(cache_key)
             if cached is not None:
                 meetings.append(cached.model_copy(update={"cache_hit": True}))
                 continue
-            meeting_page = await self.provider.post_jradb("/JRADB/accessD.html", resolved.cname)
+            meeting_page = await self.provider.post_jradb(path, resolved.cname)
             meeting = MeetingSnapshot(
                 date=target_date,
                 course=resolved.course,
@@ -374,6 +386,157 @@ class JraService:
             self.cache.set(cache_key, meeting, ttl_seconds=60)
             meetings.append(meeting)
         return meetings
+
+    async def _load_result_race_page(self, target_date: date, course: str, race_no: int):
+        meeting_page = await self._load_result_meeting_page(target_date, course)
+        race_navigation = parse_result_race_navigation(meeting_page.content)
+        race_cname = race_navigation.get(race_no)
+        if race_cname is None:
+            raise LookupError(f"result race not found for course={course} date={target_date} race_no={race_no}")
+        return await self.provider.post_jradb("/JRADB/accessS.html", race_cname)
+
+    async def _load_result_meeting_page(self, target_date: date, course: str):
+        cache_key = f"result-meeting-page:{target_date.isoformat()}:{course}"
+        cached = self.cache.get(cache_key)
+        if cached is not None:
+            return cached
+        select_page = await self._load_result_selection_page(target_date)
+        resolved = self.navigation.resolve_meeting_from_selection(
+            page=select_page,
+            target_date=target_date,
+            course=course,
+            kind="result",
+        )
+        page = await self.provider.post_jradb("/JRADB/accessS.html", resolved.cname)
+        self.cache.set(cache_key, page, ttl_seconds=3600)
+        return page
+
+    async def _load_result_selection_page(self, target_date: date):
+        cache_key = f"result-selection-page:{target_date.isoformat()}"
+        cached = self.cache.get(cache_key)
+        if cached is not None:
+            return cached
+        target_month = f"{target_date.year:04d}-{target_date.month:02d}"
+        page = await self.provider.post_jradb("/JRADB/accessS.html", "pw01sli00/AF")
+        if self.navigation.list_meetings_from_selection(page, target_date, kind="result"):
+            self.cache.set(cache_key, page, ttl_seconds=3600)
+            return page
+        if not parse_result_month_navigation(page.content):
+            page = await self.provider.post_jradb("/JRADB/accessS.html", "pw01skl00999999/B3")
+            if self.navigation.list_meetings_from_selection(page, target_date, kind="result"):
+                self.cache.set(cache_key, page, ttl_seconds=3600)
+                return page
+
+        visited: set[str] = set()
+        for _ in range(24):
+            month_navigation = parse_result_month_navigation(page.content)
+            next_cname = self._select_closest_result_month_cname(month_navigation, target_month, visited)
+            if next_cname is None:
+                break
+            visited.add(next_cname)
+            page = await self.provider.post_jradb("/JRADB/accessS.html", next_cname)
+            if self.navigation.list_meetings_from_selection(page, target_date, kind="result"):
+                self.cache.set(cache_key, page, ttl_seconds=3600)
+                return page
+        raise LookupError(f"result selection page not found for date={target_date}")
+
+    async def _get_meetings_for_date_from_calendar(self, target_date: date) -> list[MeetingSnapshot]:
+        page = await self.provider.fetch_calendar_month(target_date.year, target_date.month)
+        parsed = parse_calendar_meetings(page.content, target_date, COURSE_NAMES)
+        meetings: list[MeetingSnapshot] = []
+        for item in parsed:
+            course = item["course"]
+            cache_key = f"meeting:{target_date.isoformat()}:{course}"
+            cached = self.cache.get(cache_key)
+            if cached is not None:
+                meetings.append(cached.model_copy(update={"cache_hit": True}))
+                continue
+            races = [
+                race.model_copy(
+                    update={"race_id": self._join_race_id(target_date, course, race.race_no)}
+                )
+                for race in item["races"]
+            ]
+            meeting = MeetingSnapshot(
+                date=target_date,
+                course=course,
+                races=races,
+                fetched_at=datetime.now(UTC),
+                source=page.source,
+            )
+            self.cache.set(cache_key, meeting, ttl_seconds=60)
+            meetings.append(meeting)
+        return meetings
+
+    async def _get_meetings_for_date_from_result_selection(self, target_date: date) -> list[MeetingSnapshot]:
+        try:
+            select_page = await self._load_result_selection_page(target_date)
+        except LookupError:
+            return []
+
+        meetings: list[MeetingSnapshot] = []
+        for resolved in self.navigation.list_meetings_from_selection(select_page, target_date, kind="result"):
+            cache_key = f"meeting:{target_date.isoformat()}:{resolved.course}"
+            cached = self.cache.get(cache_key)
+            if cached is not None:
+                meetings.append(cached.model_copy(update={"cache_hit": True}))
+                continue
+            meeting_page = await self.provider.post_jradb("/JRADB/accessS.html", resolved.cname)
+            race_navigation = parse_result_race_navigation(meeting_page.content)
+            races = [
+                MeetingRace(
+                    race_no=race_no,
+                    race_id=self._join_race_id(target_date, resolved.course, race_no),
+                    result_cname=cname,
+                )
+                for race_no, cname in sorted(race_navigation.items())
+            ]
+            meeting = MeetingSnapshot(
+                date=target_date,
+                course=resolved.course,
+                races=races,
+                fetched_at=datetime.now(UTC),
+                source=meeting_page.source,
+            )
+            self.cache.set(cache_key, meeting, ttl_seconds=3600)
+            meetings.append(meeting)
+        return meetings
+
+    async def _load_meeting_for_date(self, target_date: date, course: str) -> MeetingSnapshot:
+        for kind in ("card", "payout"):
+            try:
+                path, select_cname = self._get_selection_endpoint(kind)
+                select_page = await self.provider.post_jradb(path, select_cname)
+                resolved = self.navigation.resolve_meeting_from_selection(
+                    page=select_page,
+                    target_date=target_date,
+                    course=course,
+                    kind=kind,
+                )
+                meeting_page = await self.provider.post_jradb(path, resolved.cname)
+                return MeetingSnapshot(
+                    date=target_date,
+                    course=course,
+                    races=parse_meeting_races(meeting_page.content),
+                    fetched_at=datetime.now(UTC),
+                    source=meeting_page.source,
+                )
+            except LookupError:
+                continue
+        for meeting in await self._get_meetings_for_date_from_calendar(target_date):
+            if meeting.course == course:
+                return meeting
+        raise LookupError(f"meeting not found for course={course} date={target_date}")
+
+    @staticmethod
+    def _get_selection_endpoint(kind: str) -> tuple[str, str]:
+        if kind == "card":
+            return "/JRADB/accessD.html", "pw01dli00/F3"
+        if kind == "result":
+            return "/JRADB/accessS.html", "pw01sli00/AF"
+        if kind == "payout":
+            return "/JRADB/accessH.html", "pw01hli00/03"
+        raise BadRequestError(f"unsupported meeting selection kind={kind}")
 
     async def _get_jra_race_odds_bundle(
         self,
@@ -413,6 +576,44 @@ class JraService:
         self.cache.set(cache_key, result, ttl_seconds=45)
         return result
 
+    async def _enrich_result_with_card_jockeys(
+        self,
+        result: RaceResult,
+        target_date: date,
+        course: str,
+        race_no: int,
+    ) -> RaceResult:
+        if not any(entry.jockey in (None, "") and entry.horse_no for entry in result.results):
+            return result
+        try:
+            card = await self.get_race_card_by_number(target_date, course, race_no)
+        except Exception:
+            logger.warning(
+                "failed to enrich result jockeys from card",
+                extra={"race_id": result.race_id, "course": course, "race_no": race_no},
+                exc_info=True,
+            )
+            return result
+
+        jockey_by_horse_no = {
+            runner.horse_no: runner.jockey
+            for runner in card.runners
+            if runner.horse_no not in (None, "") and runner.jockey not in (None, "")
+        }
+        if not jockey_by_horse_no:
+            return result
+
+        return result.model_copy(
+            update={
+                "results": [
+                    entry.model_copy(update={"jockey": jockey_by_horse_no[entry.horse_no]})
+                    if entry.horse_no in jockey_by_horse_no and entry.jockey in (None, "")
+                    else entry
+                    for entry in result.results
+                ]
+            }
+        )
+
     def _is_fixture_provider(self) -> bool:
         return isinstance(self.provider, FixtureProvider)
 
@@ -425,5 +626,27 @@ class JraService:
 
     @staticmethod
     def _join_race_id(target_date: date, course: str, race_no: int) -> str:
-        course_code = {value: key for key, value in COURSE_CODE_TO_NAME.items()}[course]
+        course_code = COURSE_NAME_TO_CODE[course]
         return f"{target_date.strftime('%Y%m%d')}{course_code}{race_no:02d}"
+
+    @staticmethod
+    def _select_closest_result_month_cname(
+        month_navigation: dict[str, str],
+        target_month: str,
+        visited: set[str],
+    ) -> str | None:
+        target_index = JraService._month_index(target_month)
+        candidates = [
+            (abs(JraService._month_index(month) - target_index), JraService._month_index(month), cname)
+            for month, cname in month_navigation.items()
+            if cname not in visited
+        ]
+        if not candidates:
+            return None
+        candidates.sort()
+        return candidates[0][2]
+
+    @staticmethod
+    def _month_index(value: str) -> int:
+        year_text, month_text = value.split("-")
+        return int(year_text) * 12 + int(month_text)

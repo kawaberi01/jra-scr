@@ -31,6 +31,9 @@ class FakeAnalysisService:
             source="meeting",
         )
 
+    async def get_meetings_for_date(self, target_date: date) -> list[MeetingSnapshot]:
+        return [await self.get_meeting(target_date, "nakayama")]
+
     async def get_race_card_by_number(self, target_date: date, course: str, race_no: int) -> RaceCard:
         return RaceCard(
             race_id=f"{target_date:%Y%m%d}06{race_no:02d}",
@@ -138,3 +141,24 @@ async def test_collect_analysis_cli_writes_sqlite(tmp_path):
     assert run_id
     assert store.count_rows("races") == 1
     assert store.count_rows("odds_entries") == 1
+
+
+@pytest.mark.asyncio
+async def test_analysis_collector_auto_discovers_meetings(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    collector = AnalysisCollector(service=FakeAnalysisService(), store=store)  # type: ignore[arg-type]
+
+    await collector.collect(
+        AnalysisCollectionOptions(
+            from_date=date(2026, 3, 22),
+            to_date=date(2026, 3, 22),
+            courses=["all"],
+            include_card=False,
+            include_odds=False,
+            include_results=True,
+        )
+    )
+
+    assert store.count_rows("races") == 1
+    assert store.count_rows("result_entries") == 1
+    assert store.count_rows("collection_errors") == 0

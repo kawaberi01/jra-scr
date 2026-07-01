@@ -286,6 +286,8 @@ class SQLiteRaceResultStorage(ResultStorage):
 
 
 class PastResultCollector:
+    AUTO_COURSE_TOKENS = {"all", "*", "auto"}
+
     def __init__(
         self,
         service: JraService,
@@ -299,8 +301,9 @@ class PastResultCollector:
     async def collect(self, from_date: date, to_date: date, courses: list[str]) -> None:
         current = from_date
         while current <= to_date:
-            for course in courses:
-                meeting = await self.service.get_meeting(current, course)
+            meetings = await self._load_meetings(current, courses)
+            for meeting in meetings:
+                course = meeting.course
                 if self.storage is None:
                     continue
                 for race in meeting.races:
@@ -309,6 +312,11 @@ class PastResultCollector:
                     result = await self._fetch_result_with_retry(current, course, race.race_no)
                     self.storage.write_result(current, course, race.race_no, result)
             current += timedelta(days=1)
+
+    async def _load_meetings(self, target_date: date, courses: list[str]):
+        if len(courses) == 1 and courses[0].strip().lower() in self.AUTO_COURSE_TOKENS:
+            return await self.service.get_meetings_for_date(target_date)
+        return [await self.service.get_meeting(target_date, course) for course in courses]
 
     async def _fetch_result_with_retry(self, target_date: date, course: str, race_no: int) -> RaceResult:
         last_error: Exception | None = None

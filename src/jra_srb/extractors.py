@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import re
+from datetime import date
 from typing import Any
 
 from bs4 import BeautifulSoup
@@ -69,6 +71,47 @@ def parse_race_card(html: str, config: dict[str, Any]) -> dict[str, Any]:
     return metadata
 
 
+def parse_result_page_as_race_card(html: str) -> dict[str, Any]:
+    soup = BeautifulSoup(html, "html.parser")
+    if soup.select_one("#race_result .race_result_unit > table") is None:
+        raise ValueError("race result table not found")
+
+    course_text = _select_text(soup, ".race_header .type .course")
+    start_time = _select_text(soup, ".race_header .date_line .time strong")
+    runners = []
+    for row in soup.select("#race_result .race_result_unit > table tbody tr"):
+        horse_no = _select_text(row, "td.num")
+        horse_name = _select_text(row, "td.horse a") or _select_text(row, "td.horse")
+        if horse_name is None:
+            continue
+        runners.append(
+            Runner(
+                frame_no=_select_text(row, "td.waku"),
+                horse_no=horse_no,
+                horse_name=horse_name,
+                sex_age=_select_text(row, "td.age"),
+                weight_carried=_select_text(row, "td.weight"),
+                jockey=_select_text(row, "td.jockey"),
+                trainer=_select_text(row, "td.trainer"),
+            )
+        )
+
+    distance = None
+    surface = None
+    if course_text:
+        distance_match = re.search(r"(\d{1,4}(?:,\d{3})?)", course_text)
+        distance = distance_match.group(1) if distance_match else None
+        surface = "ダート" if "ダート" in course_text else "芝" if "芝" in course_text else None
+    return {
+        "race_name": _select_text(soup, ".race_header .race_name"),
+        "course": course_text,
+        "distance": distance,
+        "surface": surface,
+        "start_time": start_time,
+        "runners": runners,
+    }
+
+
 def _parse_jra_race_card(soup: BeautifulSoup) -> dict[str, Any]:
     course_text = _select_text(soup, ".race_header .type .course")
     start_time = _select_text(soup, ".race_header .date_line .time strong")
@@ -89,7 +132,7 @@ def _parse_jra_race_card(soup: BeautifulSoup) -> dict[str, Any]:
             if len(parts) >= 3:
                 weight_carried = f"{parts[1]} {parts[2]}".strip()
             if len(parts) >= 4:
-                jockey = parts[3]
+                jockey = "".join(parts[3:])
         popularity = _select_text(row, "td.horse .pop_rank")
         if popularity:
             popularity = re.sub(r"\D", "", popularity) or None
@@ -213,6 +256,28 @@ def parse_odds_navigation(html: str) -> dict[str, str]:
     return mapping
 
 
+def parse_result_month_navigation(html: str) -> dict[str, str]:
+    soup = BeautifulSoup(html, "html.parser")
+    mapping: dict[str, str] = {}
+    for link in soup.select("a[onclick*='pw01skl10']"):
+        onclick = link.get("onclick", "")
+        match = re.search(r"(pw01skl10(?P<year>\d{4})(?P<month>\d{2})/\w+)", onclick)
+        if match is None:
+            continue
+        mapping[f"{match.group('year')}-{match.group('month')}"] = match.group(1)
+    return mapping
+
+
+def parse_result_race_navigation(html: str) -> dict[int, str]:
+    mapping: dict[int, str] = {}
+    for cname in re.findall(r"(pw01sde\d+/\w+)", html):
+        race_no_match = re.search(r"pw01sde\d{2}\d{2}\d{4}\d{2}\d{2}(?P<race_no>\d{2})\d{8}/", cname)
+        if race_no_match is None:
+            continue
+        mapping[int(race_no_match.group("race_no"))] = cname
+    return mapping
+
+
 def parse_jra_win_place_odds(html: str) -> list[OddsEntry]:
     soup = BeautifulSoup(html, "html.parser")
     entries: list[OddsEntry] = []
@@ -284,6 +349,8 @@ def parse_race_result(html: str, config: dict[str, Any]) -> dict[str, Any]:
     race_name = _select_text(soup, config["race_name_selector"])
     if race_name is None and soup.select_one("li[id^='harai_'] .race_name"):
         raise ValueError("use parse_meeting_payout_result for meeting payout pages")
+    if race_name is None and soup.select_one(".race_header .race_name"):
+        return _parse_jra_race_result(soup)
     results = []
     for row in _parse_collection(soup, config["results"]):
         data = {name: _parse_field(row, rule) for name, rule in config["result_fields"].items()}
@@ -293,6 +360,105 @@ def parse_race_result(html: str, config: dict[str, Any]) -> dict[str, Any]:
         data = {name: _parse_field(row, rule) for name, rule in config["payout_fields"].items()}
         payouts.append(PayoutEntry(**data))
     return {"race_name": race_name, "results": results, "payouts": payouts}
+
+
+def _parse_jra_race_result(soup: BeautifulSoup) -> dict[str, Any]:
+    results = []
+    for row in soup.select("#race_result .race_result_unit > table tbody tr"):
+        rank = _select_text(row, "td.place")
+        horse_name = _select_text(row, "td.horse")
+        if rank is None or horse_name is None:
+            continue
+        results.append(
+            ResultEntry(
+                rank=rank,
+                horse_no=_select_text(row, "td.num"),
+                horse_name=horse_name,
+                jockey=_select_text(row, "td.jockey"),
+                time=_select_text(row, "td.time"),
+            )
+        )
+
+    bet_type_map = {
+        "win": "単勝",
+        "place": "複勝",
+        "wakuren": "枠連",
+        "wide": "ワイド",
+        "umaren": "馬連",
+        "umatan": "馬単",
+        "trio": "3連複",
+        "tierce": "3連単",
+    }
+    payouts = []
+    for item in soup.select(".refund_area li"):
+        css_classes = set(item.get("class", []))
+        bet_type = next((bet_type_map[name] for name in bet_type_map if name in css_classes), None)
+        if bet_type is None:
+            continue
+        for line in item.select("dd .line"):
+            combination = _select_text(line, ".num")
+            payout = _select_text(line, ".yen")
+            if combination is None or payout is None:
+                continue
+            payouts.append(
+                PayoutEntry(
+                    bet_type=bet_type,
+                    combination=combination,
+                    payout=re.sub(r"[^\d,]", "", payout),
+                    popularity=re.sub(r"\D", "", _select_text(line, ".pop") or "") or None,
+                )
+            )
+
+    return {
+        "race_name": _select_text(soup, ".race_header .race_name"),
+        "results": results,
+        "payouts": payouts,
+    }
+
+
+def parse_calendar_meetings(
+    content: str,
+    target_date: date,
+    course_name_map: dict[str, str],
+    race_count: int = 12,
+) -> list[dict[str, Any]]:
+    payload = json.loads(content)
+    target_day = str(target_date.day)
+    meetings: list[dict[str, Any]] = []
+    seen: set[str] = set()
+
+    for month_block in payload:
+        for day_block in month_block.get("data", []):
+            if day_block.get("date") != target_day:
+                continue
+            for info in day_block.get("info", []):
+                for race in info.get("race", []):
+                    meeting_name = race.get("name", "")
+                    course = _resolve_course_from_calendar_name(meeting_name, course_name_map)
+                    if course is None or course in seen:
+                        continue
+                    seen.add(course)
+                    meetings.append(
+                        {
+                            "course": course,
+                            "label": meeting_name,
+                            "races": [
+                                MeetingRace(
+                                    race_no=race_no,
+                                    race_id="",
+                                )
+                                for race_no in range(1, race_count + 1)
+                            ],
+                        }
+                    )
+    return meetings
+
+
+def _resolve_course_from_calendar_name(name: str, course_name_map: dict[str, str]) -> str | None:
+    for course, course_name in course_name_map.items():
+        if course_name in name:
+            return course
+    return None
 
 
 def parse_meeting_payout_result(html: str, race_no: int) -> dict[str, Any]:

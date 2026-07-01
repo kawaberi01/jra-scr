@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 
 from .analysis_store import AnalysisSQLiteStore
+from .models import MeetingSnapshot
 from .service import JraService, SUPPORTED_JRA_BET_TYPES
 
 
@@ -21,6 +22,8 @@ class AnalysisCollectionOptions:
 
 
 class AnalysisCollector:
+    AUTO_COURSE_TOKENS = {"all", "*", "auto"}
+
     def __init__(self, service: JraService, store: AnalysisSQLiteStore) -> None:
         self.service = service
         self.store = store
@@ -38,13 +41,14 @@ class AnalysisCollector:
         failed = False
         current = options.from_date
         while current <= options.to_date:
-            for course in options.courses:
-                try:
-                    meeting = await self.service.get_meeting(current, course)
-                except Exception as exc:
-                    failed = True
-                    self.store.write_error(run_id, current, course, "meeting", exc)
-                    continue
+            meetings, meeting_errors = await self._load_meetings(run_id, current, options.courses)
+            if meeting_errors:
+                failed = True
+            if meetings is None:
+                current += timedelta(days=1)
+                continue
+            for meeting in meetings:
+                course = meeting.course
                 for race in meeting.races:
                     self.store.write_race(current, course, race, source=meeting.source, fetched_at=meeting.fetched_at)
                     if options.include_card:
@@ -102,6 +106,33 @@ class AnalysisCollector:
             current += timedelta(days=1)
         self.store.finish_run(run_id, "failed" if failed else "succeeded")
         return run_id
+
+    async def _load_meetings(
+        self,
+        run_id: str,
+        target_date: date,
+        courses: list[str],
+    ) -> tuple[list[MeetingSnapshot] | None, bool]:
+        if self._should_auto_discover_courses(courses):
+            try:
+                return await self.service.get_meetings_for_date(target_date), False
+            except Exception as exc:
+                self.store.write_error(run_id, target_date, "all", "meeting-list", exc)
+                return None, True
+
+        meetings: list[MeetingSnapshot] = []
+        had_error = False
+        for course in courses:
+            try:
+                meetings.append(await self.service.get_meeting(target_date, course))
+            except Exception as exc:
+                had_error = True
+                self.store.write_error(run_id, target_date, course, "meeting", exc)
+        return meetings, had_error
+
+    @classmethod
+    def _should_auto_discover_courses(cls, courses: list[str]) -> bool:
+        return len(courses) == 1 and courses[0].strip().lower() in cls.AUTO_COURSE_TOKENS
 
     @staticmethod
     async def _with_retry(retries: int, func, *args):
