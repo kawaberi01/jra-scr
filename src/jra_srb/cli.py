@@ -5,9 +5,17 @@ import asyncio
 from datetime import date
 import os
 from pathlib import Path
+import sys
 from typing import Sequence
 
 from .analysis_collector import AnalysisCollectionOptions, AnalysisCollector
+from .analysis_maintenance import (
+    AnalysisJoinVerifier,
+    AnalysisRunnerBackfiller,
+    RunnerBackfillOptions,
+    format_backfill_summary,
+    format_join_verification,
+)
 from .analysis_store import AnalysisSQLiteStore
 from .batch import JsonlRaceResultStorage, PastResultCollector, ResultStorage, SQLiteRaceResultStorage
 from .normalization import normalize_course
@@ -15,6 +23,7 @@ from .service import JraService, SUPPORTED_JRA_BET_TYPES
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    _configure_stdout()
     parser = build_parser()
     args = parser.parse_args(argv)
     if args.command == "collect-results":
@@ -27,6 +36,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             parser.error("--from-date must be earlier than or equal to --to-date")
         asyncio.run(collect_analysis(args))
         return 0
+    if args.command == "backfill-analysis-runners":
+        if args.from_date > args.to_date:
+            parser.error("--from-date must be earlier than or equal to --to-date")
+        summary = asyncio.run(backfill_analysis_runners(args))
+        print(format_backfill_summary(summary))
+        return 1 if summary.failed_count else 0
+    if args.command == "verify-analysis-joins":
+        if args.from_date > args.to_date:
+            parser.error("--from-date must be earlier than or equal to --to-date")
+        result = verify_analysis_joins(args)
+        print(format_join_verification(result))
+        return 0 if result.ok else 1
     parser.print_help()
     return 1
 
@@ -54,12 +75,35 @@ def build_parser() -> argparse.ArgumentParser:
     analysis.add_argument("--bet-types", default=",".join(SUPPORTED_JRA_BET_TYPES))
     analysis.add_argument("--odds-timing", default="final_or_near_final")
     analysis.add_argument("--retries", type=int, default=0)
+
+    backfill = subparsers.add_parser(
+        "backfill-analysis-runners",
+        help="Backfill missing runners in analysis SQLite from existing races.",
+    )
+    backfill.add_argument("--db", type=Path, default=Path(os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/analysis.sqlite")))
+    backfill.add_argument("--from-date", type=date.fromisoformat, required=True)
+    backfill.add_argument("--to-date", type=date.fromisoformat, required=True)
+    backfill.add_argument("--courses", required=True, help="'all' or comma-separated course names or codes.")
+    backfill.add_argument("--only-missing", action="store_true")
+    backfill.add_argument("--retries", type=int, default=0)
+    backfill.add_argument("--min-interval-seconds", type=float, default=0.0)
+    backfill.add_argument("--limit", type=int)
+    backfill.add_argument("--dry-run", action="store_true")
+
+    verify = subparsers.add_parser(
+        "verify-analysis-joins",
+        help="Verify analysis SQLite card/result join health.",
+    )
+    verify.add_argument("--db", type=Path, default=Path(os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/analysis.sqlite")))
+    verify.add_argument("--from-date", type=date.fromisoformat, required=True)
+    verify.add_argument("--to-date", type=date.fromisoformat, required=True)
+    verify.add_argument("--sample-size", type=int, default=10)
     return parser
 
 
 async def collect_results(args: argparse.Namespace, service: JraService | None = None) -> None:
     storage = build_storage(args.storage, args.output)
-    courses = [str(normalize_course(item)) for item in args.courses.split(",") if item.strip()]
+    courses = parse_course_list(args.courses)
     collector = PastResultCollector(
         service=service or JraService(),
         storage=storage,
@@ -69,7 +113,7 @@ async def collect_results(args: argparse.Namespace, service: JraService | None =
 
 
 async def collect_analysis(args: argparse.Namespace, service: JraService | None = None) -> str:
-    courses = [str(normalize_course(item)) for item in args.courses.split(",") if item.strip()]
+    courses = parse_course_list(args.courses)
     bet_types = [item.strip() for item in args.bet_types.split(",") if item.strip()]
     store = AnalysisSQLiteStore(args.db)
     collector = AnalysisCollector(service=service or JraService(), store=store)
@@ -88,10 +132,46 @@ async def collect_analysis(args: argparse.Namespace, service: JraService | None 
     )
 
 
+async def backfill_analysis_runners(args: argparse.Namespace, service: JraService | None = None):
+    courses = parse_course_list(args.courses)
+    store = AnalysisSQLiteStore(args.db)
+    backfiller = AnalysisRunnerBackfiller(service=service or JraService(), store=store)
+    return await backfiller.backfill(
+        RunnerBackfillOptions(
+            from_date=args.from_date,
+            to_date=args.to_date,
+            courses=courses,
+            only_missing=args.only_missing,
+            retries=args.retries,
+            min_interval_seconds=args.min_interval_seconds,
+            limit=args.limit,
+            dry_run=args.dry_run,
+        )
+    )
+
+
+def verify_analysis_joins(args: argparse.Namespace):
+    store = AnalysisSQLiteStore(args.db)
+    verifier = AnalysisJoinVerifier(store)
+    return verifier.verify(args.from_date, args.to_date, args.sample_size)
+
+
 def build_storage(kind: str, path: Path) -> ResultStorage:
     if kind == "sqlite":
         return SQLiteRaceResultStorage(path)
     return JsonlRaceResultStorage(path)
+
+
+def parse_course_list(value: str) -> list[str]:
+    items = [item.strip() for item in value.split(",") if item.strip()]
+    if len(items) == 1 and items[0].lower() in AnalysisCollector.AUTO_COURSE_TOKENS:
+        return [items[0].lower()]
+    return [str(normalize_course(item)) for item in items]
+
+
+def _configure_stdout() -> None:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
 
 
 if __name__ == "__main__":

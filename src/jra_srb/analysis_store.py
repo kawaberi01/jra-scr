@@ -506,6 +506,214 @@ class AnalysisSQLiteStore:
         with self._connect() as conn:
             return int(conn.execute(f"select count(*) from {table}").fetchone()[0])
 
+    def list_races_for_runner_backfill(
+        self,
+        from_date: date,
+        to_date: date,
+        courses: list[str],
+        only_missing: bool,
+        limit: int | None = None,
+    ):
+        from .analysis_maintenance import AnalysisRaceTarget
+
+        where = ["r.race_date >= ?", "r.race_date <= ?"]
+        params: list[object] = [from_date.isoformat(), to_date.isoformat()]
+        if not _is_all_courses(courses):
+            placeholders = ",".join("?" for _ in courses)
+            where.append(f"r.course in ({placeholders})")
+            params.extend(courses)
+        having = "having count(ru.horse_no) = 0" if only_missing else ""
+        limit_sql = ""
+        if limit is not None:
+            limit_sql = "limit ?"
+            params.append(limit)
+
+        sql = f"""
+            select r.race_id, r.race_date, r.course, r.race_no, count(ru.horse_no) as runner_count
+            from races r
+            left join runners ru on ru.race_id = r.race_id
+            where {" and ".join(where)}
+            group by r.race_id, r.race_date, r.course, r.race_no
+            {having}
+            order by r.race_date, r.course, r.race_no
+            {limit_sql}
+        """
+        with self._connect() as conn:
+            rows = conn.execute(sql, params).fetchall()
+        return [
+            AnalysisRaceTarget(
+                race_id=row["race_id"],
+                race_date=date.fromisoformat(row["race_date"]),
+                course=row["course"],
+                race_no=int(row["race_no"]),
+                runner_count=int(row["runner_count"]),
+            )
+            for row in rows
+        ]
+
+    def verify_analysis_joins(self, from_date: date, to_date: date, sample_size: int):
+        from .analysis_maintenance import AnalysisJoinSample, AnalysisJoinVerification
+
+        params = (from_date.isoformat(), to_date.isoformat())
+        with self._connect() as conn:
+            counts = {
+                "races": _scalar(
+                    conn,
+                    "select count(1) from races where race_date >= ? and race_date <= ?",
+                    params,
+                ),
+                "runners": _scalar(
+                    conn,
+                    """
+                    select count(1)
+                    from runners ru
+                    join races r on r.race_id = ru.race_id
+                    where r.race_date >= ? and r.race_date <= ?
+                    """,
+                    params,
+                ),
+                "race_results": _scalar(
+                    conn,
+                    """
+                    select count(1)
+                    from race_results rr
+                    join races r on r.race_id = rr.race_id
+                    where r.race_date >= ? and r.race_date <= ?
+                    """,
+                    params,
+                ),
+                "result_entries": _scalar(
+                    conn,
+                    """
+                    select count(1)
+                    from result_entries re
+                    join races r on r.race_id = re.race_id
+                    where r.race_date >= ? and r.race_date <= ?
+                    """,
+                    params,
+                ),
+                "payouts": _scalar(
+                    conn,
+                    """
+                    select count(1)
+                    from payouts p
+                    join races r on r.race_id = p.race_id
+                    where r.race_date >= ? and r.race_date <= ?
+                    """,
+                    params,
+                ),
+                "races_with_runners": _scalar(
+                    conn,
+                    """
+                    select count(1)
+                    from (
+                        select r.race_id
+                        from races r
+                        join runners ru on ru.race_id = r.race_id
+                        where r.race_date >= ? and r.race_date <= ?
+                        group by r.race_id
+                    )
+                    """,
+                    params,
+                ),
+                "result_runner_join_rows": _scalar(
+                    conn,
+                    """
+                    select count(1)
+                    from result_entries re
+                    join races r on r.race_id = re.race_id
+                    join runners ru on ru.race_id = re.race_id and ru.horse_no = re.horse_no
+                    where r.race_date >= ? and r.race_date <= ?
+                    """,
+                    params,
+                ),
+                "payout_runner_race_join_rows": _scalar(
+                    conn,
+                    """
+                    select count(1)
+                    from payouts p
+                    join races r on r.race_id = p.race_id
+                    join runners ru on ru.race_id = p.race_id
+                    where r.race_date >= ? and r.race_date <= ?
+                    """,
+                    params,
+                ),
+                "missing_runner_races": _scalar(
+                    conn,
+                    """
+                    select count(1)
+                    from (
+                        select r.race_id
+                        from races r
+                        left join runners ru on ru.race_id = r.race_id
+                        where r.race_date >= ? and r.race_date <= ?
+                        group by r.race_id
+                        having count(ru.horse_no) = 0
+                    )
+                    """,
+                    params,
+                ),
+            }
+            latest_run = conn.execute(
+                """
+                select run_id
+                from collection_runs
+                order by created_at desc
+                limit 1
+                """
+            ).fetchone()
+            latest_run_errors = []
+            if latest_run is not None:
+                latest_run_errors = [
+                    _row_to_dict(row)
+                    for row in conn.execute(
+                        """
+                        select race_id, race_date, course, race_no, stage, error_type, error_message, created_at
+                        from collection_errors
+                        where run_id = ?
+                        order by created_at desc
+                        limit 10
+                        """,
+                        (latest_run["run_id"],),
+                    )
+                ]
+            samples = [
+                AnalysisJoinSample(
+                    race_id=row["race_id"],
+                    horse_no=row["horse_no"],
+                    horse_name=row["horse_name"],
+                    jockey=row["jockey"],
+                    trainer=row["trainer"],
+                    sex_age=row["sex_age"],
+                    weight_carried=row["weight_carried"],
+                )
+                for row in conn.execute(
+                    """
+                    select ru.race_id, ru.horse_no, ru.horse_name, ru.jockey,
+                           ru.trainer, ru.sex_age, ru.weight_carried
+                    from runners ru
+                    join races r on r.race_id = ru.race_id
+                    where r.race_date >= ? and r.race_date <= ?
+                    order by ru.race_id, cast(ru.horse_no as integer), ru.horse_no
+                    limit ?
+                    """,
+                    (*params, sample_size),
+                )
+            ]
+        return AnalysisJoinVerification(
+            races=counts["races"],
+            runners=counts["runners"],
+            race_results=counts["race_results"],
+            result_entries=counts["result_entries"],
+            payouts=counts["payouts"],
+            races_with_runners=counts["races_with_runners"],
+            result_runner_join_rows=counts["result_runner_join_rows"],
+            payout_runner_race_join_rows=counts["payout_runner_race_join_rows"],
+            missing_runner_races=counts["missing_runner_races"],
+            latest_run_errors=latest_run_errors,
+            samples=samples,
+        )
+
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.path)
         conn.row_factory = sqlite3.Row
@@ -551,3 +759,11 @@ def _now() -> str:
 
 def _row_to_dict(row: sqlite3.Row) -> dict:
     return dict(row)
+
+
+def _scalar(conn: sqlite3.Connection, sql: str, params: tuple[object, ...]) -> int:
+    return int(conn.execute(sql, params).fetchone()[0])
+
+
+def _is_all_courses(courses: list[str]) -> bool:
+    return len(courses) == 1 and courses[0].strip().lower() in {"all", "*", "auto"}
