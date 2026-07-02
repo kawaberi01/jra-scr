@@ -32,6 +32,8 @@ from .models import (
     ResultStorageKind,
     StoredRaceResultPage,
 )
+from .netkeiba_provider import NetkeibaHttpProvider
+from .netkeiba_service import NetkeibaService
 from .normalization import normalize_race_input, parse_bet_types
 from .provider import HttpProvider, ProviderError
 from .service import JraService
@@ -74,6 +76,16 @@ def build_service() -> JraService:
     return JraService(provider=provider)
 
 
+def build_netkeiba_service() -> NetkeibaService:
+    cache_path = os.environ.get("JRA_SRB_CACHE_PATH")
+    provider = NetkeibaHttpProvider(
+        min_interval_seconds=_env_float("JRA_SRB_NETKEIBA_MIN_INTERVAL_SECONDS", default=1.0, minimum=0.0),
+    )
+    if cache_path:
+        return NetkeibaService(provider=provider, cache=SQLiteTTLCache(cache_path))
+    return NetkeibaService(provider=provider)
+
+
 def _env_int(name: str, default: int, minimum: int) -> int:
     value = os.environ.get(name)
     if value is None or not value.strip():
@@ -95,11 +107,16 @@ def _env_float(name: str, default: float, minimum: float) -> float:
 
 
 service = build_service()
+netkeiba_service = build_netkeiba_service()
 result_collection_jobs = ResultCollectionJobRegistry()
 
 
 def get_service() -> JraService:
     return service
+
+
+def get_netkeiba_service() -> NetkeibaService:
+    return netkeiba_service
 
 
 def get_result_collection_job_registry() -> ResultCollectionJobRegistry:
@@ -419,6 +436,49 @@ async def get_race_result_by_number(
     svc: JraService = Depends(get_service),
 ):
     return await svc.get_race_result_by_number(date_, str(course), race_no)
+
+
+@app.get(
+    "/netkeiba/races/{race_id}/result",
+    tags=["netkeiba"],
+    summary="netkeiba race_result を取得",
+    description="netkeiba の過去レース結果ページから着順、詳細結果、払戻を取得します。",
+)
+async def get_netkeiba_race_result(
+    race_id: RaceIdPath,
+    svc: NetkeibaService = Depends(get_netkeiba_service),
+):
+    return await svc.get_race_result(race_id)
+
+
+@app.get(
+    "/netkeiba/races/{race_id}/odds",
+    tags=["netkeiba"],
+    summary="netkeiba odds_view を取得",
+    description="netkeiba の odds_view とページ内 odds API からオッズを取得します。",
+)
+async def get_netkeiba_race_odds(
+    race_id: RaceIdPath,
+    bet_type: str | None = Query(
+        default=None,
+        description="券種コード。例: wide, quinella, trio, trifecta, win, place",
+        examples=["wide"],
+    ),
+    combination: str | None = Query(
+        default=None,
+        description="組み合わせをカンマ区切りで指定します。例: 6,10",
+        examples=["13,17"],
+    ),
+    refresh: bool = Query(default=False, description="true の場合はキャッシュを使わず再取得します。"),
+    svc: NetkeibaService = Depends(get_netkeiba_service),
+):
+    parsed_combination = [item.strip() for item in combination.split(",")] if combination else None
+    return await svc.get_race_odds(
+        race_id,
+        bet_type=bet_type,
+        combination=parsed_combination,
+        refresh=refresh,
+    )
 
 
 @app.get(

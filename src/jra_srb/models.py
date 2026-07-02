@@ -85,6 +85,44 @@ class PayoutEntry(BaseModel):
     popularity: str | None = None
 
 
+class NetkeibaResultEntry(BaseModel):
+    rank: str
+    frame_no: str | None = None
+    horse_no: str | None = None
+    horse_name: str
+    sex_age: str | None = None
+    weight_carried: str | None = None
+    jockey: str | None = None
+    trainer: str | None = None
+    horse_weight: str | None = None
+    horse_weight_diff: str | None = None
+    finish_time: str | None = None
+    margin: str | None = None
+    corner_order: str | None = None
+    final_3f: str | None = None
+    win_odds: str | None = None
+    popularity: str | None = None
+
+
+class NetkeibaRaceResult(BaseModel):
+    race_id: str
+    race_name: str | None = None
+    date: str | None = None
+    course: str | None = None
+    race_no: str | None = None
+    surface: str | None = None
+    distance: str | None = None
+    direction: str | None = None
+    weather: str | None = None
+    track_condition: str | None = None
+    results: list[NetkeibaResultEntry] = Field(default_factory=list)
+    payouts: list[PayoutEntry] = Field(default_factory=list)
+    corner_passages: list[str] = Field(default_factory=list)
+    fetched_at: datetime
+    source: str
+    cache_hit: bool = False
+
+
 class RaceCard(BaseModel):
     race_id: str
     race_name: str | None = None

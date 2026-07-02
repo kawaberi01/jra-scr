@@ -2,11 +2,13 @@ from datetime import UTC, date, datetime
 
 from fastapi.testclient import TestClient
 
-from jra_srb.app import app, get_result_collection_job_registry, get_result_storage, get_service
+from jra_srb.app import app, get_netkeiba_service, get_result_collection_job_registry, get_result_storage, get_service
 from jra_srb.batch import JsonlRaceResultStorage, SQLiteRaceResultStorage
 from jra_srb.errors import BadRequestError, ResourceNotFoundError
 from jra_srb.jobs import ResultCollectionJobRegistry
 from jra_srb.models import MeetingRace, MeetingSnapshot, PayoutEntry, RaceResult, RaceSummary, ResultEntry
+from jra_srb.netkeiba_provider import NetkeibaFixtureProvider
+from jra_srb.netkeiba_service import NetkeibaService
 from jra_srb.provider import FixtureProvider, ProviderError
 from jra_srb.service import JraService
 
@@ -114,6 +116,107 @@ def test_get_race_result_by_meeting_coordinates_endpoint():
         assert body["race_name"] == CHIBA_STAKES
         assert body["results"][0]["horse_name"] == DRAGON_WELLS
         assert any(p["bet_type"] == TRIFECTA_LABEL for p in body["payouts"])
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_get_netkeiba_race_result_endpoint():
+    service = NetkeibaService(provider=NetkeibaFixtureProvider("tests/fixtures"))
+    app.dependency_overrides[get_netkeiba_service] = lambda: service
+    try:
+        client = TestClient(app)
+        response = client.get("/netkeiba/races/202605021211/result")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["race_id"] == "202605021211"
+        assert body["race_name"] == "日本ダービー"
+        assert body["date"] == "2026-05-31"
+        assert body["course"] == "東京"
+        assert body["results"][0]["horse_name"] == "ロブチェン"
+        assert body["results"][0]["win_odds"] == "2.7"
+        assert body["results"][0]["popularity"] == "1"
+        assert body["results"][0]["horse_weight"] == "522"
+        assert body["results"][0]["final_3f"] == "33.2"
+        assert any(payout["bet_type"] == "trifecta" for payout in body["payouts"])
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_get_netkeiba_race_odds_endpoint_filters_bet_type_and_combination():
+    service = NetkeibaService(provider=NetkeibaFixtureProvider("tests/fixtures"))
+    app.dependency_overrides[get_netkeiba_service] = lambda: service
+    try:
+        client = TestClient(app)
+        response = client.get("/netkeiba/races/202605021211/odds?bet_type=wide&combination=13,17")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["race_id"] == "202605021211"
+        assert body["bet_type"] == "wide"
+        assert len(body["entries"]) == 1
+        assert body["entries"][0]["combination"] == ["13", "17"]
+        assert body["entries"][0]["odds_min"] == "5.1"
+        assert body["entries"][0]["odds_max"] == "5.6"
+        assert body["entries"][0]["popularity"] == "3"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_get_netkeiba_race_odds_endpoint_matches_unordered_bet_type_combinations_in_reverse_order():
+    service = NetkeibaService(provider=NetkeibaFixtureProvider("tests/fixtures"))
+    app.dependency_overrides[get_netkeiba_service] = lambda: service
+    try:
+        client = TestClient(app)
+
+        wide_forward = client.get("/netkeiba/races/202605021211/odds?bet_type=wide&combination=13,17")
+        wide_reverse = client.get("/netkeiba/races/202605021211/odds?bet_type=wide&combination=17,13")
+        quinella_reverse = client.get("/netkeiba/races/202605021211/odds?bet_type=quinella&combination=17,11")
+        trio_forward = client.get("/netkeiba/races/202605021211/odds?bet_type=trio&combination=1,11,17")
+        trio_reverse = client.get("/netkeiba/races/202605021211/odds?bet_type=trio&combination=17,11,1")
+
+        assert wide_forward.status_code == 200
+        assert wide_reverse.status_code == 200
+        assert wide_forward.json()["entries"] == wide_reverse.json()["entries"]
+        assert wide_reverse.json()["entries"][0]["combination"] == ["13", "17"]
+        assert wide_reverse.json()["entries"][0]["odds_min"] == "5.1"
+        assert wide_reverse.json()["entries"][0]["odds_max"] == "5.6"
+
+        assert quinella_reverse.status_code == 200
+        assert quinella_reverse.json()["entries"][0]["combination"] == ["11", "17"]
+        assert quinella_reverse.json()["entries"][0]["odds"] == "7.6"
+
+        assert trio_forward.status_code == 200
+        assert trio_reverse.status_code == 200
+        assert trio_forward.json()["entries"] == trio_reverse.json()["entries"]
+        assert trio_reverse.json()["entries"][0]["combination"] == ["1", "11", "17"]
+        assert trio_reverse.json()["entries"][0]["odds"] == "20.7"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_get_netkeiba_race_odds_endpoint_preserves_ordered_bet_type_combinations():
+    service = NetkeibaService(provider=NetkeibaFixtureProvider("tests/fixtures"))
+    app.dependency_overrides[get_netkeiba_service] = lambda: service
+    try:
+        client = TestClient(app)
+
+        exacta_forward = client.get("/netkeiba/races/202605021211/odds?bet_type=exacta&combination=17,11")
+        exacta_reverse = client.get("/netkeiba/races/202605021211/odds?bet_type=exacta&combination=11,17")
+        trifecta_target = client.get("/netkeiba/races/202605021211/odds?bet_type=trifecta&combination=17,13,5")
+        trifecta_reordered = client.get("/netkeiba/races/202605021211/odds?bet_type=trifecta&combination=17,5,13")
+
+        assert exacta_forward.status_code == 200
+        assert exacta_reverse.status_code == 200
+        assert exacta_forward.json()["entries"][0]["combination"] == ["17", "11"]
+        assert exacta_forward.json()["entries"][0]["odds"] == "12.0"
+        assert exacta_reverse.json()["entries"][0]["combination"] == ["11", "17"]
+        assert exacta_reverse.json()["entries"][0]["odds"] == "17.1"
+
+        assert trifecta_target.status_code == 200
+        assert trifecta_reordered.status_code == 200
+        assert trifecta_target.json()["entries"][0]["combination"] == ["17", "13", "5"]
+        assert trifecta_target.json()["entries"][0]["odds"] == "470.5"
+        assert trifecta_reordered.json()["entries"][0]["combination"] == ["17", "5", "13"]
+        assert trifecta_reordered.json()["entries"][0]["odds"] == "736.9"
     finally:
         app.dependency_overrides.clear()
 

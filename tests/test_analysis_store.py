@@ -6,6 +6,8 @@ import pytest
 from jra_srb.analysis_store import AnalysisSQLiteStore
 from jra_srb.models import (
     MeetingRace,
+    NetkeibaRaceResult,
+    NetkeibaResultEntry,
     OddsEntry,
     PayoutEntry,
     RaceCard,
@@ -32,6 +34,10 @@ def test_analysis_store_creates_schema(tmp_path):
     assert "odds_entries" in tables
     assert "predictions" in tables
     assert "evaluations" in tables
+    assert "netkeiba_race_results" in tables
+    assert "netkeiba_result_entries" in tables
+    assert "netkeiba_payouts" in tables
+    assert "netkeiba_odds_entries" in tables
 
 
 def test_analysis_store_writes_pre_race_and_result_data_without_leaking_result_to_snapshot(tmp_path):
@@ -131,6 +137,90 @@ def test_analysis_store_upserts_card_and_odds_without_duplicates(tmp_path):
     assert store.count_rows("runners") == 1
     assert store.count_rows("odds_snapshots") == 1
     assert store.count_rows("odds_entries") == 1
+
+
+def test_analysis_store_writes_netkeiba_result_and_odds(tmp_path):
+    path = tmp_path / "analysis.sqlite"
+    store = AnalysisSQLiteStore(path)
+    result = NetkeibaRaceResult(
+        race_id="202605021211",
+        race_name="Tokyo Race",
+        date="2026-05-02",
+        course="Tokyo",
+        race_no="11",
+        surface="芝",
+        distance="2400",
+        direction="左",
+        weather="晴",
+        track_condition="良",
+        results=[
+            NetkeibaResultEntry(
+                rank="1",
+                frame_no="8",
+                horse_no="17",
+                horse_name="Sample Horse",
+                sex_age="牡3",
+                weight_carried="57.0",
+                jockey="Sample Jockey",
+                trainer="Sample Trainer",
+                horse_weight="500",
+                horse_weight_diff="-2",
+                finish_time="2:23.1",
+                margin="",
+                corner_order="3-3-3-2",
+                final_3f="33.4",
+                win_odds="5.6",
+                popularity="2",
+            )
+        ],
+        payouts=[PayoutEntry(bet_type="wide", combination="13-17", payout="1,610", popularity="8")],
+        corner_passages=["3-3-3-2"],
+        fetched_at=datetime.now(UTC),
+        source="netkeiba-fixture",
+    )
+    odds = RaceOdds(
+        race_id="202605021211",
+        bet_type="wide",
+        entries=[
+            OddsEntry(
+                bet_type="wide",
+                combination=["13", "17"],
+                odds_min="16.1",
+                odds_max="17.3",
+                popularity="8",
+            )
+        ],
+        fetched_at=datetime.now(UTC),
+        source="netkeiba-fixture",
+    )
+
+    store.write_netkeiba_result(result, jra_race_id="202606280301")
+    store.write_netkeiba_odds(odds, jra_race_id="202606280301", bet_type="wide")
+
+    assert store.has_netkeiba_result("202605021211") is True
+    assert store.has_netkeiba_odds_entry("202605021211", "wide", ["13", "17"]) is True
+    assert store.has_netkeiba_odds_entry("202605021211", "wide", ["013", "017"]) is True
+    assert store.count_rows("netkeiba_race_results") == 1
+    assert store.count_rows("netkeiba_result_entries") == 1
+    assert store.count_rows("netkeiba_payouts") == 1
+    assert store.count_rows("netkeiba_odds_entries") == 1
+
+    with sqlite3.connect(path) as conn:
+        conn.row_factory = sqlite3.Row
+        race = conn.execute("select * from netkeiba_race_results").fetchone()
+        entry = conn.execute("select * from netkeiba_result_entries").fetchone()
+        payout = conn.execute("select * from netkeiba_payouts").fetchone()
+        stored_odds = conn.execute("select * from netkeiba_odds_entries").fetchone()
+
+    assert race["jra_race_id"] == "202606280301"
+    assert race["netkeiba_race_id"] == "202605021211"
+    assert entry["horse_weight_diff"] == -2
+    assert entry["final_3f"] == 33.4
+    assert entry["win_odds"] == 5.6
+    assert entry["popularity"] == 2
+    assert payout["payout"] == 1610
+    assert stored_odds["combination"] == "13-17"
+    assert stored_odds["odds_min"] == 16.1
 
 
 def test_analysis_store_records_collection_error(tmp_path):

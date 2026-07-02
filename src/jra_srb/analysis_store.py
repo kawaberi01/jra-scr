@@ -7,7 +7,7 @@ import re
 import sqlite3
 from uuid import uuid4
 
-from .models import MeetingRace, OddsEntry, RaceCard, RaceOdds, RaceResult
+from .models import MeetingRace, NetkeibaRaceResult, OddsEntry, RaceCard, RaceOdds, RaceResult
 
 
 class AnalysisSQLiteStore:
@@ -117,6 +117,79 @@ class AnalysisSQLiteStore:
                 );
                 create index if not exists idx_analysis_payouts_race_bet
                 on payouts (race_id, bet_type);
+
+                create table if not exists netkeiba_race_results (
+                    netkeiba_race_id text primary key,
+                    jra_race_id text,
+                    race_date text,
+                    course text,
+                    race_no integer,
+                    race_name text,
+                    surface text,
+                    distance text,
+                    direction text,
+                    weather text,
+                    track_condition text,
+                    source text not null,
+                    fetched_at text not null,
+                    raw_json text
+                );
+                create index if not exists idx_netkeiba_race_results_jra_race
+                on netkeiba_race_results (jra_race_id);
+                create index if not exists idx_netkeiba_race_results_date_course
+                on netkeiba_race_results (race_date, course, race_no);
+
+                create table if not exists netkeiba_result_entries (
+                    netkeiba_race_id text not null,
+                    jra_race_id text,
+                    rank integer,
+                    frame_no text,
+                    horse_no text,
+                    horse_name text not null,
+                    sex_age text,
+                    weight_carried text,
+                    jockey text,
+                    trainer text,
+                    horse_weight integer,
+                    horse_weight_diff integer,
+                    finish_time text,
+                    margin text,
+                    corner_order text,
+                    final_3f real,
+                    win_odds real,
+                    popularity integer,
+                    primary key (netkeiba_race_id, rank, horse_no)
+                );
+                create index if not exists idx_netkeiba_result_entries_jra_race
+                on netkeiba_result_entries (jra_race_id);
+
+                create table if not exists netkeiba_payouts (
+                    netkeiba_race_id text not null,
+                    jra_race_id text,
+                    bet_type text not null,
+                    combination text not null,
+                    payout integer,
+                    popularity integer
+                );
+                create index if not exists idx_netkeiba_payouts_race_bet
+                on netkeiba_payouts (netkeiba_race_id, bet_type);
+
+                create table if not exists netkeiba_odds_entries (
+                    netkeiba_race_id text not null,
+                    jra_race_id text,
+                    bet_type text not null,
+                    combination text not null,
+                    combination_json text not null,
+                    odds real,
+                    odds_min real,
+                    odds_max real,
+                    popularity integer,
+                    fetched_at text not null,
+                    source text not null,
+                    primary key (netkeiba_race_id, bet_type, combination)
+                );
+                create index if not exists idx_netkeiba_odds_entries_jra_race
+                on netkeiba_odds_entries (jra_race_id);
 
                 create table if not exists collection_errors (
                     error_id text primary key,
@@ -427,6 +500,168 @@ class AnalysisSQLiteStore:
                     ),
                 )
 
+    def has_netkeiba_result(self, netkeiba_race_id: str) -> bool:
+        with self._connect() as conn:
+            row = conn.execute(
+                "select 1 from netkeiba_race_results where netkeiba_race_id = ? limit 1",
+                (netkeiba_race_id,),
+            ).fetchone()
+        return row is not None
+
+    def write_netkeiba_result(
+        self,
+        result: NetkeibaRaceResult,
+        jra_race_id: str | None = None,
+        raw_json: str | None = None,
+    ) -> None:
+        raw_payload = raw_json
+        if raw_payload is None:
+            raw_payload = json.dumps(result.model_dump(mode="json"), ensure_ascii=False)
+        with self._connect() as conn:
+            conn.execute(
+                """
+                insert into netkeiba_race_results
+                (netkeiba_race_id, jra_race_id, race_date, course, race_no, race_name,
+                 surface, distance, direction, weather, track_condition, source, fetched_at, raw_json)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                on conflict(netkeiba_race_id) do update set
+                    jra_race_id = coalesce(excluded.jra_race_id, netkeiba_race_results.jra_race_id),
+                    race_date = coalesce(excluded.race_date, netkeiba_race_results.race_date),
+                    course = coalesce(excluded.course, netkeiba_race_results.course),
+                    race_no = coalesce(excluded.race_no, netkeiba_race_results.race_no),
+                    race_name = excluded.race_name,
+                    surface = excluded.surface,
+                    distance = excluded.distance,
+                    direction = excluded.direction,
+                    weather = excluded.weather,
+                    track_condition = excluded.track_condition,
+                    source = excluded.source,
+                    fetched_at = excluded.fetched_at,
+                    raw_json = excluded.raw_json
+                """,
+                (
+                    result.race_id,
+                    jra_race_id,
+                    result.date,
+                    result.course,
+                    _parse_int(result.race_no),
+                    result.race_name,
+                    result.surface,
+                    result.distance,
+                    result.direction,
+                    result.weather,
+                    result.track_condition,
+                    result.source,
+                    _dt(result.fetched_at),
+                    raw_payload,
+                ),
+            )
+            conn.execute("delete from netkeiba_result_entries where netkeiba_race_id = ?", (result.race_id,))
+            for entry in result.results:
+                conn.execute(
+                    """
+                    insert into netkeiba_result_entries
+                    (netkeiba_race_id, jra_race_id, rank, frame_no, horse_no, horse_name,
+                     sex_age, weight_carried, jockey, trainer, horse_weight, horse_weight_diff,
+                     finish_time, margin, corner_order, final_3f, win_odds, popularity)
+                    values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        result.race_id,
+                        jra_race_id,
+                        _parse_int(entry.rank),
+                        entry.frame_no,
+                        entry.horse_no,
+                        entry.horse_name,
+                        entry.sex_age,
+                        entry.weight_carried,
+                        entry.jockey,
+                        entry.trainer,
+                        _parse_int(entry.horse_weight),
+                        _parse_signed_int(entry.horse_weight_diff),
+                        entry.finish_time,
+                        entry.margin,
+                        entry.corner_order,
+                        _parse_float(entry.final_3f),
+                        _parse_float(entry.win_odds),
+                        _parse_int(entry.popularity),
+                    ),
+                )
+            conn.execute("delete from netkeiba_payouts where netkeiba_race_id = ?", (result.race_id,))
+            for payout in result.payouts:
+                conn.execute(
+                    """
+                    insert into netkeiba_payouts
+                    (netkeiba_race_id, jra_race_id, bet_type, combination, payout, popularity)
+                    values (?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        result.race_id,
+                        jra_race_id,
+                        payout.bet_type,
+                        payout.combination,
+                        _parse_int(payout.payout),
+                        _parse_int(payout.popularity),
+                    ),
+                )
+
+    def has_netkeiba_odds_entry(self, netkeiba_race_id: str, bet_type: str, combination: list[str]) -> bool:
+        stored_combination = "-".join(_normalize_combination_items(combination))
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                select 1
+                from netkeiba_odds_entries
+                where netkeiba_race_id = ? and bet_type = ? and combination = ?
+                limit 1
+                """,
+                (netkeiba_race_id, bet_type, stored_combination),
+            ).fetchone()
+        return row is not None
+
+    def write_netkeiba_odds(
+        self,
+        odds: RaceOdds,
+        jra_race_id: str | None = None,
+        bet_type: str | None = None,
+    ) -> None:
+        entries_by_type = _netkeiba_odds_entries_by_type(odds, bet_type)
+        with self._connect() as conn:
+            for current_bet_type, entries in entries_by_type.items():
+                for entry in entries:
+                    normalized_combination = _normalize_combination_items(entry.combination)
+                    combination = "-".join(normalized_combination)
+                    conn.execute(
+                        """
+                        insert into netkeiba_odds_entries
+                        (netkeiba_race_id, jra_race_id, bet_type, combination, combination_json,
+                         odds, odds_min, odds_max, popularity, fetched_at, source)
+                        values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        on conflict(netkeiba_race_id, bet_type, combination) do update set
+                            jra_race_id = coalesce(excluded.jra_race_id, netkeiba_odds_entries.jra_race_id),
+                            combination_json = excluded.combination_json,
+                            odds = excluded.odds,
+                            odds_min = excluded.odds_min,
+                            odds_max = excluded.odds_max,
+                            popularity = excluded.popularity,
+                            fetched_at = excluded.fetched_at,
+                            source = excluded.source
+                        """,
+                        (
+                            odds.race_id,
+                            jra_race_id,
+                            current_bet_type,
+                            combination,
+                            json.dumps(normalized_combination, ensure_ascii=False),
+                            _parse_float(entry.odds),
+                            _parse_float(entry.odds_min),
+                            _parse_float(entry.odds_max),
+                            _parse_int(entry.popularity),
+                            _dt(odds.fetched_at),
+                            odds.source,
+                        ),
+                    )
+
     def write_error(
         self,
         run_id: str | None,
@@ -505,6 +740,30 @@ class AnalysisSQLiteStore:
             raise ValueError(f"invalid table name={table}")
         with self._connect() as conn:
             return int(conn.execute(f"select count(*) from {table}").fetchone()[0])
+
+    def list_races_for_netkeiba_mapping(
+        self,
+        from_date: date,
+        to_date: date,
+        limit: int | None = None,
+    ) -> list[dict]:
+        params: list[object] = [from_date.isoformat(), to_date.isoformat()]
+        limit_sql = ""
+        if limit is not None:
+            limit_sql = "limit ?"
+            params.append(limit)
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"""
+                select race_id, race_date, course, race_no
+                from races
+                where race_date >= ? and race_date <= ?
+                order by race_date, course, race_no
+                {limit_sql}
+                """,
+                params,
+            ).fetchall()
+        return [_row_to_dict(row) for row in rows]
 
     def list_races_for_runner_backfill(
         self,
@@ -727,6 +986,15 @@ def _odds_entries_by_type(odds: RaceOdds, bet_type: str | None) -> dict[str, lis
     return {current_bet_type: list(odds.entries)}
 
 
+def _netkeiba_odds_entries_by_type(odds: RaceOdds, bet_type: str | None) -> dict[str, list[OddsEntry]]:
+    if odds.odds:
+        if bet_type is not None:
+            return {bet_type: list(odds.odds.get(bet_type, []))}
+        return {key: list(value) for key, value in odds.odds.items()}
+    current_bet_type = bet_type or odds.bet_type or "unknown"
+    return {current_bet_type: list(odds.entries)}
+
+
 def _parse_float(value: str | None) -> float | None:
     if value is None:
         return None
@@ -745,6 +1013,24 @@ def _parse_int(value: str | None) -> int | None:
     if match is None:
         return None
     return int(match.group(0))
+
+
+def _parse_signed_int(value: str | None) -> int | None:
+    if value is None:
+        return None
+    normalized = value.replace(",", "").strip()
+    match = re.search(r"[+-]?\d+", normalized)
+    if match is None:
+        return None
+    return int(match.group(0))
+
+
+def _normalize_combination_items(combination: list[str]) -> list[str]:
+    normalized = []
+    for item in combination:
+        value = item.strip()
+        normalized.append(str(int(value)) if value.isdigit() else value)
+    return normalized
 
 
 def _dt(value: datetime | None) -> str | None:
