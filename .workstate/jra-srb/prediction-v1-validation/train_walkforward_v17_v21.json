@@ -1,0 +1,300 @@
+[
+  {
+    "theory_version": "v17",
+    "theory_note": "single-middle test: keep v11 rules, but allow one middle when axis gap > 10 and odds ratio > 5",
+    "evaluation_period": "2025-07-01..2025-07-31",
+    "candidate_races": 288,
+    "evaluated_races": 230,
+    "excluded_races": 58,
+    "bet_races": 180,
+    "tickets": 351,
+    "hits": 49,
+    "total_bet": 35100,
+    "total_payout": 33700,
+    "return_rate": 0.9601,
+    "return_rate_without_max_payout": 0.8812,
+    "return_rate_without_top3_payouts": 0.7838,
+    "axis_top3_rate": 0.5696,
+    "middle_hole_top3_rate": 0.2707,
+    "wide_hit_rate": 0.1396,
+    "average_tickets_per_evaluated_race": 1.5261,
+    "skip_rate": 0.2174,
+    "exclusion_rate": 0.2014,
+    "max_payout": 2770,
+    "split_label": "wf1_2025_07",
+    "train_end": "2025-06-30",
+    "top_exclusion_reasons": [
+      [
+        "few_candidates:0",
+        47
+      ],
+      [
+        "few_candidates:1",
+        5
+      ],
+      [
+        "few_candidates:5",
+        4
+      ],
+      [
+        "few_candidates:2",
+        1
+      ],
+      [
+        "few_candidates:4",
+        1
+      ]
+    ]
+  },
+  {
+    "theory_version": "v17",
+    "theory_note": "single-middle test: keep v11 rules, but allow one middle when axis gap > 10 and odds ratio > 5",
+    "evaluation_period": "2025-08-01..2025-08-31",
+    "candidate_races": 360,
+    "evaluated_races": 280,
+    "excluded_races": 80,
+    "bet_races": 235,
+    "tickets": 451,
+    "hits": 56,
+    "total_bet": 45100,
+    "total_payout": 35230,
+    "return_rate": 0.7812,
+    "return_rate_without_max_payout": 0.7401,
+    "return_rate_without_top3_payouts": 0.6843,
+    "axis_top3_rate": 0.5643,
+    "middle_hole_top3_rate": 0.2639,
+    "wide_hit_rate": 0.1242,
+    "average_tickets_per_evaluated_race": 1.6107,
+    "skip_rate": 0.1607,
+    "exclusion_rate": 0.2222,
+    "max_payout": 1850,
+    "split_label": "wf2_2025_08",
+    "train_end": "2025-07-31",
+    "top_exclusion_reasons": [
+      [
+        "few_candidates:0",
+        45
+      ],
+      [
+        "few_candidates:1",
+        11
+      ],
+      [
+        "few_candidates:4",
+        7
+      ],
+      [
+        "few_candidates:2",
+        7
+      ],
+      [
+        "few_candidates:3",
+        6
+      ],
+      [
+        "few_candidates:5",
+        4
+      ]
+    ]
+  },
+  {
+    "theory_version": "v17",
+    "theory_note": "single-middle test: keep v11 rules, but allow one middle when axis gap > 10 and odds ratio > 5",
+    "evaluation_period": "2025-09-01..2025-09-30",
+    "candidate_races": 240,
+    "evaluated_races": 161,
+    "excluded_races": 79,
+    "bet_races": 134,
+    "tickets": 258,
+    "hits": 31,
+    "total_bet": 25800,
+    "total_payout": 16160,
+    "return_rate": 0.6264,
+    "return_rate_without_max_payout": 0.5787,
+    "return_rate_without_top3_payouts": 0.4996,
+    "axis_top3_rate": 0.5901,
+    "middle_hole_top3_rate": 0.2558,
+    "wide_hit_rate": 0.1202,
+    "average_tickets_per_evaluated_race": 1.6025,
+    "skip_rate": 0.1677,
+    "exclusion_rate": 0.3292,
+    "max_payout": 1230,
+    "split_label": "wf3_2025_09",
+    "train_end": "2025-08-31",
+    "top_exclusion_reasons": [
+      [
+        "few_candidates:0",
+        36
+      ],
+      [
+        "few_candidates:5",
+        10
+      ],
+      [
+        "few_candidates:2",
+        9
+      ],
+      [
+        "few_candidates:4",
+        9
+      ],
+      [
+        "few_candidates:3",
+        9
+      ],
+      [
+        "few_candidates:1",
+        6
+      ]
+    ]
+  },
+  {
+    "theory_version": "v21",
+    "theory_note": "targeted shape guard: keep v17 rules, but skip standard bets only when axis odds are 2.0..4.0 and odds ratio is 2.0..3.0",
+    "evaluation_period": "2025-07-01..2025-07-31",
+    "candidate_races": 288,
+    "evaluated_races": 230,
+    "excluded_races": 58,
+    "bet_races": 170,
+    "tickets": 331,
+    "hits": 47,
+    "total_bet": 33100,
+    "total_payout": 32020,
+    "return_rate": 0.9674,
+    "return_rate_without_max_payout": 0.8837,
+    "return_rate_without_top3_payouts": 0.7804,
+    "axis_top3_rate": 0.5696,
+    "middle_hole_top3_rate": 0.287,
+    "wide_hit_rate": 0.142,
+    "average_tickets_per_evaluated_race": 1.4391,
+    "skip_rate": 0.2609,
+    "exclusion_rate": 0.2014,
+    "max_payout": 2770,
+    "split_label": "wf1_2025_07",
+    "train_end": "2025-06-30",
+    "top_exclusion_reasons": [
+      [
+        "few_candidates:0",
+        47
+      ],
+      [
+        "few_candidates:1",
+        5
+      ],
+      [
+        "few_candidates:5",
+        4
+      ],
+      [
+        "few_candidates:2",
+        1
+      ],
+      [
+        "few_candidates:4",
+        1
+      ]
+    ]
+  },
+  {
+    "theory_version": "v21",
+    "theory_note": "targeted shape guard: keep v17 rules, but skip standard bets only when axis odds are 2.0..4.0 and odds ratio is 2.0..3.0",
+    "evaluation_period": "2025-08-01..2025-08-31",
+    "candidate_races": 360,
+    "evaluated_races": 280,
+    "excluded_races": 80,
+    "bet_races": 217,
+    "tickets": 415,
+    "hits": 51,
+    "total_bet": 41500,
+    "total_payout": 33120,
+    "return_rate": 0.7981,
+    "return_rate_without_max_payout": 0.7535,
+    "return_rate_without_top3_payouts": 0.6928,
+    "axis_top3_rate": 0.5643,
+    "middle_hole_top3_rate": 0.2867,
+    "wide_hit_rate": 0.1229,
+    "average_tickets_per_evaluated_race": 1.4821,
+    "skip_rate": 0.225,
+    "exclusion_rate": 0.2222,
+    "max_payout": 1850,
+    "split_label": "wf2_2025_08",
+    "train_end": "2025-07-31",
+    "top_exclusion_reasons": [
+      [
+        "few_candidates:0",
+        45
+      ],
+      [
+        "few_candidates:1",
+        11
+      ],
+      [
+        "few_candidates:4",
+        7
+      ],
+      [
+        "few_candidates:2",
+        7
+      ],
+      [
+        "few_candidates:3",
+        6
+      ],
+      [
+        "few_candidates:5",
+        4
+      ]
+    ]
+  },
+  {
+    "theory_version": "v21",
+    "theory_note": "targeted shape guard: keep v17 rules, but skip standard bets only when axis odds are 2.0..4.0 and odds ratio is 2.0..3.0",
+    "evaluation_period": "2025-09-01..2025-09-30",
+    "candidate_races": 240,
+    "evaluated_races": 161,
+    "excluded_races": 79,
+    "bet_races": 117,
+    "tickets": 224,
+    "hits": 26,
+    "total_bet": 22400,
+    "total_payout": 13010,
+    "return_rate": 0.5808,
+    "return_rate_without_max_payout": 0.5259,
+    "return_rate_without_top3_payouts": 0.4348,
+    "axis_top3_rate": 0.5901,
+    "middle_hole_top3_rate": 0.2946,
+    "wide_hit_rate": 0.1161,
+    "average_tickets_per_evaluated_race": 1.3913,
+    "skip_rate": 0.2733,
+    "exclusion_rate": 0.3292,
+    "max_payout": 1230,
+    "split_label": "wf3_2025_09",
+    "train_end": "2025-08-31",
+    "top_exclusion_reasons": [
+      [
+        "few_candidates:0",
+        36
+      ],
+      [
+        "few_candidates:5",
+        10
+      ],
+      [
+        "few_candidates:2",
+        9
+      ],
+      [
+        "few_candidates:4",
+        9
+      ],
+      [
+        "few_candidates:3",
+        9
+      ],
+      [
+        "few_candidates:1",
+        6
+      ]
+    ]
+  }
+]

@@ -1,0 +1,598 @@
+[
+  {
+    "theory_version": "v39",
+    "theory_note": "race-shape test: v25 but bet only field size >= 14",
+    "evaluation_period": "2025-07-01..2025-07-31",
+    "candidate_races": 288,
+    "evaluated_races": 230,
+    "excluded_races": 58,
+    "bet_races": 79,
+    "tickets": 149,
+    "hits": 17,
+    "total_bet": 14900,
+    "total_payout": 14530,
+    "return_rate": 0.9752,
+    "return_rate_without_max_payout": 0.8584,
+    "return_rate_without_top3_payouts": 0.6544,
+    "axis_top3_rate": 0.6,
+    "middle_hole_top3_rate": 0.2886,
+    "wide_hit_rate": 0.1141,
+    "average_tickets_per_evaluated_race": 0.6478,
+    "skip_rate": 0.6565,
+    "exclusion_rate": 0.2014,
+    "max_payout": 1740,
+    "split_label": "wf1_2025_07",
+    "train_end": "2025-06-30",
+    "top_exclusion_reasons": [
+      [
+        "few_candidates:0",
+        47
+      ],
+      [
+        "few_candidates:1",
+        5
+      ],
+      [
+        "few_candidates:5",
+        4
+      ],
+      [
+        "few_candidates:2",
+        1
+      ],
+      [
+        "few_candidates:4",
+        1
+      ]
+    ]
+  },
+  {
+    "theory_version": "v39",
+    "theory_note": "race-shape test: v25 but bet only field size >= 14",
+    "evaluation_period": "2025-08-01..2025-08-31",
+    "candidate_races": 360,
+    "evaluated_races": 280,
+    "excluded_races": 80,
+    "bet_races": 113,
+    "tickets": 213,
+    "hits": 30,
+    "total_bet": 21300,
+    "total_payout": 20140,
+    "return_rate": 0.9455,
+    "return_rate_without_max_payout": 0.8587,
+    "return_rate_without_top3_payouts": 0.7451,
+    "axis_top3_rate": 0.6143,
+    "middle_hole_top3_rate": 0.2723,
+    "wide_hit_rate": 0.1408,
+    "average_tickets_per_evaluated_race": 0.7607,
+    "skip_rate": 0.5964,
+    "exclusion_rate": 0.2222,
+    "max_payout": 1850,
+    "split_label": "wf2_2025_08",
+    "train_end": "2025-07-31",
+    "top_exclusion_reasons": [
+      [
+        "few_candidates:0",
+        45
+      ],
+      [
+        "few_candidates:1",
+        11
+      ],
+      [
+        "few_candidates:4",
+        7
+      ],
+      [
+        "few_candidates:2",
+        7
+      ],
+      [
+        "few_candidates:3",
+        6
+      ],
+      [
+        "few_candidates:5",
+        4
+      ]
+    ]
+  },
+  {
+    "theory_version": "v39",
+    "theory_note": "race-shape test: v25 but bet only field size >= 14",
+    "evaluation_period": "2025-09-01..2025-09-30",
+    "candidate_races": 240,
+    "evaluated_races": 161,
+    "excluded_races": 79,
+    "bet_races": 58,
+    "tickets": 106,
+    "hits": 11,
+    "total_bet": 10600,
+    "total_payout": 7120,
+    "return_rate": 0.6717,
+    "return_rate_without_max_payout": 0.5623,
+    "return_rate_without_top3_payouts": 0.3981,
+    "axis_top3_rate": 0.5776,
+    "middle_hole_top3_rate": 0.2453,
+    "wide_hit_rate": 0.1038,
+    "average_tickets_per_evaluated_race": 0.6584,
+    "skip_rate": 0.6398,
+    "exclusion_rate": 0.3292,
+    "max_payout": 1160,
+    "split_label": "wf3_2025_09",
+    "train_end": "2025-08-31",
+    "top_exclusion_reasons": [
+      [
+        "few_candidates:0",
+        36
+      ],
+      [
+        "few_candidates:5",
+        10
+      ],
+      [
+        "few_candidates:2",
+        9
+      ],
+      [
+        "few_candidates:4",
+        9
+      ],
+      [
+        "few_candidates:3",
+        9
+      ],
+      [
+        "few_candidates:1",
+        6
+      ]
+    ]
+  },
+  {
+    "theory_version": "v40",
+    "theory_note": "race-shape test: v25 but skip field size <= 10",
+    "evaluation_period": "2025-07-01..2025-07-31",
+    "candidate_races": 288,
+    "evaluated_races": 230,
+    "excluded_races": 58,
+    "bet_races": 108,
+    "tickets": 205,
+    "hits": 27,
+    "total_bet": 20500,
+    "total_payout": 21700,
+    "return_rate": 1.0585,
+    "return_rate_without_max_payout": 0.9234,
+    "return_rate_without_top3_payouts": 0.7629,
+    "axis_top3_rate": 0.6,
+    "middle_hole_top3_rate": 0.2878,
+    "wide_hit_rate": 0.1317,
+    "average_tickets_per_evaluated_race": 0.8913,
+    "skip_rate": 0.5304,
+    "exclusion_rate": 0.2014,
+    "max_payout": 2770,
+    "split_label": "wf1_2025_07",
+    "train_end": "2025-06-30",
+    "top_exclusion_reasons": [
+      [
+        "few_candidates:0",
+        47
+      ],
+      [
+        "few_candidates:1",
+        5
+      ],
+      [
+        "few_candidates:5",
+        4
+      ],
+      [
+        "few_candidates:2",
+        1
+      ],
+      [
+        "few_candidates:4",
+        1
+      ]
+    ]
+  },
+  {
+    "theory_version": "v40",
+    "theory_note": "race-shape test: v25 but skip field size <= 10",
+    "evaluation_period": "2025-08-01..2025-08-31",
+    "candidate_races": 360,
+    "evaluated_races": 280,
+    "excluded_races": 80,
+    "bet_races": 151,
+    "tickets": 281,
+    "hits": 39,
+    "total_bet": 28100,
+    "total_payout": 25670,
+    "return_rate": 0.9135,
+    "return_rate_without_max_payout": 0.8477,
+    "return_rate_without_top3_payouts": 0.758,
+    "axis_top3_rate": 0.6143,
+    "middle_hole_top3_rate": 0.2669,
+    "wide_hit_rate": 0.1388,
+    "average_tickets_per_evaluated_race": 1.0036,
+    "skip_rate": 0.4607,
+    "exclusion_rate": 0.2222,
+    "max_payout": 1850,
+    "split_label": "wf2_2025_08",
+    "train_end": "2025-07-31",
+    "top_exclusion_reasons": [
+      [
+        "few_candidates:0",
+        45
+      ],
+      [
+        "few_candidates:1",
+        11
+      ],
+      [
+        "few_candidates:4",
+        7
+      ],
+      [
+        "few_candidates:2",
+        7
+      ],
+      [
+        "few_candidates:3",
+        6
+      ],
+      [
+        "few_candidates:5",
+        4
+      ]
+    ]
+  },
+  {
+    "theory_version": "v40",
+    "theory_note": "race-shape test: v25 but skip field size <= 10",
+    "evaluation_period": "2025-09-01..2025-09-30",
+    "candidate_races": 240,
+    "evaluated_races": 161,
+    "excluded_races": 79,
+    "bet_races": 77,
+    "tickets": 142,
+    "hits": 15,
+    "total_bet": 14200,
+    "total_payout": 8410,
+    "return_rate": 0.5923,
+    "return_rate_without_max_payout": 0.5106,
+    "return_rate_without_top3_payouts": 0.388,
+    "axis_top3_rate": 0.5776,
+    "middle_hole_top3_rate": 0.2394,
+    "wide_hit_rate": 0.1056,
+    "average_tickets_per_evaluated_race": 0.882,
+    "skip_rate": 0.5217,
+    "exclusion_rate": 0.3292,
+    "max_payout": 1160,
+    "split_label": "wf3_2025_09",
+    "train_end": "2025-08-31",
+    "top_exclusion_reasons": [
+      [
+        "few_candidates:0",
+        36
+      ],
+      [
+        "few_candidates:5",
+        10
+      ],
+      [
+        "few_candidates:2",
+        9
+      ],
+      [
+        "few_candidates:4",
+        9
+      ],
+      [
+        "few_candidates:3",
+        9
+      ],
+      [
+        "few_candidates:1",
+        6
+      ]
+    ]
+  },
+  {
+    "theory_version": "v41",
+    "theory_note": "hybrid test: v25 plus field size >= 14 and first gap > 2.5",
+    "evaluation_period": "2025-07-01..2025-07-31",
+    "candidate_races": 288,
+    "evaluated_races": 230,
+    "excluded_races": 58,
+    "bet_races": 76,
+    "tickets": 143,
+    "hits": 17,
+    "total_bet": 14300,
+    "total_payout": 14040,
+    "return_rate": 0.9818,
+    "return_rate_without_max_payout": 0.8601,
+    "return_rate_without_top3_payouts": 0.6476,
+    "axis_top3_rate": 0.6,
+    "middle_hole_top3_rate": 0.2937,
+    "wide_hit_rate": 0.1189,
+    "average_tickets_per_evaluated_race": 0.6217,
+    "skip_rate": 0.6696,
+    "exclusion_rate": 0.2014,
+    "max_payout": 1740,
+    "split_label": "wf1_2025_07",
+    "train_end": "2025-06-30",
+    "top_exclusion_reasons": [
+      [
+        "few_candidates:0",
+        47
+      ],
+      [
+        "few_candidates:1",
+        5
+      ],
+      [
+        "few_candidates:5",
+        4
+      ],
+      [
+        "few_candidates:2",
+        1
+      ],
+      [
+        "few_candidates:4",
+        1
+      ]
+    ]
+  },
+  {
+    "theory_version": "v41",
+    "theory_note": "hybrid test: v25 plus field size >= 14 and first gap > 2.5",
+    "evaluation_period": "2025-08-01..2025-08-31",
+    "candidate_races": 360,
+    "evaluated_races": 280,
+    "excluded_races": 80,
+    "bet_races": 104,
+    "tickets": 194,
+    "hits": 26,
+    "total_bet": 19400,
+    "total_payout": 16430,
+    "return_rate": 0.8469,
+    "return_rate_without_max_payout": 0.7861,
+    "return_rate_without_top3_payouts": 0.6799,
+    "axis_top3_rate": 0.6143,
+    "middle_hole_top3_rate": 0.2629,
+    "wide_hit_rate": 0.134,
+    "average_tickets_per_evaluated_race": 0.6929,
+    "skip_rate": 0.6286,
+    "exclusion_rate": 0.2222,
+    "max_payout": 1180,
+    "split_label": "wf2_2025_08",
+    "train_end": "2025-07-31",
+    "top_exclusion_reasons": [
+      [
+        "few_candidates:0",
+        45
+      ],
+      [
+        "few_candidates:1",
+        11
+      ],
+      [
+        "few_candidates:4",
+        7
+      ],
+      [
+        "few_candidates:2",
+        7
+      ],
+      [
+        "few_candidates:3",
+        6
+      ],
+      [
+        "few_candidates:5",
+        4
+      ]
+    ]
+  },
+  {
+    "theory_version": "v41",
+    "theory_note": "hybrid test: v25 plus field size >= 14 and first gap > 2.5",
+    "evaluation_period": "2025-09-01..2025-09-30",
+    "candidate_races": 240,
+    "evaluated_races": 161,
+    "excluded_races": 79,
+    "bet_races": 55,
+    "tickets": 100,
+    "hits": 11,
+    "total_bet": 10000,
+    "total_payout": 7120,
+    "return_rate": 0.712,
+    "return_rate_without_max_payout": 0.596,
+    "return_rate_without_top3_payouts": 0.422,
+    "axis_top3_rate": 0.5776,
+    "middle_hole_top3_rate": 0.24,
+    "wide_hit_rate": 0.11,
+    "average_tickets_per_evaluated_race": 0.6211,
+    "skip_rate": 0.6584,
+    "exclusion_rate": 0.3292,
+    "max_payout": 1160,
+    "split_label": "wf3_2025_09",
+    "train_end": "2025-08-31",
+    "top_exclusion_reasons": [
+      [
+        "few_candidates:0",
+        36
+      ],
+      [
+        "few_candidates:5",
+        10
+      ],
+      [
+        "few_candidates:2",
+        9
+      ],
+      [
+        "few_candidates:4",
+        9
+      ],
+      [
+        "few_candidates:3",
+        9
+      ],
+      [
+        "few_candidates:1",
+        6
+      ]
+    ]
+  },
+  {
+    "theory_version": "v42",
+    "theory_note": "shape-filter test: v25 plus dirt races only and axis odds <= 2.5",
+    "evaluation_period": "2025-07-01..2025-07-31",
+    "candidate_races": 288,
+    "evaluated_races": 230,
+    "excluded_races": 58,
+    "bet_races": 32,
+    "tickets": 58,
+    "hits": 10,
+    "total_bet": 5800,
+    "total_payout": 4920,
+    "return_rate": 0.8483,
+    "return_rate_without_max_payout": 0.6948,
+    "return_rate_without_top3_payouts": 0.4931,
+    "axis_top3_rate": 0.5522,
+    "middle_hole_top3_rate": 0.3103,
+    "wide_hit_rate": 0.1724,
+    "average_tickets_per_evaluated_race": 0.2522,
+    "skip_rate": 0.8609,
+    "exclusion_rate": 0.2014,
+    "max_payout": 890,
+    "split_label": "wf1_2025_07",
+    "train_end": "2025-06-30",
+    "top_exclusion_reasons": [
+      [
+        "few_candidates:0",
+        47
+      ],
+      [
+        "few_candidates:1",
+        5
+      ],
+      [
+        "few_candidates:5",
+        4
+      ],
+      [
+        "few_candidates:2",
+        1
+      ],
+      [
+        "few_candidates:4",
+        1
+      ]
+    ]
+  },
+  {
+    "theory_version": "v42",
+    "theory_note": "shape-filter test: v25 plus dirt races only and axis odds <= 2.5",
+    "evaluation_period": "2025-08-01..2025-08-31",
+    "candidate_races": 360,
+    "evaluated_races": 280,
+    "excluded_races": 80,
+    "bet_races": 37,
+    "tickets": 64,
+    "hits": 13,
+    "total_bet": 6400,
+    "total_payout": 5930,
+    "return_rate": 0.9266,
+    "return_rate_without_max_payout": 0.8313,
+    "return_rate_without_top3_payouts": 0.6578,
+    "axis_top3_rate": 0.5786,
+    "middle_hole_top3_rate": 0.3125,
+    "wide_hit_rate": 0.2031,
+    "average_tickets_per_evaluated_race": 0.2286,
+    "skip_rate": 0.8679,
+    "exclusion_rate": 0.2222,
+    "max_payout": 610,
+    "split_label": "wf2_2025_08",
+    "train_end": "2025-07-31",
+    "top_exclusion_reasons": [
+      [
+        "few_candidates:0",
+        45
+      ],
+      [
+        "few_candidates:1",
+        11
+      ],
+      [
+        "few_candidates:4",
+        7
+      ],
+      [
+        "few_candidates:2",
+        7
+      ],
+      [
+        "few_candidates:3",
+        6
+      ],
+      [
+        "few_candidates:5",
+        4
+      ]
+    ]
+  },
+  {
+    "theory_version": "v42",
+    "theory_note": "shape-filter test: v25 plus dirt races only and axis odds <= 2.5",
+    "evaluation_period": "2025-09-01..2025-09-30",
+    "candidate_races": 240,
+    "evaluated_races": 161,
+    "excluded_races": 79,
+    "bet_races": 27,
+    "tickets": 40,
+    "hits": 10,
+    "total_bet": 4000,
+    "total_payout": 3760,
+    "return_rate": 0.94,
+    "return_rate_without_max_payout": 0.7775,
+    "return_rate_without_top3_payouts": 0.56,
+    "axis_top3_rate": 0.5963,
+    "middle_hole_top3_rate": 0.375,
+    "wide_hit_rate": 0.25,
+    "average_tickets_per_evaluated_race": 0.2484,
+    "skip_rate": 0.8323,
+    "exclusion_rate": 0.3292,
+    "max_payout": 650,
+    "split_label": "wf3_2025_09",
+    "train_end": "2025-08-31",
+    "top_exclusion_reasons": [
+      [
+        "few_candidates:0",
+        36
+      ],
+      [
+        "few_candidates:5",
+        10
+      ],
+      [
+        "few_candidates:2",
+        9
+      ],
+      [
+        "few_candidates:4",
+        9
+      ],
+      [
+        "few_candidates:3",
+        9
+      ],
+      [
+        "few_candidates:1",
+        6
+      ]
+    ]
+  }
+]

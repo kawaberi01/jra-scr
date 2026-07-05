@@ -1,0 +1,190 @@
+[
+  {
+    "conditions": [
+      {
+        "feature": "field_size",
+        "bucket": "ge_14"
+      }
+    ],
+    "train_no_max_floor": 0.9453,
+    "validation_no_max": 0.9553,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 54,
+        "roi": 1.3389,
+        "no_max_roi": 1.0167,
+        "max_payout": 1740
+      },
+      "wf2_2025_08": {
+        "tickets": 64,
+        "roi": 1.1406,
+        "no_max_roi": 0.9453,
+        "max_payout": 1250
+      },
+      "wf3_2025_09": {
+        "tickets": 34,
+        "roi": 1.3765,
+        "no_max_roi": 1.0353,
+        "max_payout": 1160
+      },
+      "validation_2025Q4": {
+        "tickets": 103,
+        "roi": 1.1583,
+        "no_max_roi": 0.9553,
+        "max_payout": 2090
+      }
+    }
+  },
+  {
+    "conditions": [
+      {
+        "feature": "axis_popularity",
+        "bucket": "1"
+      }
+    ],
+    "train_no_max_floor": 0.7905,
+    "validation_no_max": 0.8078,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 30,
+        "roi": 1.15,
+        "no_max_roi": 0.81,
+        "max_payout": 1020
+      },
+      "wf2_2025_08": {
+        "tickets": 30,
+        "roi": 1.2133,
+        "no_max_roi": 0.95,
+        "max_payout": 790
+      },
+      "wf3_2025_09": {
+        "tickets": 21,
+        "roi": 1.1,
+        "no_max_roi": 0.7905,
+        "max_payout": 650
+      },
+      "validation_2025Q4": {
+        "tickets": 51,
+        "roi": 1.049,
+        "no_max_roi": 0.8078,
+        "max_payout": 1230
+      }
+    }
+  },
+  {
+    "conditions": [
+      {
+        "feature": "axis_popularity",
+        "bucket": "1"
+      },
+      {
+        "feature": "field_size",
+        "bucket": "ge_14"
+      }
+    ],
+    "train_no_max_floor": 0.7905,
+    "validation_no_max": 0.8078,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 30,
+        "roi": 1.15,
+        "no_max_roi": 0.81,
+        "max_payout": 1020
+      },
+      "wf2_2025_08": {
+        "tickets": 30,
+        "roi": 1.2133,
+        "no_max_roi": 0.95,
+        "max_payout": 790
+      },
+      "wf3_2025_09": {
+        "tickets": 21,
+        "roi": 1.1,
+        "no_max_roi": 0.7905,
+        "max_payout": 650
+      },
+      "validation_2025Q4": {
+        "tickets": 51,
+        "roi": 1.049,
+        "no_max_roi": 0.8078,
+        "max_payout": 1230
+      }
+    }
+  },
+  {
+    "conditions": [
+      {
+        "feature": "race_no",
+        "bucket": "r06_08"
+      }
+    ],
+    "train_no_max_floor": 0.0,
+    "validation_no_max": 1.0122,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 23,
+        "roi": 2.4826,
+        "no_max_roi": 1.7261,
+        "max_payout": 1740
+      },
+      "wf2_2025_08": {
+        "tickets": 20,
+        "roi": 0.16,
+        "no_max_roi": 0.0,
+        "max_payout": 320
+      },
+      "wf3_2025_09": {
+        "tickets": 21,
+        "roi": 1.7333,
+        "no_max_roi": 1.181,
+        "max_payout": 1160
+      },
+      "validation_2025Q4": {
+        "tickets": 74,
+        "roi": 1.2946,
+        "no_max_roi": 1.0122,
+        "max_payout": 2090
+      }
+    }
+  },
+  {
+    "conditions": [
+      {
+        "feature": "field_size",
+        "bucket": "ge_14"
+      },
+      {
+        "feature": "race_no",
+        "bucket": "r06_08"
+      }
+    ],
+    "train_no_max_floor": 0.0,
+    "validation_no_max": 1.0122,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 23,
+        "roi": 2.4826,
+        "no_max_roi": 1.7261,
+        "max_payout": 1740
+      },
+      "wf2_2025_08": {
+        "tickets": 20,
+        "roi": 0.16,
+        "no_max_roi": 0.0,
+        "max_payout": 320
+      },
+      "wf3_2025_09": {
+        "tickets": 21,
+        "roi": 1.7333,
+        "no_max_roi": 1.181,
+        "max_payout": 1160
+      },
+      "validation_2025Q4": {
+        "tickets": 74,
+        "roi": 1.2946,
+        "no_max_roi": 1.0122,
+        "max_payout": 2090
+      }
+    }
+  }
+]

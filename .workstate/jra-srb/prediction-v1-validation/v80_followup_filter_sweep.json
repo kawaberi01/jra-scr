@@ -1,0 +1,2195 @@
+[
+  {
+    "rule": "exclude_middle_same_course_top3_rate=ge_0_35",
+    "train_no_max_floor": 1.004,
+    "validation_no_max": 1.4053,
+    "holdout_no_max": 0.8431,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 13,
+        "hits": 5,
+        "roi": 1.8308,
+        "no_max_roi": 1.1846,
+        "max_payout": 840
+      },
+      "wf2_2025_08": {
+        "tickets": 25,
+        "hits": 7,
+        "roi": 1.248,
+        "no_max_roi": 1.004,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 6,
+        "hits": 2,
+        "roi": 2.1333,
+        "no_max_roi": 1.05,
+        "max_payout": 650
+      },
+      "validation_2025Q4": {
+        "tickets": 19,
+        "hits": 6,
+        "roi": 1.8421,
+        "no_max_roi": 1.4053,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 58,
+        "hits": 10,
+        "roi": 0.9845,
+        "no_max_roi": 0.8431,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "keep_middle_popularity=4",
+    "train_no_max_floor": 0.9176,
+    "validation_no_max": 0.2133,
+    "holdout_no_max": 0.7694,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 9,
+        "hits": 4,
+        "roi": 2.2222,
+        "no_max_roi": 1.2889,
+        "max_payout": 840
+      },
+      "wf2_2025_08": {
+        "tickets": 17,
+        "hits": 5,
+        "roi": 1.2765,
+        "no_max_roi": 0.9176,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 4,
+        "hits": 2,
+        "roi": 3.025,
+        "no_max_roi": 1.275,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 15,
+        "hits": 2,
+        "roi": 0.5667,
+        "no_max_roi": 0.2133,
+        "max_payout": 530
+      },
+      "holdout_2026H1": {
+        "tickets": 36,
+        "hits": 7,
+        "roi": 0.9389,
+        "no_max_roi": 0.7694,
+        "max_payout": 610
+      }
+    }
+  },
+  {
+    "rule": "exclude_middle_popularity=5",
+    "train_no_max_floor": 0.9176,
+    "validation_no_max": 0.2133,
+    "holdout_no_max": 0.7694,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 9,
+        "hits": 4,
+        "roi": 2.2222,
+        "no_max_roi": 1.2889,
+        "max_payout": 840
+      },
+      "wf2_2025_08": {
+        "tickets": 17,
+        "hits": 5,
+        "roi": 1.2765,
+        "no_max_roi": 0.9176,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 4,
+        "hits": 2,
+        "roi": 3.025,
+        "no_max_roi": 1.275,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 15,
+        "hits": 2,
+        "roi": 0.5667,
+        "no_max_roi": 0.2133,
+        "max_payout": 530
+      },
+      "holdout_2026H1": {
+        "tickets": 36,
+        "hits": 7,
+        "roi": 0.9389,
+        "no_max_roi": 0.7694,
+        "max_payout": 610
+      }
+    }
+  },
+  {
+    "rule": "exclude_middle_same_dist_top3_rate=ge_0_35",
+    "train_no_max_floor": 0.9043,
+    "validation_no_max": 0.8941,
+    "holdout_no_max": 1.3237,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 9,
+        "hits": 4,
+        "roi": 2.2222,
+        "no_max_roi": 1.2889,
+        "max_payout": 840
+      },
+      "wf2_2025_08": {
+        "tickets": 23,
+        "hits": 6,
+        "roi": 1.1696,
+        "no_max_roi": 0.9043,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 9,
+        "hits": 4,
+        "roi": 2.5444,
+        "no_max_roi": 1.8222,
+        "max_payout": 650
+      },
+      "validation_2025Q4": {
+        "tickets": 17,
+        "hits": 4,
+        "roi": 1.3824,
+        "no_max_roi": 0.8941,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 38,
+        "hits": 10,
+        "roi": 1.5395,
+        "no_max_roi": 1.3237,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "exclude_middle_jockey_recent_top3_rate=0_15_0_25",
+    "train_no_max_floor": 0.8864,
+    "validation_no_max": 1.1704,
+    "holdout_no_max": 1.1037,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 11,
+        "hits": 4,
+        "roi": 1.8273,
+        "no_max_roi": 1.0182,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 22,
+        "hits": 6,
+        "roi": 1.1409,
+        "no_max_roi": 0.8864,
+        "max_payout": 560
+      },
+      "wf3_2025_09": {
+        "tickets": 12,
+        "hits": 4,
+        "roi": 2.0667,
+        "no_max_roi": 1.4833,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 27,
+        "hits": 8,
+        "roi": 1.4556,
+        "no_max_roi": 1.1704,
+        "max_payout": 770
+      },
+      "holdout_2026H1": {
+        "tickets": 54,
+        "hits": 12,
+        "roi": 1.2556,
+        "no_max_roi": 1.1037,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "keep_surface=ダート",
+    "train_no_max_floor": 0.85,
+    "validation_no_max": 0.9125,
+    "holdout_no_max": 1.05,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 6,
+        "hits": 3,
+        "roi": 2.85,
+        "no_max_roi": 1.3667,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 18,
+        "hits": 5,
+        "roi": 1.2778,
+        "no_max_roi": 0.9389,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 6,
+        "hits": 2,
+        "roi": 1.9333,
+        "no_max_roi": 0.85,
+        "max_payout": 650
+      },
+      "validation_2025Q4": {
+        "tickets": 24,
+        "hits": 6,
+        "roi": 1.2333,
+        "no_max_roi": 0.9125,
+        "max_payout": 770
+      },
+      "holdout_2026H1": {
+        "tickets": 50,
+        "hits": 11,
+        "roi": 1.214,
+        "no_max_roi": 1.05,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "exclude_surface=芝",
+    "train_no_max_floor": 0.85,
+    "validation_no_max": 0.9125,
+    "holdout_no_max": 1.05,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 6,
+        "hits": 3,
+        "roi": 2.85,
+        "no_max_roi": 1.3667,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 18,
+        "hits": 5,
+        "roi": 1.2778,
+        "no_max_roi": 0.9389,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 6,
+        "hits": 2,
+        "roi": 1.9333,
+        "no_max_roi": 0.85,
+        "max_payout": 650
+      },
+      "validation_2025Q4": {
+        "tickets": 24,
+        "hits": 6,
+        "roi": 1.2333,
+        "no_max_roi": 0.9125,
+        "max_payout": 770
+      },
+      "holdout_2026H1": {
+        "tickets": 50,
+        "hits": 11,
+        "roi": 1.214,
+        "no_max_roi": 1.05,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "exclude_axis_odds=4_6",
+    "train_no_max_floor": 0.8478,
+    "validation_no_max": 1.2281,
+    "holdout_no_max": 1.1016,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 14,
+        "hits": 5,
+        "roi": 1.7357,
+        "no_max_roi": 1.1,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 23,
+        "hits": 6,
+        "roi": 1.113,
+        "no_max_roi": 0.8478,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 12,
+        "hits": 5,
+        "roi": 2.4917,
+        "no_max_roi": 1.9083,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 32,
+        "hits": 9,
+        "roi": 1.4875,
+        "no_max_roi": 1.2281,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 64,
+        "hits": 14,
+        "roi": 1.2297,
+        "no_max_roi": 1.1016,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "exclude_odds_ratio=3_5_5",
+    "train_no_max_floor": 0.8367,
+    "validation_no_max": 1.1559,
+    "holdout_no_max": 0.8984,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 9,
+        "hits": 3,
+        "roi": 1.8444,
+        "no_max_roi": 0.9111,
+        "max_payout": 840
+      },
+      "wf2_2025_08": {
+        "tickets": 30,
+        "hits": 7,
+        "roi": 1.04,
+        "no_max_roi": 0.8367,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 12,
+        "hits": 4,
+        "roi": 2.075,
+        "no_max_roi": 1.4917,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 34,
+        "hits": 9,
+        "roi": 1.4,
+        "no_max_roi": 1.1559,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 62,
+        "hits": 11,
+        "roi": 1.0306,
+        "no_max_roi": 0.8984,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "base_v80",
+    "train_no_max_floor": 0.8097,
+    "validation_no_max": 1.0342,
+    "holdout_no_max": 0.9658,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 16,
+        "hits": 6,
+        "roi": 2.0438,
+        "no_max_roi": 1.4875,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 31,
+        "hits": 7,
+        "roi": 1.0065,
+        "no_max_roi": 0.8097,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 14,
+        "hits": 5,
+        "roi": 2.1357,
+        "no_max_roi": 1.6357,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 38,
+        "hits": 9,
+        "roi": 1.2526,
+        "no_max_roi": 1.0342,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 73,
+        "hits": 14,
+        "roi": 1.0781,
+        "no_max_roi": 0.9658,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "exclude_middle_same_course_top3_rate=lt_0_15",
+    "train_no_max_floor": 0.8074,
+    "validation_no_max": 0.9889,
+    "holdout_no_max": 1.0071,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 15,
+        "hits": 5,
+        "roi": 1.98,
+        "no_max_roi": 1.3867,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 27,
+        "hits": 6,
+        "roi": 1.0333,
+        "no_max_roi": 0.8074,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 13,
+        "hits": 5,
+        "roi": 2.3,
+        "no_max_roi": 1.7615,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 36,
+        "hits": 8,
+        "roi": 1.2194,
+        "no_max_roi": 0.9889,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 70,
+        "hits": 14,
+        "roi": 1.1243,
+        "no_max_roi": 1.0071,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "exclude_middle_odds=15_20",
+    "train_no_max_floor": 0.8,
+    "validation_no_max": 0.7088,
+    "holdout_no_max": 0.7121,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 15,
+        "hits": 6,
+        "roi": 2.18,
+        "no_max_roi": 1.5867,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 26,
+        "hits": 6,
+        "roi": 1.0346,
+        "no_max_roi": 0.8,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 12,
+        "hits": 5,
+        "roi": 2.4917,
+        "no_max_roi": 1.9083,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 34,
+        "hits": 6,
+        "roi": 0.9353,
+        "no_max_roi": 0.7088,
+        "max_payout": 770
+      },
+      "holdout_2026H1": {
+        "tickets": 58,
+        "hits": 9,
+        "roi": 0.8517,
+        "no_max_roi": 0.7121,
+        "max_payout": 810
+      }
+    }
+  },
+  {
+    "rule": "exclude_odds_ratio=lt_2",
+    "train_no_max_floor": 0.78,
+    "validation_no_max": 1.1559,
+    "holdout_no_max": 1.0071,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 15,
+        "hits": 6,
+        "roi": 2.18,
+        "no_max_roi": 1.5867,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 25,
+        "hits": 6,
+        "roi": 1.024,
+        "no_max_roi": 0.78,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 13,
+        "hits": 5,
+        "roi": 2.3,
+        "no_max_roi": 1.7615,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 34,
+        "hits": 9,
+        "roi": 1.4,
+        "no_max_roi": 1.1559,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 70,
+        "hits": 14,
+        "roi": 1.1243,
+        "no_max_roi": 1.0071,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "exclude_middle_trainer_recent_top3_rate=0_15_0_25",
+    "train_no_max_floor": 0.7727,
+    "validation_no_max": 1.1522,
+    "holdout_no_max": 0.5878,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 12,
+        "hits": 5,
+        "roi": 2.375,
+        "no_max_roi": 1.6333,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 22,
+        "hits": 5,
+        "roi": 1.05,
+        "no_max_roi": 0.7727,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 8,
+        "hits": 3,
+        "roi": 2.325,
+        "no_max_roi": 1.45,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 23,
+        "hits": 6,
+        "roi": 1.513,
+        "no_max_roi": 1.1522,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 41,
+        "hits": 6,
+        "roi": 0.7878,
+        "no_max_roi": 0.5878,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "exclude_middle_jockey_recent_top3_rate=0_25_0_35",
+    "train_no_max_floor": 0.7609,
+    "validation_no_max": 0.8276,
+    "holdout_no_max": 1.0132,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 12,
+        "hits": 6,
+        "roi": 2.725,
+        "no_max_roi": 1.9833,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 23,
+        "hits": 5,
+        "roi": 1.0261,
+        "no_max_roi": 0.7609,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 9,
+        "hits": 4,
+        "roi": 2.6222,
+        "no_max_roi": 1.8444,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 29,
+        "hits": 6,
+        "roi": 1.1138,
+        "no_max_roi": 0.8276,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 53,
+        "hits": 11,
+        "roi": 1.1679,
+        "no_max_roi": 1.0132,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "keep_middle_same_course_top3_rate=missing",
+    "train_no_max_floor": 0.7455,
+    "validation_no_max": 1.3529,
+    "holdout_no_max": 0.9226,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 11,
+        "hits": 3,
+        "roi": 1.5091,
+        "no_max_roi": 0.7455,
+        "max_payout": 840
+      },
+      "wf2_2025_08": {
+        "tickets": 20,
+        "hits": 6,
+        "roi": 1.395,
+        "no_max_roi": 1.09,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 5,
+        "hits": 2,
+        "roi": 2.56,
+        "no_max_roi": 1.26,
+        "max_payout": 650
+      },
+      "validation_2025Q4": {
+        "tickets": 17,
+        "hits": 5,
+        "roi": 1.8412,
+        "no_max_roi": 1.3529,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 53,
+        "hits": 10,
+        "roi": 1.0774,
+        "no_max_roi": 0.9226,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "exclude_middle_same_dist_top3_rate=0_25_0_35",
+    "train_no_max_floor": 0.735,
+    "validation_no_max": 1.1452,
+    "holdout_no_max": 0.6922,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 11,
+        "hits": 4,
+        "roi": 1.8273,
+        "no_max_roi": 1.0182,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 20,
+        "hits": 5,
+        "roi": 1.015,
+        "no_max_roi": 0.735,
+        "max_payout": 560
+      },
+      "wf3_2025_09": {
+        "tickets": 8,
+        "hits": 2,
+        "roi": 1.6625,
+        "no_max_roi": 0.7875,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 31,
+        "hits": 8,
+        "roi": 1.4129,
+        "no_max_roi": 1.1452,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 64,
+        "hits": 10,
+        "roi": 0.8187,
+        "no_max_roi": 0.6922,
+        "max_payout": 810
+      }
+    }
+  },
+  {
+    "rule": "exclude_middle_trainer_recent_top3_rate=lt_0_15",
+    "train_no_max_floor": 0.7167,
+    "validation_no_max": 0.9029,
+    "holdout_no_max": 1.0456,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 12,
+        "hits": 3,
+        "roi": 1.4167,
+        "no_max_roi": 0.7167,
+        "max_payout": 840
+      },
+      "wf2_2025_08": {
+        "tickets": 25,
+        "hits": 7,
+        "roi": 1.248,
+        "no_max_roi": 1.004,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 10,
+        "hits": 4,
+        "roi": 2.29,
+        "no_max_roi": 1.64,
+        "max_payout": 650
+      },
+      "validation_2025Q4": {
+        "tickets": 35,
+        "hits": 8,
+        "roi": 1.1229,
+        "no_max_roi": 0.9029,
+        "max_payout": 770
+      },
+      "holdout_2026H1": {
+        "tickets": 57,
+        "hits": 12,
+        "roi": 1.1877,
+        "no_max_roi": 1.0456,
+        "max_payout": 810
+      }
+    }
+  },
+  {
+    "rule": "exclude_middle_trainer_recent_top3_rate=0_25_0_35",
+    "train_no_max_floor": 0.7087,
+    "validation_no_max": 0.7714,
+    "holdout_no_max": 1.119,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 10,
+        "hits": 4,
+        "roi": 1.99,
+        "no_max_roi": 1.1,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 23,
+        "hits": 5,
+        "roi": 0.9739,
+        "no_max_roi": 0.7087,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 10,
+        "hits": 3,
+        "roi": 1.83,
+        "no_max_roi": 1.13,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 28,
+        "hits": 6,
+        "roi": 1.0679,
+        "no_max_roi": 0.7714,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 63,
+        "hits": 14,
+        "roi": 1.2492,
+        "no_max_roi": 1.119,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "exclude_axis_odds=2_5_4",
+    "train_no_max_floor": 0.6947,
+    "validation_no_max": 0.9875,
+    "holdout_no_max": 0.7535,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 9,
+        "hits": 4,
+        "roi": 2.7444,
+        "no_max_roi": 1.7556,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 19,
+        "hits": 4,
+        "roi": 1.0158,
+        "no_max_roi": 0.6947,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 8,
+        "hits": 2,
+        "roi": 1.6,
+        "no_max_roi": 0.7875,
+        "max_payout": 650
+      },
+      "validation_2025Q4": {
+        "tickets": 24,
+        "hits": 6,
+        "roi": 1.3333,
+        "no_max_roi": 0.9875,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 43,
+        "hits": 8,
+        "roi": 0.9442,
+        "no_max_roi": 0.7535,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "keep_axis_odds=le_2_5",
+    "train_no_max_floor": 0.6909,
+    "validation_no_max": 1.3941,
+    "holdout_no_max": 0.9818,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 7,
+        "hits": 3,
+        "roi": 2.3286,
+        "no_max_roi": 1.0571,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 11,
+        "hits": 3,
+        "roi": 1.2455,
+        "no_max_roi": 0.6909,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 5,
+        "hits": 2,
+        "roi": 2.56,
+        "no_max_roi": 1.26,
+        "max_payout": 650
+      },
+      "validation_2025Q4": {
+        "tickets": 17,
+        "hits": 6,
+        "roi": 1.8824,
+        "no_max_roi": 1.3941,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 33,
+        "hits": 8,
+        "roi": 1.2303,
+        "no_max_roi": 0.9818,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "exclude_middle_jockey_recent_top3_rate=ge_0_35",
+    "train_no_max_floor": 0.6833,
+    "validation_no_max": 0.9333,
+    "holdout_no_max": 0.84,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 14,
+        "hits": 5,
+        "roi": 2.0643,
+        "no_max_roi": 1.4286,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 24,
+        "hits": 5,
+        "roi": 0.9375,
+        "no_max_roi": 0.6833,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 11,
+        "hits": 4,
+        "roi": 2.0818,
+        "no_max_roi": 1.4909,
+        "max_payout": 650
+      },
+      "validation_2025Q4": {
+        "tickets": 33,
+        "hits": 7,
+        "roi": 1.1848,
+        "no_max_roi": 0.9333,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 65,
+        "hits": 11,
+        "roi": 0.9646,
+        "no_max_roi": 0.84,
+        "max_payout": 810
+      }
+    }
+  },
+  {
+    "rule": "exclude_middle_jockey_recent_top3_rate=lt_0_15",
+    "train_no_max_floor": 0.6792,
+    "validation_no_max": 0.9154,
+    "holdout_no_max": 0.7245,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 11,
+        "hits": 3,
+        "roi": 1.4909,
+        "no_max_roi": 0.7273,
+        "max_payout": 840
+      },
+      "wf2_2025_08": {
+        "tickets": 24,
+        "hits": 5,
+        "roi": 0.9333,
+        "no_max_roi": 0.6792,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 10,
+        "hits": 3,
+        "roi": 1.84,
+        "no_max_roi": 1.14,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 26,
+        "hits": 6,
+        "roi": 1.2346,
+        "no_max_roi": 0.9154,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 49,
+        "hits": 8,
+        "roi": 0.8918,
+        "no_max_roi": 0.7245,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "exclude_odds_ratio=ge_5",
+    "train_no_max_floor": 0.6611,
+    "validation_no_max": 0.625,
+    "holdout_no_max": 0.8523,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 13,
+        "hits": 5,
+        "roi": 2.1769,
+        "no_max_roi": 1.4923,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 18,
+        "hits": 4,
+        "roi": 0.9722,
+        "no_max_roi": 0.6611,
+        "max_payout": 560
+      },
+      "wf3_2025_09": {
+        "tickets": 7,
+        "hits": 3,
+        "roi": 2.4429,
+        "no_max_roi": 1.4429,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 24,
+        "hits": 4,
+        "roi": 0.8708,
+        "no_max_roi": 0.625,
+        "max_payout": 590
+      },
+      "holdout_2026H1": {
+        "tickets": 44,
+        "hits": 8,
+        "roi": 1.0364,
+        "no_max_roi": 0.8523,
+        "max_payout": 810
+      }
+    }
+  },
+  {
+    "rule": "exclude_odds_ratio=2_3_5",
+    "train_no_max_floor": 0.66,
+    "validation_no_max": 0.8364,
+    "holdout_no_max": 0.9233,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 11,
+        "hits": 4,
+        "roi": 1.8636,
+        "no_max_roi": 1.0545,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 20,
+        "hits": 4,
+        "roi": 0.965,
+        "no_max_roi": 0.66,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 10,
+        "hits": 3,
+        "roi": 1.78,
+        "no_max_roi": 1.13,
+        "max_payout": 650
+      },
+      "validation_2025Q4": {
+        "tickets": 22,
+        "hits": 5,
+        "roi": 1.2136,
+        "no_max_roi": 0.8364,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 43,
+        "hits": 9,
+        "roi": 1.114,
+        "no_max_roi": 0.9233,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "keep_odds_ratio=2_3_5",
+    "train_no_max_floor": 0.6455,
+    "validation_no_max": 0.9375,
+    "holdout_no_max": 0.7567,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 5,
+        "hits": 2,
+        "roi": 2.44,
+        "no_max_roi": 0.76,
+        "max_payout": 840
+      },
+      "wf2_2025_08": {
+        "tickets": 11,
+        "hits": 3,
+        "roi": 1.0818,
+        "no_max_roi": 0.6455,
+        "max_payout": 480
+      },
+      "wf3_2025_09": {
+        "tickets": 4,
+        "hits": 2,
+        "roi": 3.025,
+        "no_max_roi": 1.275,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 16,
+        "hits": 4,
+        "roi": 1.3062,
+        "no_max_roi": 0.9375,
+        "max_payout": 590
+      },
+      "holdout_2026H1": {
+        "tickets": 30,
+        "hits": 5,
+        "roi": 1.0267,
+        "no_max_roi": 0.7567,
+        "max_payout": 810
+      }
+    }
+  },
+  {
+    "rule": "keep_axis_popularity=1",
+    "train_no_max_floor": 0.6118,
+    "validation_no_max": 1.112,
+    "holdout_no_max": 0.8438,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 14,
+        "hits": 5,
+        "roi": 1.7357,
+        "no_max_roi": 1.1,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 17,
+        "hits": 4,
+        "roi": 0.9706,
+        "no_max_roi": 0.6118,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 9,
+        "hits": 3,
+        "roi": 1.9778,
+        "no_max_roi": 1.2556,
+        "max_payout": 650
+      },
+      "validation_2025Q4": {
+        "tickets": 25,
+        "hits": 7,
+        "roi": 1.444,
+        "no_max_roi": 1.112,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 48,
+        "hits": 9,
+        "roi": 1.0146,
+        "no_max_roi": 0.8438,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "exclude_axis_popularity=2",
+    "train_no_max_floor": 0.6118,
+    "validation_no_max": 1.112,
+    "holdout_no_max": 0.8438,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 14,
+        "hits": 5,
+        "roi": 1.7357,
+        "no_max_roi": 1.1,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 17,
+        "hits": 4,
+        "roi": 0.9706,
+        "no_max_roi": 0.6118,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 9,
+        "hits": 3,
+        "roi": 1.9778,
+        "no_max_roi": 1.2556,
+        "max_payout": 650
+      },
+      "validation_2025Q4": {
+        "tickets": 25,
+        "hits": 7,
+        "roi": 1.444,
+        "no_max_roi": 1.112,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 48,
+        "hits": 9,
+        "roi": 1.0146,
+        "no_max_roi": 0.8438,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "keep_middle_odds=8_10",
+    "train_no_max_floor": 0.6,
+    "validation_no_max": 0.3154,
+    "holdout_no_max": 0.6033,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 5,
+        "hits": 2,
+        "roi": 1.36,
+        "no_max_roi": 0.6,
+        "max_payout": 380
+      },
+      "wf2_2025_08": {
+        "tickets": 17,
+        "hits": 4,
+        "roi": 1.0294,
+        "no_max_roi": 0.7,
+        "max_payout": 560
+      },
+      "wf3_2025_09": {
+        "tickets": 3,
+        "hits": 2,
+        "roi": 4.0333,
+        "no_max_roi": 1.7,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 13,
+        "hits": 2,
+        "roi": 0.7231,
+        "no_max_roi": 0.3154,
+        "max_payout": 530
+      },
+      "holdout_2026H1": {
+        "tickets": 30,
+        "hits": 5,
+        "roi": 0.8067,
+        "no_max_roi": 0.6033,
+        "max_payout": 610
+      }
+    }
+  },
+  {
+    "rule": "exclude_axis_odds=le_2_5",
+    "train_no_max_floor": 0.595,
+    "validation_no_max": 0.4619,
+    "holdout_no_max": 0.75,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 9,
+        "hits": 3,
+        "roi": 1.8222,
+        "no_max_roi": 0.8889,
+        "max_payout": 840
+      },
+      "wf2_2025_08": {
+        "tickets": 20,
+        "hits": 4,
+        "roi": 0.875,
+        "no_max_roi": 0.595,
+        "max_payout": 560
+      },
+      "wf3_2025_09": {
+        "tickets": 9,
+        "hits": 3,
+        "roi": 1.9,
+        "no_max_roi": 1.1222,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 21,
+        "hits": 3,
+        "roi": 0.7429,
+        "no_max_roi": 0.4619,
+        "max_payout": 590
+      },
+      "holdout_2026H1": {
+        "tickets": 40,
+        "hits": 6,
+        "roi": 0.9525,
+        "no_max_roi": 0.75,
+        "max_payout": 810
+      }
+    }
+  },
+  {
+    "rule": "exclude_middle_same_dist_top3_rate=lt_0_15",
+    "train_no_max_floor": 0.588,
+    "validation_no_max": 0.7971,
+    "holdout_no_max": 1.0189,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 13,
+        "hits": 4,
+        "roi": 1.9462,
+        "no_max_roi": 1.2615,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 25,
+        "hits": 4,
+        "roi": 0.832,
+        "no_max_roi": 0.588,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 12,
+        "hits": 4,
+        "roi": 1.9667,
+        "no_max_roi": 1.3833,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 35,
+        "hits": 7,
+        "roi": 1.0343,
+        "no_max_roi": 0.7971,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 53,
+        "hits": 11,
+        "roi": 1.1736,
+        "no_max_roi": 1.0189,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "exclude_middle_odds=8_10",
+    "train_no_max_floor": 0.5429,
+    "validation_no_max": 1.196,
+    "holdout_no_max": 1.0767,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 11,
+        "hits": 4,
+        "roi": 2.3545,
+        "no_max_roi": 1.5455,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 14,
+        "hits": 3,
+        "roi": 0.9786,
+        "no_max_roi": 0.5429,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 11,
+        "hits": 3,
+        "roi": 1.6182,
+        "no_max_roi": 1.0273,
+        "max_payout": 650
+      },
+      "validation_2025Q4": {
+        "tickets": 25,
+        "hits": 7,
+        "roi": 1.528,
+        "no_max_roi": 1.196,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 43,
+        "hits": 9,
+        "roi": 1.2674,
+        "no_max_roi": 1.0767,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "keep_axis_odds=2_5_4",
+    "train_no_max_floor": 0.5429,
+    "validation_no_max": 0.6929,
+    "holdout_no_max": 1.0,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 7,
+        "hits": 2,
+        "roi": 1.1429,
+        "no_max_roi": 0.5429,
+        "max_payout": 420
+      },
+      "wf2_2025_08": {
+        "tickets": 12,
+        "hits": 3,
+        "roi": 0.9917,
+        "no_max_roi": 0.5917,
+        "max_payout": 480
+      },
+      "wf3_2025_09": {
+        "tickets": 6,
+        "hits": 3,
+        "roi": 2.85,
+        "no_max_roi": 1.6833,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 14,
+        "hits": 3,
+        "roi": 1.1143,
+        "no_max_roi": 0.6929,
+        "max_payout": 590
+      },
+      "holdout_2026H1": {
+        "tickets": 30,
+        "hits": 6,
+        "roi": 1.27,
+        "no_max_roi": 1.0,
+        "max_payout": 810
+      }
+    }
+  },
+  {
+    "rule": "exclude_middle_odds=10_15",
+    "train_no_max_floor": 0.5,
+    "validation_no_max": 0.9941,
+    "holdout_no_max": 1.0067,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 6,
+        "hits": 2,
+        "roi": 1.1333,
+        "no_max_roi": 0.5,
+        "max_payout": 380
+      },
+      "wf2_2025_08": {
+        "tickets": 22,
+        "hits": 5,
+        "roi": 0.9909,
+        "no_max_roi": 0.7364,
+        "max_payout": 560
+      },
+      "wf3_2025_09": {
+        "tickets": 5,
+        "hits": 2,
+        "roi": 2.42,
+        "no_max_roi": 1.02,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 17,
+        "hits": 5,
+        "roi": 1.4824,
+        "no_max_roi": 0.9941,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 45,
+        "hits": 10,
+        "roi": 1.1889,
+        "no_max_roi": 1.0067,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "exclude_middle_trainer_recent_top3_rate=ge_0_35",
+    "train_no_max_floor": 0.4913,
+    "validation_no_max": 1.0893,
+    "holdout_no_max": 0.8483,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 14,
+        "hits": 6,
+        "roi": 2.3357,
+        "no_max_roi": 1.7,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 23,
+        "hits": 4,
+        "roi": 0.7348,
+        "no_max_roi": 0.4913,
+        "max_payout": 560
+      },
+      "wf3_2025_09": {
+        "tickets": 14,
+        "hits": 5,
+        "roi": 2.1357,
+        "no_max_roi": 1.6357,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 28,
+        "hits": 7,
+        "roi": 1.3857,
+        "no_max_roi": 1.0893,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 58,
+        "hits": 10,
+        "roi": 0.9897,
+        "no_max_roi": 0.8483,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "keep_middle_jockey_recent_top3_rate=lt_0_15",
+    "train_no_max_floor": 0.4571,
+    "validation_no_max": 0.65,
+    "holdout_no_max": 1.1542,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 5,
+        "hits": 3,
+        "roi": 3.26,
+        "no_max_roi": 1.48,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 7,
+        "hits": 2,
+        "roi": 1.2571,
+        "no_max_roi": 0.4571,
+        "max_payout": 560
+      },
+      "wf3_2025_09": {
+        "tickets": 4,
+        "hits": 2,
+        "roi": 2.875,
+        "no_max_roi": 1.25,
+        "max_payout": 650
+      },
+      "validation_2025Q4": {
+        "tickets": 12,
+        "hits": 3,
+        "roi": 1.2917,
+        "no_max_roi": 0.65,
+        "max_payout": 770
+      },
+      "holdout_2026H1": {
+        "tickets": 24,
+        "hits": 6,
+        "roi": 1.4583,
+        "no_max_roi": 1.1542,
+        "max_payout": 730
+      }
+    }
+  },
+  {
+    "rule": "keep_middle_odds=10_15",
+    "train_no_max_floor": 0.3667,
+    "validation_no_max": 0.7,
+    "holdout_no_max": 0.6107,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 10,
+        "hits": 4,
+        "roi": 2.59,
+        "no_max_roi": 1.7,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 9,
+        "hits": 2,
+        "roi": 1.0444,
+        "no_max_roi": 0.3667,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 9,
+        "hits": 3,
+        "roi": 1.9778,
+        "no_max_roi": 1.2556,
+        "max_payout": 650
+      },
+      "validation_2025Q4": {
+        "tickets": 21,
+        "hits": 4,
+        "roi": 1.0667,
+        "no_max_roi": 0.7,
+        "max_payout": 770
+      },
+      "holdout_2026H1": {
+        "tickets": 28,
+        "hits": 4,
+        "roi": 0.9,
+        "no_max_roi": 0.6107,
+        "max_payout": 810
+      }
+    }
+  },
+  {
+    "rule": "exclude_surface=ダート",
+    "train_no_max_floor": 0.3,
+    "validation_no_max": 0.6929,
+    "holdout_no_max": 0.5217,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 10,
+        "hits": 3,
+        "roi": 1.56,
+        "no_max_roi": 0.72,
+        "max_payout": 840
+      },
+      "wf2_2025_08": {
+        "tickets": 13,
+        "hits": 2,
+        "roi": 0.6308,
+        "no_max_roi": 0.3,
+        "max_payout": 430
+      },
+      "wf3_2025_09": {
+        "tickets": 8,
+        "hits": 3,
+        "roi": 2.2875,
+        "no_max_roi": 1.4125,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 14,
+        "hits": 3,
+        "roi": 1.2857,
+        "no_max_roi": 0.6929,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 23,
+        "hits": 3,
+        "roi": 0.7826,
+        "no_max_roi": 0.5217,
+        "max_payout": 600
+      }
+    }
+  },
+  {
+    "rule": "keep_surface=芝",
+    "train_no_max_floor": 0.3,
+    "validation_no_max": 0.6929,
+    "holdout_no_max": 0.5217,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 10,
+        "hits": 3,
+        "roi": 1.56,
+        "no_max_roi": 0.72,
+        "max_payout": 840
+      },
+      "wf2_2025_08": {
+        "tickets": 13,
+        "hits": 2,
+        "roi": 0.6308,
+        "no_max_roi": 0.3,
+        "max_payout": 430
+      },
+      "wf3_2025_09": {
+        "tickets": 8,
+        "hits": 3,
+        "roi": 2.2875,
+        "no_max_roi": 1.4125,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 14,
+        "hits": 3,
+        "roi": 1.2857,
+        "no_max_roi": 0.6929,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 23,
+        "hits": 3,
+        "roi": 0.7826,
+        "no_max_roi": 0.5217,
+        "max_payout": 600
+      }
+    }
+  },
+  {
+    "rule": "exclude_middle_popularity=4",
+    "train_no_max_floor": 0.2786,
+    "validation_no_max": 1.3391,
+    "holdout_no_max": 0.9919,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 7,
+        "hits": 2,
+        "roi": 1.8143,
+        "no_max_roi": 0.5429,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 14,
+        "hits": 2,
+        "roi": 0.6786,
+        "no_max_roi": 0.2786,
+        "max_payout": 560
+      },
+      "wf3_2025_09": {
+        "tickets": 10,
+        "hits": 3,
+        "roi": 1.78,
+        "no_max_roi": 1.13,
+        "max_payout": 650
+      },
+      "validation_2025Q4": {
+        "tickets": 23,
+        "hits": 7,
+        "roi": 1.7,
+        "no_max_roi": 1.3391,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 37,
+        "hits": 7,
+        "roi": 1.2135,
+        "no_max_roi": 0.9919,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "keep_middle_popularity=5",
+    "train_no_max_floor": 0.2786,
+    "validation_no_max": 1.3391,
+    "holdout_no_max": 0.9919,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 7,
+        "hits": 2,
+        "roi": 1.8143,
+        "no_max_roi": 0.5429,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 14,
+        "hits": 2,
+        "roi": 0.6786,
+        "no_max_roi": 0.2786,
+        "max_payout": 560
+      },
+      "wf3_2025_09": {
+        "tickets": 10,
+        "hits": 3,
+        "roi": 1.78,
+        "no_max_roi": 1.13,
+        "max_payout": 650
+      },
+      "validation_2025Q4": {
+        "tickets": 23,
+        "hits": 7,
+        "roi": 1.7,
+        "no_max_roi": 1.3391,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 37,
+        "hits": 7,
+        "roi": 1.2135,
+        "no_max_roi": 0.9919,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "keep_race_no=r01_05",
+    "train_no_max_floor": 0.0,
+    "validation_no_max": 1.3286,
+    "holdout_no_max": 0.8103,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 8,
+        "hits": 3,
+        "roi": 1.9,
+        "no_max_roi": 0.85,
+        "max_payout": 840
+      },
+      "wf2_2025_08": {
+        "tickets": 21,
+        "hits": 6,
+        "roi": 1.3333,
+        "no_max_roi": 1.0429,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 5,
+        "hits": 1,
+        "roi": 1.02,
+        "no_max_roi": 0.0,
+        "max_payout": 510
+      },
+      "validation_2025Q4": {
+        "tickets": 14,
+        "hits": 4,
+        "roi": 1.9214,
+        "no_max_roi": 1.3286,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 39,
+        "hits": 7,
+        "roi": 0.9974,
+        "no_max_roi": 0.8103,
+        "max_payout": 730
+      }
+    }
+  },
+  {
+    "rule": "exclude_race_no=r06_08",
+    "train_no_max_floor": 0.0,
+    "validation_no_max": 1.3286,
+    "holdout_no_max": 0.8103,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 8,
+        "hits": 3,
+        "roi": 1.9,
+        "no_max_roi": 0.85,
+        "max_payout": 840
+      },
+      "wf2_2025_08": {
+        "tickets": 21,
+        "hits": 6,
+        "roi": 1.3333,
+        "no_max_roi": 1.0429,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 5,
+        "hits": 1,
+        "roi": 1.02,
+        "no_max_roi": 0.0,
+        "max_payout": 510
+      },
+      "validation_2025Q4": {
+        "tickets": 14,
+        "hits": 4,
+        "roi": 1.9214,
+        "no_max_roi": 1.3286,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 39,
+        "hits": 7,
+        "roi": 0.9974,
+        "no_max_roi": 0.8103,
+        "max_payout": 730
+      }
+    }
+  },
+  {
+    "rule": "keep_odds_ratio=ge_5",
+    "train_no_max_floor": 0.0,
+    "validation_no_max": 1.3143,
+    "holdout_no_max": 0.8586,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 3,
+        "hits": 1,
+        "roi": 1.4667,
+        "no_max_roi": 0.0,
+        "max_payout": 440
+      },
+      "wf2_2025_08": {
+        "tickets": 13,
+        "hits": 3,
+        "roi": 1.0538,
+        "no_max_roi": 0.5846,
+        "max_payout": 610
+      },
+      "wf3_2025_09": {
+        "tickets": 7,
+        "hits": 2,
+        "roi": 1.8286,
+        "no_max_roi": 0.9,
+        "max_payout": 650
+      },
+      "validation_2025Q4": {
+        "tickets": 14,
+        "hits": 5,
+        "roi": 1.9071,
+        "no_max_roi": 1.3143,
+        "max_payout": 830
+      },
+      "holdout_2026H1": {
+        "tickets": 29,
+        "hits": 6,
+        "roi": 1.1414,
+        "no_max_roi": 0.8586,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "keep_middle_same_dist_top3_rate=ge_0_35",
+    "train_no_max_floor": 0.0,
+    "validation_no_max": 0.8667,
+    "holdout_no_max": 0.3457,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 7,
+        "hits": 2,
+        "roi": 1.8143,
+        "no_max_roi": 0.5429,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 8,
+        "hits": 1,
+        "roi": 0.5375,
+        "no_max_roi": 0.0,
+        "max_payout": 430
+      },
+      "wf3_2025_09": {
+        "tickets": 5,
+        "hits": 1,
+        "roi": 1.4,
+        "no_max_roi": 0.0,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 21,
+        "hits": 5,
+        "roi": 1.1476,
+        "no_max_roi": 0.8667,
+        "max_payout": 590
+      },
+      "holdout_2026H1": {
+        "tickets": 35,
+        "hits": 4,
+        "roi": 0.5771,
+        "no_max_roi": 0.3457,
+        "max_payout": 810
+      }
+    }
+  },
+  {
+    "rule": "exclude_race_no=r01_05",
+    "train_no_max_floor": 0.0,
+    "validation_no_max": 0.6167,
+    "holdout_no_max": 0.9294,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 8,
+        "hits": 3,
+        "roi": 2.1875,
+        "no_max_roi": 1.075,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 10,
+        "hits": 1,
+        "roi": 0.32,
+        "no_max_roi": 0.0,
+        "max_payout": 320
+      },
+      "wf3_2025_09": {
+        "tickets": 9,
+        "hits": 4,
+        "roi": 2.7556,
+        "no_max_roi": 1.9778,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 24,
+        "hits": 5,
+        "roi": 0.8625,
+        "no_max_roi": 0.6167,
+        "max_payout": 590
+      },
+      "holdout_2026H1": {
+        "tickets": 34,
+        "hits": 7,
+        "roi": 1.1706,
+        "no_max_roi": 0.9294,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "keep_race_no=r06_08",
+    "train_no_max_floor": 0.0,
+    "validation_no_max": 0.6167,
+    "holdout_no_max": 0.9294,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 8,
+        "hits": 3,
+        "roi": 2.1875,
+        "no_max_roi": 1.075,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 10,
+        "hits": 1,
+        "roi": 0.32,
+        "no_max_roi": 0.0,
+        "max_payout": 320
+      },
+      "wf3_2025_09": {
+        "tickets": 9,
+        "hits": 4,
+        "roi": 2.7556,
+        "no_max_roi": 1.9778,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 24,
+        "hits": 5,
+        "roi": 0.8625,
+        "no_max_roi": 0.6167,
+        "max_payout": 590
+      },
+      "holdout_2026H1": {
+        "tickets": 34,
+        "hits": 7,
+        "roi": 1.1706,
+        "no_max_roi": 0.9294,
+        "max_payout": 820
+      }
+    }
+  },
+  {
+    "rule": "exclude_middle_same_course_top3_rate=missing",
+    "train_no_max_floor": 0.0,
+    "validation_no_max": 0.5095,
+    "holdout_no_max": 0.675,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 5,
+        "hits": 3,
+        "roi": 3.22,
+        "no_max_roi": 1.44,
+        "max_payout": 890
+      },
+      "wf2_2025_08": {
+        "tickets": 11,
+        "hits": 1,
+        "roi": 0.3,
+        "no_max_roi": 0.0,
+        "max_payout": 330
+      },
+      "wf3_2025_09": {
+        "tickets": 9,
+        "hits": 3,
+        "roi": 1.9,
+        "no_max_roi": 1.1222,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 21,
+        "hits": 4,
+        "roi": 0.7762,
+        "no_max_roi": 0.5095,
+        "max_payout": 560
+      },
+      "holdout_2026H1": {
+        "tickets": 20,
+        "hits": 4,
+        "roi": 1.08,
+        "no_max_roi": 0.675,
+        "max_payout": 810
+      }
+    }
+  },
+  {
+    "rule": "keep_middle_trainer_recent_top3_rate=0_15_0_25",
+    "train_no_max_floor": 0.0,
+    "validation_no_max": 0.5,
+    "holdout_no_max": 1.1969,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 4,
+        "hits": 1,
+        "roi": 1.05,
+        "no_max_roi": 0.0,
+        "max_payout": 420
+      },
+      "wf2_2025_08": {
+        "tickets": 9,
+        "hits": 2,
+        "roi": 0.9,
+        "no_max_roi": 0.3667,
+        "max_payout": 480
+      },
+      "wf3_2025_09": {
+        "tickets": 6,
+        "hits": 2,
+        "roi": 1.8833,
+        "no_max_roi": 0.8333,
+        "max_payout": 630
+      },
+      "validation_2025Q4": {
+        "tickets": 15,
+        "hits": 3,
+        "roi": 0.8533,
+        "no_max_roi": 0.5,
+        "max_payout": 530
+      },
+      "holdout_2026H1": {
+        "tickets": 32,
+        "hits": 8,
+        "roi": 1.45,
+        "no_max_roi": 1.1969,
+        "max_payout": 810
+      }
+    }
+  },
+  {
+    "rule": "exclude_axis_popularity=1",
+    "train_no_max_floor": 0.0,
+    "validation_no_max": 0.4308,
+    "holdout_no_max": 0.908,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 2,
+        "hits": 1,
+        "roi": 4.2,
+        "no_max_roi": 0.0,
+        "max_payout": 840
+      },
+      "wf2_2025_08": {
+        "tickets": 14,
+        "hits": 3,
+        "roi": 1.05,
+        "no_max_roi": 0.65,
+        "max_payout": 560
+      },
+      "wf3_2025_09": {
+        "tickets": 5,
+        "hits": 2,
+        "roi": 2.42,
+        "no_max_roi": 1.02,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 13,
+        "hits": 2,
+        "roi": 0.8846,
+        "no_max_roi": 0.4308,
+        "max_payout": 590
+      },
+      "holdout_2026H1": {
+        "tickets": 25,
+        "hits": 5,
+        "roi": 1.2,
+        "no_max_roi": 0.908,
+        "max_payout": 730
+      }
+    }
+  },
+  {
+    "rule": "keep_axis_popularity=2",
+    "train_no_max_floor": 0.0,
+    "validation_no_max": 0.4308,
+    "holdout_no_max": 0.908,
+    "by_split": {
+      "wf1_2025_07": {
+        "tickets": 2,
+        "hits": 1,
+        "roi": 4.2,
+        "no_max_roi": 0.0,
+        "max_payout": 840
+      },
+      "wf2_2025_08": {
+        "tickets": 14,
+        "hits": 3,
+        "roi": 1.05,
+        "no_max_roi": 0.65,
+        "max_payout": 560
+      },
+      "wf3_2025_09": {
+        "tickets": 5,
+        "hits": 2,
+        "roi": 2.42,
+        "no_max_roi": 1.02,
+        "max_payout": 700
+      },
+      "validation_2025Q4": {
+        "tickets": 13,
+        "hits": 2,
+        "roi": 0.8846,
+        "no_max_roi": 0.4308,
+        "max_payout": 590
+      },
+      "holdout_2026H1": {
+        "tickets": 25,
+        "hits": 5,
+        "roi": 1.2,
+        "no_max_roi": 0.908,
+        "max_payout": 730
+      }
+    }
+  }
+]

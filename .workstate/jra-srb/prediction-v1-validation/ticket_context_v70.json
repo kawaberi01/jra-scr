@@ -1,0 +1,740 @@
+[
+  {
+    "split": "wf1_2025_07",
+    "from_date": "2025-07-01",
+    "to_date": "2025-07-31",
+    "theory_version": "v70",
+    "groups": {
+      "middle_jockey_recent_top3_rate": {
+        "0_15_0_25": {
+          "tickets": 21,
+          "hits": 2,
+          "bet": 2100,
+          "payout": 1440,
+          "roi": 0.6857,
+          "no_max_roi": 0.2,
+          "max_payout": 1020
+        },
+        "0_25_0_35": {
+          "tickets": 10,
+          "hits": 0,
+          "bet": 1000,
+          "payout": 0,
+          "roi": 0.0,
+          "no_max_roi": 0.0,
+          "max_payout": 0
+        },
+        "ge_0_35": {
+          "tickets": 9,
+          "hits": 2,
+          "bet": 900,
+          "payout": 2120,
+          "roi": 2.3556,
+          "no_max_roi": 0.4222,
+          "max_payout": 1740
+        },
+        "lt_0_15": {
+          "tickets": 14,
+          "hits": 4,
+          "bet": 1400,
+          "payout": 2830,
+          "roi": 2.0214,
+          "no_max_roi": 1.1643,
+          "max_payout": 1200
+        }
+      },
+      "middle_trainer_recent_top3_rate": {
+        "0_15_0_25": {
+          "tickets": 14,
+          "hits": 1,
+          "bet": 1400,
+          "payout": 420,
+          "roi": 0.3,
+          "no_max_roi": 0.0,
+          "max_payout": 420
+        },
+        "0_25_0_35": {
+          "tickets": 12,
+          "hits": 1,
+          "bet": 1200,
+          "payout": 440,
+          "roi": 0.3667,
+          "no_max_roi": 0.0,
+          "max_payout": 440
+        },
+        "ge_0_35": {
+          "tickets": 5,
+          "hits": 0,
+          "bet": 500,
+          "payout": 0,
+          "roi": 0.0,
+          "no_max_roi": 0.0,
+          "max_payout": 0
+        },
+        "lt_0_15": {
+          "tickets": 23,
+          "hits": 6,
+          "bet": 2300,
+          "payout": 5530,
+          "roi": 2.4043,
+          "no_max_roi": 1.6478,
+          "max_payout": 1740
+        }
+      },
+      "middle_same_course_top3_rate": {
+        "0_25_0_35": {
+          "tickets": 3,
+          "hits": 1,
+          "bet": 300,
+          "payout": 420,
+          "roi": 1.4,
+          "no_max_roi": 0.0,
+          "max_payout": 420
+        },
+        "ge_0_35": {
+          "tickets": 13,
+          "hits": 3,
+          "bet": 1300,
+          "payout": 3830,
+          "roi": 2.9462,
+          "no_max_roi": 1.6077,
+          "max_payout": 1740
+        },
+        "lt_0_15": {
+          "tickets": 10,
+          "hits": 2,
+          "bet": 1000,
+          "payout": 1320,
+          "roi": 1.32,
+          "no_max_roi": 0.3,
+          "max_payout": 1020
+        },
+        "missing": {
+          "tickets": 28,
+          "hits": 2,
+          "bet": 2800,
+          "payout": 820,
+          "roi": 0.2929,
+          "no_max_roi": 0.1357,
+          "max_payout": 440
+        }
+      },
+      "middle_same_dist_top3_rate": {
+        "0_15_0_25": {
+          "tickets": 2,
+          "hits": 0,
+          "bet": 200,
+          "payout": 0,
+          "roi": 0.0,
+          "no_max_roi": 0.0,
+          "max_payout": 0
+        },
+        "0_25_0_35": {
+          "tickets": 12,
+          "hits": 3,
+          "bet": 1200,
+          "payout": 3360,
+          "roi": 2.8,
+          "no_max_roi": 1.35,
+          "max_payout": 1740
+        },
+        "ge_0_35": {
+          "tickets": 21,
+          "hits": 2,
+          "bet": 2100,
+          "payout": 1270,
+          "roi": 0.6048,
+          "no_max_roi": 0.181,
+          "max_payout": 890
+        },
+        "lt_0_15": {
+          "tickets": 17,
+          "hits": 3,
+          "bet": 1700,
+          "payout": 1760,
+          "roi": 1.0353,
+          "no_max_roi": 0.4353,
+          "max_payout": 1020
+        },
+        "missing": {
+          "tickets": 2,
+          "hits": 0,
+          "bet": 200,
+          "payout": 0,
+          "roi": 0.0,
+          "no_max_roi": 0.0,
+          "max_payout": 0
+        }
+      },
+      "field_size": {
+        "ge_14": {
+          "tickets": 54,
+          "hits": 8,
+          "bet": 5400,
+          "payout": 6390,
+          "roi": 1.1833,
+          "no_max_roi": 0.8611,
+          "max_payout": 1740
+        }
+      }
+    }
+  },
+  {
+    "split": "wf2_2025_08",
+    "from_date": "2025-08-01",
+    "to_date": "2025-08-31",
+    "theory_version": "v70",
+    "groups": {
+      "middle_jockey_recent_top3_rate": {
+        "0_15_0_25": {
+          "tickets": 18,
+          "hits": 2,
+          "bet": 1800,
+          "payout": 1120,
+          "roi": 0.6222,
+          "no_max_roi": 0.2833,
+          "max_payout": 610
+        },
+        "0_25_0_35": {
+          "tickets": 17,
+          "hits": 4,
+          "bet": 1700,
+          "payout": 2700,
+          "roi": 1.5882,
+          "no_max_roi": 0.8529,
+          "max_payout": 1250
+        },
+        "ge_0_35": {
+          "tickets": 14,
+          "hits": 3,
+          "bet": 1400,
+          "payout": 1810,
+          "roi": 1.2929,
+          "no_max_roi": 0.6214,
+          "max_payout": 940
+        },
+        "lt_0_15": {
+          "tickets": 14,
+          "hits": 3,
+          "bet": 1400,
+          "payout": 1670,
+          "roi": 1.1929,
+          "no_max_roi": 0.6286,
+          "max_payout": 790
+        },
+        "missing": {
+          "tickets": 1,
+          "hits": 0,
+          "bet": 100,
+          "payout": 0,
+          "roi": 0.0,
+          "no_max_roi": 0.0,
+          "max_payout": 0
+        }
+      },
+      "middle_trainer_recent_top3_rate": {
+        "0_15_0_25": {
+          "tickets": 18,
+          "hits": 3,
+          "bet": 1800,
+          "payout": 1500,
+          "roi": 0.8333,
+          "no_max_roi": 0.45,
+          "max_payout": 690
+        },
+        "0_25_0_35": {
+          "tickets": 20,
+          "hits": 3,
+          "bet": 2000,
+          "payout": 1820,
+          "roi": 0.91,
+          "no_max_roi": 0.44,
+          "max_payout": 940
+        },
+        "ge_0_35": {
+          "tickets": 17,
+          "hits": 6,
+          "bet": 1700,
+          "payout": 3980,
+          "roi": 2.3412,
+          "no_max_roi": 1.6059,
+          "max_payout": 1250
+        },
+        "lt_0_15": {
+          "tickets": 9,
+          "hits": 0,
+          "bet": 900,
+          "payout": 0,
+          "roi": 0.0,
+          "no_max_roi": 0.0,
+          "max_payout": 0
+        }
+      },
+      "middle_same_course_top3_rate": {
+        "0_25_0_35": {
+          "tickets": 1,
+          "hits": 0,
+          "bet": 100,
+          "payout": 0,
+          "roi": 0.0,
+          "no_max_roi": 0.0,
+          "max_payout": 0
+        },
+        "ge_0_35": {
+          "tickets": 13,
+          "hits": 1,
+          "bet": 1300,
+          "payout": 690,
+          "roi": 0.5308,
+          "no_max_roi": 0.0,
+          "max_payout": 690
+        },
+        "lt_0_15": {
+          "tickets": 9,
+          "hits": 2,
+          "bet": 900,
+          "payout": 1580,
+          "roi": 1.7556,
+          "no_max_roi": 0.3667,
+          "max_payout": 1250
+        },
+        "missing": {
+          "tickets": 41,
+          "hits": 9,
+          "bet": 4100,
+          "payout": 5030,
+          "roi": 1.2268,
+          "no_max_roi": 0.9976,
+          "max_payout": 940
+        }
+      },
+      "middle_same_dist_top3_rate": {
+        "0_15_0_25": {
+          "tickets": 4,
+          "hits": 0,
+          "bet": 400,
+          "payout": 0,
+          "roi": 0.0,
+          "no_max_roi": 0.0,
+          "max_payout": 0
+        },
+        "0_25_0_35": {
+          "tickets": 22,
+          "hits": 3,
+          "bet": 2200,
+          "payout": 1780,
+          "roi": 0.8091,
+          "no_max_roi": 0.4955,
+          "max_payout": 690
+        },
+        "ge_0_35": {
+          "tickets": 21,
+          "hits": 3,
+          "bet": 2100,
+          "payout": 1880,
+          "roi": 0.8952,
+          "no_max_roi": 0.4476,
+          "max_payout": 940
+        },
+        "lt_0_15": {
+          "tickets": 12,
+          "hits": 5,
+          "bet": 1200,
+          "payout": 3080,
+          "roi": 2.5667,
+          "no_max_roi": 1.525,
+          "max_payout": 1250
+        },
+        "missing": {
+          "tickets": 5,
+          "hits": 1,
+          "bet": 500,
+          "payout": 560,
+          "roi": 1.12,
+          "no_max_roi": 0.0,
+          "max_payout": 560
+        }
+      },
+      "field_size": {
+        "ge_14": {
+          "tickets": 64,
+          "hits": 12,
+          "bet": 6400,
+          "payout": 7300,
+          "roi": 1.1406,
+          "no_max_roi": 0.9453,
+          "max_payout": 1250
+        }
+      }
+    }
+  },
+  {
+    "split": "wf3_2025_09",
+    "from_date": "2025-09-01",
+    "to_date": "2025-09-30",
+    "theory_version": "v70",
+    "groups": {
+      "middle_jockey_recent_top3_rate": {
+        "0_15_0_25": {
+          "tickets": 5,
+          "hits": 1,
+          "bet": 500,
+          "payout": 510,
+          "roi": 1.02,
+          "no_max_roi": 0.0,
+          "max_payout": 510
+        },
+        "0_25_0_35": {
+          "tickets": 12,
+          "hits": 3,
+          "bet": 1200,
+          "payout": 2320,
+          "roi": 1.9333,
+          "no_max_roi": 0.9667,
+          "max_payout": 1160
+        },
+        "ge_0_35": {
+          "tickets": 6,
+          "hits": 1,
+          "bet": 600,
+          "payout": 700,
+          "roi": 1.1667,
+          "no_max_roi": 0.0,
+          "max_payout": 700
+        },
+        "lt_0_15": {
+          "tickets": 11,
+          "hits": 2,
+          "bet": 1100,
+          "payout": 1150,
+          "roi": 1.0455,
+          "no_max_roi": 0.4545,
+          "max_payout": 650
+        }
+      },
+      "middle_trainer_recent_top3_rate": {
+        "0_15_0_25": {
+          "tickets": 13,
+          "hits": 2,
+          "bet": 1300,
+          "payout": 1130,
+          "roi": 0.8692,
+          "no_max_roi": 0.3846,
+          "max_payout": 630
+        },
+        "0_25_0_35": {
+          "tickets": 8,
+          "hits": 3,
+          "bet": 800,
+          "payout": 1690,
+          "roi": 2.1125,
+          "no_max_roi": 1.3,
+          "max_payout": 650
+        },
+        "ge_0_35": {
+          "tickets": 4,
+          "hits": 1,
+          "bet": 400,
+          "payout": 1160,
+          "roi": 2.9,
+          "no_max_roi": 0.0,
+          "max_payout": 1160
+        },
+        "lt_0_15": {
+          "tickets": 9,
+          "hits": 1,
+          "bet": 900,
+          "payout": 700,
+          "roi": 0.7778,
+          "no_max_roi": 0.0,
+          "max_payout": 700
+        }
+      },
+      "middle_same_course_top3_rate": {
+        "0_15_0_25": {
+          "tickets": 1,
+          "hits": 0,
+          "bet": 100,
+          "payout": 0,
+          "roi": 0.0,
+          "no_max_roi": 0.0,
+          "max_payout": 0
+        },
+        "0_25_0_35": {
+          "tickets": 1,
+          "hits": 0,
+          "bet": 100,
+          "payout": 0,
+          "roi": 0.0,
+          "no_max_roi": 0.0,
+          "max_payout": 0
+        },
+        "ge_0_35": {
+          "tickets": 13,
+          "hits": 4,
+          "bet": 1300,
+          "payout": 2240,
+          "roi": 1.7231,
+          "no_max_roi": 1.1846,
+          "max_payout": 700
+        },
+        "lt_0_15": {
+          "tickets": 9,
+          "hits": 1,
+          "bet": 900,
+          "payout": 1160,
+          "roi": 1.2889,
+          "no_max_roi": 0.0,
+          "max_payout": 1160
+        },
+        "missing": {
+          "tickets": 10,
+          "hits": 2,
+          "bet": 1000,
+          "payout": 1280,
+          "roi": 1.28,
+          "no_max_roi": 0.63,
+          "max_payout": 650
+        }
+      },
+      "middle_same_dist_top3_rate": {
+        "0_25_0_35": {
+          "tickets": 13,
+          "hits": 4,
+          "bet": 1300,
+          "payout": 2820,
+          "roi": 2.1692,
+          "no_max_roi": 1.2769,
+          "max_payout": 1160
+        },
+        "ge_0_35": {
+          "tickets": 16,
+          "hits": 2,
+          "bet": 1600,
+          "payout": 1230,
+          "roi": 0.7688,
+          "no_max_roi": 0.3312,
+          "max_payout": 700
+        },
+        "lt_0_15": {
+          "tickets": 4,
+          "hits": 1,
+          "bet": 400,
+          "payout": 630,
+          "roi": 1.575,
+          "no_max_roi": 0.0,
+          "max_payout": 630
+        },
+        "missing": {
+          "tickets": 1,
+          "hits": 0,
+          "bet": 100,
+          "payout": 0,
+          "roi": 0.0,
+          "no_max_roi": 0.0,
+          "max_payout": 0
+        }
+      },
+      "field_size": {
+        "ge_14": {
+          "tickets": 34,
+          "hits": 7,
+          "bet": 3400,
+          "payout": 4680,
+          "roi": 1.3765,
+          "no_max_roi": 1.0353,
+          "max_payout": 1160
+        }
+      }
+    }
+  },
+  {
+    "split": "validation_2025Q4",
+    "from_date": "2025-10-01",
+    "to_date": "2025-12-31",
+    "theory_version": "v70",
+    "groups": {
+      "middle_jockey_recent_top3_rate": {
+        "0_15_0_25": {
+          "tickets": 36,
+          "hits": 5,
+          "bet": 3600,
+          "payout": 5580,
+          "roi": 1.55,
+          "no_max_roi": 0.9694,
+          "max_payout": 2090
+        },
+        "0_25_0_35": {
+          "tickets": 21,
+          "hits": 4,
+          "bet": 2100,
+          "payout": 2020,
+          "roi": 0.9619,
+          "no_max_roi": 0.681,
+          "max_payout": 590
+        },
+        "ge_0_35": {
+          "tickets": 14,
+          "hits": 3,
+          "bet": 1400,
+          "payout": 1700,
+          "roi": 1.2143,
+          "no_max_roi": 0.6071,
+          "max_payout": 850
+        },
+        "lt_0_15": {
+          "tickets": 30,
+          "hits": 5,
+          "bet": 3000,
+          "payout": 3450,
+          "roi": 1.15,
+          "no_max_roi": 0.7967,
+          "max_payout": 1060
+        },
+        "missing": {
+          "tickets": 2,
+          "hits": 0,
+          "bet": 200,
+          "payout": 0,
+          "roi": 0.0,
+          "no_max_roi": 0.0,
+          "max_payout": 0
+        }
+      },
+      "middle_trainer_recent_top3_rate": {
+        "0_15_0_25": {
+          "tickets": 27,
+          "hits": 3,
+          "bet": 2700,
+          "payout": 1280,
+          "roi": 0.4741,
+          "no_max_roi": 0.2778,
+          "max_payout": 530
+        },
+        "0_25_0_35": {
+          "tickets": 35,
+          "hits": 4,
+          "bet": 3500,
+          "payout": 2610,
+          "roi": 0.7457,
+          "no_max_roi": 0.5057,
+          "max_payout": 840
+        },
+        "ge_0_35": {
+          "tickets": 23,
+          "hits": 5,
+          "bet": 2300,
+          "payout": 3450,
+          "roi": 1.5,
+          "no_max_roi": 0.9652,
+          "max_payout": 1230
+        },
+        "lt_0_15": {
+          "tickets": 18,
+          "hits": 5,
+          "bet": 1800,
+          "payout": 5410,
+          "roi": 3.0056,
+          "no_max_roi": 1.8444,
+          "max_payout": 2090
+        }
+      },
+      "middle_same_course_top3_rate": {
+        "0_25_0_35": {
+          "tickets": 4,
+          "hits": 1,
+          "bet": 400,
+          "payout": 490,
+          "roi": 1.225,
+          "no_max_roi": 0.0,
+          "max_payout": 490
+        },
+        "ge_0_35": {
+          "tickets": 37,
+          "hits": 7,
+          "bet": 3700,
+          "payout": 4380,
+          "roi": 1.1838,
+          "no_max_roi": 0.9297,
+          "max_payout": 940
+        },
+        "lt_0_15": {
+          "tickets": 10,
+          "hits": 1,
+          "bet": 1000,
+          "payout": 370,
+          "roi": 0.37,
+          "no_max_roi": 0.0,
+          "max_payout": 370
+        },
+        "missing": {
+          "tickets": 52,
+          "hits": 8,
+          "bet": 5200,
+          "payout": 7510,
+          "roi": 1.4442,
+          "no_max_roi": 1.0423,
+          "max_payout": 2090
+        }
+      },
+      "middle_same_dist_top3_rate": {
+        "0_15_0_25": {
+          "tickets": 2,
+          "hits": 0,
+          "bet": 200,
+          "payout": 0,
+          "roi": 0.0,
+          "no_max_roi": 0.0,
+          "max_payout": 0
+        },
+        "0_25_0_35": {
+          "tickets": 21,
+          "hits": 2,
+          "bet": 2100,
+          "payout": 870,
+          "roi": 0.4143,
+          "no_max_roi": 0.181,
+          "max_payout": 490
+        },
+        "ge_0_35": {
+          "tickets": 57,
+          "hits": 11,
+          "bet": 5700,
+          "payout": 8680,
+          "roi": 1.5228,
+          "no_max_roi": 1.1561,
+          "max_payout": 2090
+        },
+        "lt_0_15": {
+          "tickets": 10,
+          "hits": 2,
+          "bet": 1000,
+          "payout": 1140,
+          "roi": 1.14,
+          "no_max_roi": 0.37,
+          "max_payout": 770
+        },
+        "missing": {
+          "tickets": 13,
+          "hits": 2,
+          "bet": 1300,
+          "payout": 2060,
+          "roi": 1.5846,
+          "no_max_roi": 0.6385,
+          "max_payout": 1230
+        }
+      },
+      "field_size": {
+        "ge_14": {
+          "tickets": 103,
+          "hits": 17,
+          "bet": 10300,
+          "payout": 12750,
+          "roi": 1.2379,
+          "no_max_roi": 1.035,
+          "max_payout": 2090
+        }
+      }
+    }
+  }
+]
