@@ -112,11 +112,31 @@ def parse_result_page_as_race_card(html: str) -> dict[str, Any]:
     }
 
 
+def _parse_horse_weight_text(value: str | None) -> tuple[str | None, str | None]:
+    if not value:
+        return None, None
+    compact = re.sub(r"\s+", "", value)
+    match = re.search(r"(?P<weight>\d+)\s*kg(?:\((?P<diff>[+-]?\d+)\))?", compact, flags=re.IGNORECASE)
+    if match is None:
+        return None, None
+    return match.group("weight"), match.group("diff")
+
+
+def _parse_jra_card_weight_cells(soup: BeautifulSoup) -> list[tuple[str | None, str | None]]:
+    weights = []
+    for node in soup.select("td.horse .result_line .cell.weight, td.horse .cell.weight"):
+        horse_weight, horse_weight_diff = _parse_horse_weight_text(node.get_text("", strip=True))
+        if horse_weight is not None:
+            weights.append((horse_weight, horse_weight_diff))
+    return weights
+
+
 def _parse_jra_race_card(soup: BeautifulSoup) -> dict[str, Any]:
     course_text = _select_text(soup, ".race_header .type .course")
     start_time = _select_text(soup, ".race_header .date_line .time strong")
     runners = []
-    for row in soup.select("table.basic.narrow-xy.mt20 tbody tr"):
+    weight_cells = _parse_jra_card_weight_cells(soup)
+    for index, row in enumerate(soup.select("table.basic.narrow-xy.mt20 tbody tr")):
         horse_no = _select_text(row, "td.num")
         horse_name = _select_text(row, "td.horse .name a")
         if horse_name is None:
@@ -136,6 +156,14 @@ def _parse_jra_race_card(soup: BeautifulSoup) -> dict[str, Any]:
         popularity = _select_text(row, "td.horse .pop_rank")
         if popularity:
             popularity = re.sub(r"\D", "", popularity) or None
+        horse_weight, horse_weight_diff = _parse_horse_weight_text(
+            _select_text(row, "td.horse .result_line .cell.weight")
+            or _select_text(row, "td.horse .cell.weight")
+            or _select_text(row, "td.h_weight")
+            or _select_text(row, ".h_weight")
+        )
+        if horse_weight is None and index < len(weight_cells):
+            horse_weight, horse_weight_diff = weight_cells[index]
         runners.append(
             Runner(
                 horse_no=horse_no,
@@ -144,6 +172,8 @@ def _parse_jra_race_card(soup: BeautifulSoup) -> dict[str, Any]:
                 weight_carried=weight_carried,
                 jockey=jockey,
                 trainer=_select_text(row, "td.horse p.trainer a"),
+                horse_weight=horse_weight,
+                horse_weight_diff=horse_weight_diff,
                 odds=_select_text(row, "td.horse .odds strong"),
                 popularity=popularity,
             )

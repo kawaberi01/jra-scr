@@ -30,7 +30,8 @@ class NetkeibaRaceTarget:
 class NetkeibaResultCollectionOptions:
     from_date: date
     to_date: date
-    mapping_csv: Path
+    mapping_csv: Path | None = None
+    use_db_mapping: bool = False
     max_live_requests: int = 30
     min_interval_seconds: float = 10.0
     refresh: bool = False
@@ -60,12 +61,7 @@ class NetkeibaAnalysisCollector:
         self.store = store
 
     async def collect_results(self, options: NetkeibaResultCollectionOptions) -> NetkeibaResultCollectionSummary:
-        targets = load_netkeiba_race_targets(
-            options.mapping_csv,
-            options.from_date,
-            options.to_date,
-            limit=options.limit,
-        )
+        targets = self._load_targets(options)
         inspection = self._inspect_targets(targets, options.refresh, options.max_live_requests)
         if options.dry_run:
             return NetkeibaResultCollectionSummary(
@@ -142,6 +138,24 @@ class NetkeibaAnalysisCollector:
             failed_count=failed,
             live_request_limit_reached=live_request_limit_reached,
         )
+
+    def _load_targets(self, options: NetkeibaResultCollectionOptions) -> list[NetkeibaRaceTarget]:
+        if options.mapping_csv is not None:
+            return load_netkeiba_race_targets(
+                options.mapping_csv,
+                options.from_date,
+                options.to_date,
+                limit=options.limit,
+            )
+        if options.use_db_mapping:
+            return load_netkeiba_race_targets_from_rows(
+                self.store.list_netkeiba_race_mappings(
+                    options.from_date,
+                    options.to_date,
+                    limit=options.limit,
+                )
+            )
+        raise ValueError("either mapping_csv or use_db_mapping is required")
 
     def _inspect_targets(
         self,
@@ -224,6 +238,21 @@ def load_netkeiba_race_targets(
                 )
             )
     return targets
+
+
+def load_netkeiba_race_targets_from_rows(rows: list[dict]) -> list[NetkeibaRaceTarget]:
+    return [
+        NetkeibaRaceTarget(
+            netkeiba_race_id=str(row.get("netkeiba_race_id") or "").strip(),
+            jra_race_id=_clean_optional(str(row.get("jra_race_id") or "")),
+            race_date=_parse_date(str(row.get("race_date") or "")),
+            course=_clean_optional(str(row.get("course") or "")),
+            race_no=_parse_int(str(row.get("race_no") or "")),
+            mapping_status=_clean_optional(str(row.get("mapping_status") or "")) or "unmapped",
+            mapping_note=_clean_optional(str(row.get("mapping_note") or "")),
+        )
+        for row in rows
+    ]
 
 
 def _parse_date(value: str | None) -> date | None:

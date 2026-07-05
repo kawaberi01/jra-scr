@@ -3,6 +3,7 @@ from datetime import date
 import pytest
 
 from jra_srb.provider import BaseProvider, PageContent
+from jra_srb.navigation import COURSE_NAMES
 from jra_srb.service import JraService
 
 
@@ -147,6 +148,74 @@ async def test_service_falls_back_to_calendar_for_historical_meetings():
     assert [meeting.course for meeting in meetings] == ["nakayama", "chukyo"]
     assert meetings[0].races[0].race_id == "202501050601"
     assert meetings[0].races[-1].race_id == "202501050612"
+
+
+class EmptyPayoutMeetingProvider(BaseProvider):
+    async def check_upstream(self) -> PageContent:
+        return PageContent(source="fake", content="ok")
+
+    async def post_jradb(self, path: str, cname: str) -> PageContent:
+        if path.endswith("accessD.html") and cname == "pw01dli00/F3":
+            return PageContent(source="fake-accessD-select", content="<html><body></body></html>")
+        if path.endswith("accessH.html") and cname == "pw01hli00/03":
+            return PageContent(
+                source="fake-accessH-select",
+                content=(
+                    "<html><body>"
+                    f"<a onclick=\"doAction('/JRADB/accessH.html','pw01hde01062026010120260502/2B')\">{COURSE_NAMES['nakayama']}</a>"
+                    "</body></html>"
+                ),
+            )
+        if path.endswith("accessH.html") and cname == "pw01hde01062026010120260502/2B":
+            return PageContent(source="fake-accessH-empty-meeting", content="<html><body></body></html>")
+        if path.endswith("accessS.html") and cname in {"pw01sli00/AF", "pw01skl00999999/B3"}:
+            return PageContent(
+                source="fake-accessS-select",
+                content=(
+                    "<html><body>"
+                    f"<a onclick=\"doAction('/JRADB/accessS.html','pw01srl10062026010120260502/AA')\">{COURSE_NAMES['nakayama']}</a>"
+                    "</body></html>"
+                ),
+            )
+        if path.endswith("accessS.html") and cname == "pw01srl10062026010120260502/AA":
+            return PageContent(
+                source="fake-accessS-meeting",
+                content=(
+                    "<html><body>"
+                    "<a href='/JRADB/accessS.html?CNAME=pw01sde1006202601011120260502/BD'>11R</a>"
+                    "</body></html>"
+                ),
+            )
+        raise AssertionError(f"unexpected post_jradb: {path} {cname}")
+
+    async def fetch_calendar_month(self, year: int, month: int) -> PageContent:
+        raise AssertionError("fetch_calendar_month should not be called when result selection has races")
+
+    async def fetch_jradb(self, path: str, cname: str) -> PageContent:
+        raise AssertionError("fetch_jradb should not be called")
+
+    async def fetch_races(self, target_date: date, course: str | None = None) -> PageContent:
+        raise AssertionError("fetch_races should not be called")
+
+    async def fetch_race_card(self, race_id: str) -> PageContent:
+        raise AssertionError("fetch_race_card should not be called")
+
+    async def fetch_race_odds(self, race_id: str) -> PageContent:
+        raise AssertionError("fetch_race_odds should not be called")
+
+    async def fetch_race_result(self, race_id: str) -> PageContent:
+        raise AssertionError("fetch_race_result should not be called")
+
+
+@pytest.mark.asyncio
+async def test_service_ignores_empty_payout_meeting_and_falls_back_to_result_selection():
+    service = JraService(provider=EmptyPayoutMeetingProvider())
+
+    meetings = await service.get_meetings_for_date(date(2026, 5, 2))
+
+    assert [(meeting.course, len(meeting.races)) for meeting in meetings] == [("nakayama", 1)]
+    assert meetings[0].races[0].race_no == 11
+    assert meetings[0].races[0].race_id == "202605020611"
 
 
 class HistoricalResultCardFallbackProvider(BaseProvider):

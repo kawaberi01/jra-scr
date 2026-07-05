@@ -1,13 +1,29 @@
 from __future__ import annotations
 
 from datetime import UTC, date, datetime
+from itertools import combinations
 import json
 from pathlib import Path
 import re
 import sqlite3
 from uuid import uuid4
 
-from .models import MeetingRace, NetkeibaRaceResult, OddsEntry, RaceCard, RaceOdds, RaceResult
+from .errors import BadRequestError
+from .models import (
+    BetRecord,
+    BetRecordCreateRequest,
+    BetRecordPage,
+    BetRecordResult,
+    BetRecordSettlement,
+    BetRecordResultTicket,
+    BetRecordTicket,
+    MeetingRace,
+    NetkeibaRaceResult,
+    OddsEntry,
+    RaceCard,
+    RaceOdds,
+    RaceResult,
+)
 
 
 class AnalysisSQLiteStore:
@@ -191,6 +207,22 @@ class AnalysisSQLiteStore:
                 create index if not exists idx_netkeiba_odds_entries_jra_race
                 on netkeiba_odds_entries (jra_race_id);
 
+                create table if not exists netkeiba_race_mappings (
+                    jra_race_id text primary key,
+                    netkeiba_race_id text,
+                    race_date text,
+                    course text,
+                    race_no integer,
+                    mapping_status text,
+                    mapping_note text,
+                    created_at text not null,
+                    updated_at text not null
+                );
+                create index if not exists idx_netkeiba_race_mappings_date
+                on netkeiba_race_mappings (race_date, course, race_no);
+                create index if not exists idx_netkeiba_race_mappings_status
+                on netkeiba_race_mappings (mapping_status);
+
                 create table if not exists collection_errors (
                     error_id text primary key,
                     run_id text,
@@ -266,6 +298,58 @@ class AnalysisSQLiteStore:
                     hit integer not null,
                     payout integer not null
                 );
+
+                create table if not exists bet_records (
+                    bet_record_id text primary key,
+                    race_id text not null,
+                    prediction_id text,
+                    theory_version text,
+                    decision_source text not null,
+                    purchased_at text,
+                    total_amount integer not null,
+                    note text,
+                    created_at text not null,
+                    updated_at text not null
+                );
+                create index if not exists idx_bet_records_race
+                on bet_records (race_id);
+                create index if not exists idx_bet_records_prediction
+                on bet_records (prediction_id);
+
+                create table if not exists bet_record_tickets (
+                    bet_ticket_id text primary key,
+                    bet_record_id text not null,
+                    race_id text not null,
+                    prediction_ticket_id text,
+                    bucket text,
+                    bet_type text not null,
+                    selection text not null,
+                    selection_json text not null,
+                    amount integer not null,
+                    odds_at_buy real,
+                    is_box_expanded integer not null,
+                    reason text,
+                    created_at text not null
+                );
+                create index if not exists idx_bet_record_tickets_record
+                on bet_record_tickets (bet_record_id);
+                create index if not exists idx_bet_record_tickets_race_bet
+                on bet_record_tickets (race_id, bet_type, selection);
+
+                create table if not exists bet_record_results (
+                    bet_record_result_id text primary key,
+                    bet_record_id text not null unique,
+                    race_id text not null,
+                    total_bet integer not null,
+                    total_payout integer not null,
+                    return_rate real not null,
+                    hit integer not null,
+                    settled_at text not null,
+                    result_json text not null,
+                    created_at text not null
+                );
+                create index if not exists idx_bet_record_results_race
+                on bet_record_results (race_id);
                 """
             )
 
@@ -500,10 +584,86 @@ class AnalysisSQLiteStore:
                     ),
                 )
 
+    def has_card(self, race_id: str) -> bool:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                select 1
+                from races r
+                where r.race_id = ?
+                  and exists (
+                    select 1
+                    from runners ru
+                    where ru.race_id = r.race_id
+                  )
+                limit 1
+                """,
+                (race_id,),
+            ).fetchone()
+        return row is not None
+
+    def has_result(self, race_id: str) -> bool:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                select 1
+                from race_results rr
+                where rr.race_id = ?
+                  and exists (
+                    select 1
+                    from result_entries re
+                    where re.race_id = rr.race_id
+                  )
+                  and exists (
+                    select 1
+                    from payouts p
+                    where p.race_id = rr.race_id
+                  )
+                limit 1
+                """,
+                (race_id,),
+            ).fetchone()
+        return row is not None
+
+    def has_odds_snapshot(self, race_id: str, bet_type: str, odds_timing: str = "final_or_near_final") -> bool:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                select 1
+                from odds_snapshots os
+                where os.race_id = ?
+                  and os.bet_type = ?
+                  and os.odds_timing = ?
+                  and exists (
+                    select 1
+                    from odds_entries oe
+                    where oe.snapshot_id = os.snapshot_id
+                  )
+                limit 1
+                """,
+                (race_id, bet_type, odds_timing),
+            ).fetchone()
+        return row is not None
+
     def has_netkeiba_result(self, netkeiba_race_id: str) -> bool:
         with self._connect() as conn:
             row = conn.execute(
-                "select 1 from netkeiba_race_results where netkeiba_race_id = ? limit 1",
+                """
+                select 1
+                from netkeiba_race_results rr
+                where rr.netkeiba_race_id = ?
+                  and exists (
+                    select 1
+                    from netkeiba_result_entries re
+                    where re.netkeiba_race_id = rr.netkeiba_race_id
+                  )
+                  and exists (
+                    select 1
+                    from netkeiba_payouts p
+                    where p.netkeiba_race_id = rr.netkeiba_race_id
+                  )
+                limit 1
+                """,
                 (netkeiba_race_id,),
             ).fetchone()
         return row is not None
@@ -661,6 +821,383 @@ class AnalysisSQLiteStore:
                             odds.source,
                         ),
                     )
+
+    def write_netkeiba_race_mappings(self, mappings: list[dict[str, str]]) -> None:
+        now = _now()
+        with self._connect() as conn:
+            for mapping in mappings:
+                conn.execute(
+                    """
+                    insert into netkeiba_race_mappings
+                    (jra_race_id, netkeiba_race_id, race_date, course, race_no,
+                     mapping_status, mapping_note, created_at, updated_at)
+                    values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    on conflict(jra_race_id) do update set
+                        netkeiba_race_id = excluded.netkeiba_race_id,
+                        race_date = excluded.race_date,
+                        course = excluded.course,
+                        race_no = excluded.race_no,
+                        mapping_status = excluded.mapping_status,
+                        mapping_note = excluded.mapping_note,
+                        updated_at = excluded.updated_at
+                    """,
+                    (
+                        mapping["jra_race_id"],
+                        mapping.get("netkeiba_race_id") or None,
+                        mapping.get("race_date") or None,
+                        mapping.get("course") or None,
+                        _parse_int(mapping.get("race_no")),
+                        mapping.get("mapping_status") or None,
+                        mapping.get("mapping_note") or None,
+                        now,
+                        now,
+                    ),
+                )
+
+    def list_netkeiba_race_mappings(
+        self,
+        from_date: date,
+        to_date: date,
+        limit: int | None = None,
+    ) -> list[dict]:
+        params: list[object] = [from_date.isoformat(), to_date.isoformat()]
+        limit_sql = ""
+        if limit is not None:
+            limit_sql = "limit ?"
+            params.append(limit)
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"""
+                select jra_race_id, netkeiba_race_id, race_date, course, race_no,
+                       mapping_status, mapping_note
+                from netkeiba_race_mappings
+                where race_date >= ? and race_date <= ?
+                order by race_date, course, race_no
+                {limit_sql}
+                """,
+                params,
+            ).fetchall()
+        return [_row_to_dict(row) for row in rows]
+
+    def create_bet_record(self, request: BetRecordCreateRequest | dict) -> BetRecord:
+        request = BetRecordCreateRequest.model_validate(request)
+        expanded_tickets = _expand_bet_record_tickets(request)
+        total_amount = sum(ticket["amount"] for ticket in expanded_tickets)
+        if total_amount != request.total_amount:
+            raise BadRequestError(
+                f"total_amount mismatch: request={request.total_amount} expanded={total_amount}"
+            )
+
+        bet_record_id = str(uuid4())
+        now = _now()
+        with self._connect() as conn:
+            conn.execute(
+                """
+                insert into bet_records
+                (bet_record_id, race_id, prediction_id, theory_version, decision_source,
+                 purchased_at, total_amount, note, created_at, updated_at)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    bet_record_id,
+                    request.race_id,
+                    request.prediction_id,
+                    request.theory_version,
+                    str(request.decision_source),
+                    _dt(request.purchased_at),
+                    request.total_amount,
+                    request.note,
+                    now,
+                    now,
+                ),
+            )
+            for ticket in expanded_tickets:
+                conn.execute(
+                    """
+                    insert into bet_record_tickets
+                    (bet_ticket_id, bet_record_id, race_id, prediction_ticket_id, bucket,
+                     bet_type, selection, selection_json, amount, odds_at_buy,
+                     is_box_expanded, reason, created_at)
+                    values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        ticket["bet_ticket_id"],
+                        bet_record_id,
+                        request.race_id,
+                        ticket["prediction_ticket_id"],
+                        ticket["bucket"],
+                        ticket["bet_type"],
+                        ticket["selection"],
+                        json.dumps(ticket["selection_json"], ensure_ascii=False),
+                        ticket["amount"],
+                        ticket["odds_at_buy"],
+                        int(ticket["is_box_expanded"]),
+                        ticket["reason"],
+                        now,
+                    ),
+                )
+        return self.get_bet_record(bet_record_id)
+
+    def get_bet_record(self, bet_record_id: str) -> BetRecord:
+        with self._connect() as conn:
+            record = conn.execute(
+                "select * from bet_records where bet_record_id = ?",
+                (bet_record_id,),
+            ).fetchone()
+            if record is None:
+                raise LookupError(f"bet record not found for bet_record_id={bet_record_id}")
+
+            ticket_rows = conn.execute(
+                """
+                select *
+                from bet_record_tickets
+                where bet_record_id = ?
+                order by rowid
+                """,
+                (bet_record_id,),
+            ).fetchall()
+
+            prediction = None
+            prediction_tickets: list[dict] = []
+            if record["prediction_id"]:
+                prediction_row = conn.execute(
+                    """
+                    select prediction_id, race_id, theory_version, mode, budget,
+                           pre_race_snapshot_json, prediction_json, created_at
+                    from predictions
+                    where prediction_id = ?
+                    """,
+                    (record["prediction_id"],),
+                ).fetchone()
+                if prediction_row is not None:
+                    prediction = _row_to_dict(prediction_row)
+                    prediction["pre_race_snapshot_json"] = json.loads(prediction["pre_race_snapshot_json"])
+                    prediction["prediction_json"] = json.loads(prediction["prediction_json"])
+                    prediction_tickets = [
+                        _row_to_dict(row)
+                        for row in conn.execute(
+                            """
+                            select ticket_id, prediction_id, race_id, bucket, bet_type,
+                                   selection, selection_json, amount, reason
+                            from prediction_tickets
+                            where prediction_id = ?
+                            order by bucket, bet_type, selection
+                            """,
+                            (record["prediction_id"],),
+                        ).fetchall()
+                    ]
+                    for ticket in prediction_tickets:
+                        ticket["selection_json"] = json.loads(ticket["selection_json"])
+
+            result_row = conn.execute(
+                """
+                select *
+                from bet_record_results
+                where bet_record_id = ?
+                """,
+                (bet_record_id,),
+            ).fetchone()
+
+        tickets = [
+            BetRecordTicket(
+                bet_ticket_id=row["bet_ticket_id"],
+                bet_record_id=row["bet_record_id"],
+                race_id=row["race_id"],
+                prediction_ticket_id=row["prediction_ticket_id"],
+                bucket=row["bucket"],
+                bet_type=row["bet_type"],
+                selection=row["selection"],
+                selection_json=json.loads(row["selection_json"]),
+                amount=int(row["amount"]),
+                odds_at_buy=row["odds_at_buy"],
+                is_box_expanded=bool(row["is_box_expanded"]),
+                reason=row["reason"],
+                created_at=_parse_datetime(row["created_at"]),
+            )
+            for row in ticket_rows
+        ]
+        result = _bet_record_result_from_row(result_row) if result_row is not None else None
+        return BetRecord(
+            bet_record_id=record["bet_record_id"],
+            race_id=record["race_id"],
+            prediction_id=record["prediction_id"],
+            theory_version=record["theory_version"],
+            decision_source=record["decision_source"],
+            purchased_at=_parse_datetime(record["purchased_at"]),
+            total_amount=int(record["total_amount"]),
+            note=record["note"],
+            created_at=_parse_datetime(record["created_at"]),
+            updated_at=_parse_datetime(record["updated_at"]),
+            tickets=tickets,
+            prediction=prediction,
+            prediction_tickets=prediction_tickets,
+            result=result,
+        )
+
+    def list_bet_records(
+        self,
+        from_date: date | None = None,
+        to_date: date | None = None,
+        race_id: str | None = None,
+        course: str | None = None,
+        theory_version: str | None = None,
+        decision_source: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> BetRecordPage:
+        where: list[str] = []
+        params: list[object] = []
+        if from_date is not None:
+            where.append("r.race_date >= ?")
+            params.append(from_date.isoformat())
+        if to_date is not None:
+            where.append("r.race_date <= ?")
+            params.append(to_date.isoformat())
+        if race_id is not None:
+            where.append("br.race_id = ?")
+            params.append(race_id)
+        if course is not None:
+            where.append("r.course = ?")
+            params.append(course)
+        if theory_version is not None:
+            where.append("br.theory_version = ?")
+            params.append(theory_version)
+        if decision_source is not None:
+            where.append("br.decision_source = ?")
+            params.append(decision_source)
+        where_sql = f"where {' and '.join(where)}" if where else ""
+
+        with self._connect() as conn:
+            total = int(
+                conn.execute(
+                    f"""
+                    select count(1)
+                    from bet_records br
+                    left join races r on r.race_id = br.race_id
+                    {where_sql}
+                    """,
+                    params,
+                ).fetchone()[0]
+            )
+            rows = conn.execute(
+                f"""
+                select br.bet_record_id
+                from bet_records br
+                left join races r on r.race_id = br.race_id
+                {where_sql}
+                order by coalesce(br.purchased_at, br.created_at) desc, br.bet_record_id desc
+                limit ? offset ?
+                """,
+                [*params, limit, offset],
+            ).fetchall()
+
+        items = [self.get_bet_record(row["bet_record_id"]) for row in rows]
+        return BetRecordPage(items=items, total=total, limit=limit, offset=offset)
+
+    def settle_bet_record(self, bet_record_id: str, settled_at: datetime | None = None) -> BetRecordSettlement:
+        record = self.get_bet_record(bet_record_id)
+        payout_index = self._load_payout_index(record.race_id)
+        ticket_results: list[BetRecordResultTicket] = []
+        total_payout = 0
+        for ticket in record.tickets:
+            payout = payout_index.get((ticket.bet_type, ticket.selection), 0)
+            ticket_result = BetRecordResultTicket(
+                bet_type=ticket.bet_type,
+                selection=ticket.selection,
+                selection_json=ticket.selection_json,
+                amount=ticket.amount,
+                hit=payout > 0,
+                payout=payout,
+            )
+            total_payout += payout
+            ticket_results.append(ticket_result)
+
+        current_settled_at = settled_at or datetime.now(UTC)
+        settlement = BetRecordSettlement(
+            bet_record_id=record.bet_record_id,
+            race_id=record.race_id,
+            total_bet=record.total_amount,
+            total_payout=total_payout,
+            return_rate=(total_payout / record.total_amount) if record.total_amount else 0.0,
+            hit=any(ticket.hit for ticket in ticket_results),
+            settled_at=current_settled_at,
+            ticket_results=ticket_results,
+        )
+        result_json = settlement.model_dump(mode="json")
+
+        with self._connect() as conn:
+            existing = conn.execute(
+                """
+                select bet_record_result_id, created_at
+                from bet_record_results
+                where bet_record_id = ?
+                """,
+                (bet_record_id,),
+            ).fetchone()
+            bet_record_result_id = existing["bet_record_result_id"] if existing is not None else str(uuid4())
+            created_at = existing["created_at"] if existing is not None else _now()
+            conn.execute(
+                """
+                insert into bet_record_results
+                (bet_record_result_id, bet_record_id, race_id, total_bet, total_payout,
+                 return_rate, hit, settled_at, result_json, created_at)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                on conflict(bet_record_id) do update set
+                    race_id = excluded.race_id,
+                    total_bet = excluded.total_bet,
+                    total_payout = excluded.total_payout,
+                    return_rate = excluded.return_rate,
+                    hit = excluded.hit,
+                    settled_at = excluded.settled_at,
+                    result_json = excluded.result_json
+                """,
+                (
+                    bet_record_result_id,
+                    bet_record_id,
+                    record.race_id,
+                    settlement.total_bet,
+                    settlement.total_payout,
+                    settlement.return_rate,
+                    int(settlement.hit),
+                    _dt(settlement.settled_at),
+                    json.dumps(result_json, ensure_ascii=False),
+                    created_at,
+                ),
+            )
+            conn.execute(
+                "update bet_records set updated_at = ? where bet_record_id = ?",
+                (_now(), bet_record_id),
+            )
+        return settlement
+
+    def _load_payout_index(self, race_id: str) -> dict[tuple[str, str], int]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                select bet_type, combination, payout
+                from payouts
+                where race_id = ?
+                """,
+                (race_id,),
+            ).fetchall()
+            if not rows:
+                rows = conn.execute(
+                    """
+                    select bet_type, combination, payout
+                    from netkeiba_payouts
+                    where jra_race_id = ?
+                    """,
+                    (race_id,),
+                ).fetchall()
+
+        payout_index: dict[tuple[str, str], int] = {}
+        for row in rows:
+            normalized_bet_type = _normalize_payout_bet_type(row["bet_type"])
+            if normalized_bet_type is None:
+                continue
+            combination = _normalize_selection_string(normalized_bet_type, row["combination"])
+            payout_index[(normalized_bet_type, combination)] = int(row["payout"] or 0)
+        return payout_index
 
     def write_error(
         self,
@@ -1033,10 +1570,134 @@ def _normalize_combination_items(combination: list[str]) -> list[str]:
     return normalized
 
 
+UNORDERED_BET_TYPES = {"quinella", "wide", "trio"}
+ORDERED_BET_TYPES = {"exacta", "trifecta"}
+SINGLE_BET_TYPES = {"win", "place"}
+BOX_SUPPORTED_BET_TYPES = {"quinella", "wide", "trio"}
+PAYOUT_BET_TYPE_MAP = {
+    "単勝": "win",
+    "複勝": "place",
+    "馬連": "quinella",
+    "ワイド": "wide",
+    "馬単": "exacta",
+    "3連複": "trio",
+    "3連単": "trifecta",
+}
+
+
+def _expand_bet_record_tickets(request: BetRecordCreateRequest) -> list[dict[str, object]]:
+    expanded: list[dict[str, object]] = []
+    for ticket in request.tickets:
+        bet_type = str(ticket.bet_type)
+        if ticket.mode == "box":
+            if bet_type not in BOX_SUPPORTED_BET_TYPES:
+                raise BadRequestError(f"box mode is not supported for bet_type={bet_type}")
+            if len(ticket.selection) < 2:
+                raise BadRequestError("box mode requires at least 2 selections")
+            leg_count = 3 if bet_type == "trio" else 2
+            if len(ticket.selection) < leg_count:
+                raise BadRequestError(f"box mode requires at least {leg_count} selections for bet_type={bet_type}")
+            for selection in combinations(ticket.selection, leg_count):
+                normalized_items = _normalize_selection_items(bet_type, list(selection))
+                expanded.append(
+                    {
+                        "bet_ticket_id": str(uuid4()),
+                        "prediction_ticket_id": ticket.prediction_ticket_id,
+                        "bucket": ticket.bucket,
+                        "bet_type": bet_type,
+                        "selection": "-".join(normalized_items),
+                        "selection_json": normalized_items,
+                        "amount": ticket.amount_per_ticket,
+                        "odds_at_buy": ticket.odds_at_buy,
+                        "is_box_expanded": True,
+                        "reason": ticket.reason,
+                    }
+                )
+            continue
+
+        normalized_items = _normalize_selection_items(bet_type, ticket.selection)
+        expanded.append(
+            {
+                "bet_ticket_id": str(uuid4()),
+                "prediction_ticket_id": ticket.prediction_ticket_id,
+                "bucket": ticket.bucket,
+                "bet_type": bet_type,
+                "selection": "-".join(normalized_items),
+                "selection_json": normalized_items,
+                "amount": ticket.amount,
+                "odds_at_buy": ticket.odds_at_buy,
+                "is_box_expanded": False,
+                "reason": ticket.reason,
+            }
+        )
+    return expanded
+
+
+def _normalize_selection_items(bet_type: str, selection: list[str]) -> list[str]:
+    normalized = _normalize_combination_items(selection)
+    expected_count = _expected_selection_count(bet_type)
+    if expected_count is not None and len(normalized) != expected_count:
+        raise BadRequestError(f"bet_type={bet_type} requires {expected_count} selections")
+    if bet_type in SINGLE_BET_TYPES:
+        return normalized
+    if bet_type in UNORDERED_BET_TYPES:
+        return sorted(normalized, key=_selection_sort_key)
+    if bet_type in ORDERED_BET_TYPES:
+        return normalized
+    raise BadRequestError(f"unsupported bet_type={bet_type}")
+
+
+def _normalize_selection_string(bet_type: str, selection: str) -> str:
+    items = [item.strip() for item in re.split(r"[-,]", selection) if item.strip()]
+    normalized = _normalize_selection_items(bet_type, items)
+    return "-".join(normalized)
+
+
+def _expected_selection_count(bet_type: str) -> int | None:
+    if bet_type in SINGLE_BET_TYPES:
+        return 1
+    if bet_type in {"quinella", "wide", "exacta"}:
+        return 2
+    if bet_type in {"trio", "trifecta"}:
+        return 3
+    return None
+
+
+def _selection_sort_key(value: str) -> tuple[int, object]:
+    return (0, int(value)) if value.isdigit() else (1, value)
+
+
+def _normalize_payout_bet_type(value: str | None) -> str | None:
+    if value is None:
+        return None
+    return PAYOUT_BET_TYPE_MAP.get(value, value if value in SINGLE_BET_TYPES | UNORDERED_BET_TYPES | ORDERED_BET_TYPES else None)
+
+
+def _bet_record_result_from_row(row: sqlite3.Row) -> BetRecordResult:
+    return BetRecordResult(
+        bet_record_result_id=row["bet_record_result_id"],
+        bet_record_id=row["bet_record_id"],
+        race_id=row["race_id"],
+        total_bet=int(row["total_bet"]),
+        total_payout=int(row["total_payout"]),
+        return_rate=float(row["return_rate"]),
+        hit=bool(row["hit"]),
+        settled_at=_parse_datetime(row["settled_at"]),
+        result_json=json.loads(row["result_json"]),
+        created_at=_parse_datetime(row["created_at"]),
+    )
+
+
 def _dt(value: datetime | None) -> str | None:
     if value is None:
         return None
     return value.isoformat()
+
+
+def _parse_datetime(value: str | None) -> datetime | None:
+    if value is None:
+        return None
+    return datetime.fromisoformat(value)
 
 
 def _now() -> str:

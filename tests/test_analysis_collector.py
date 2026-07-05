@@ -1,4 +1,5 @@
 from datetime import UTC, date, datetime
+import sqlite3
 
 import pytest
 
@@ -21,6 +22,9 @@ from jra_srb.models import (
 class FakeAnalysisService:
     def __init__(self, fail_result: bool = False) -> None:
         self.fail_result = fail_result
+        self.card_calls = 0
+        self.odds_calls = 0
+        self.result_calls = 0
 
     async def get_meeting(self, target_date: date, course: str) -> MeetingSnapshot:
         return MeetingSnapshot(
@@ -35,6 +39,7 @@ class FakeAnalysisService:
         return [await self.get_meeting(target_date, "nakayama")]
 
     async def get_race_card_by_number(self, target_date: date, course: str, race_no: int) -> RaceCard:
+        self.card_calls += 1
         return RaceCard(
             race_id=f"{target_date:%Y%m%d}06{race_no:02d}",
             race_name="Chiba Stakes",
@@ -45,6 +50,7 @@ class FakeAnalysisService:
         )
 
     async def get_race_odds_by_number(self, target_date: date, course: str, race_no: int, bet_type: str) -> RaceOdds:
+        self.odds_calls += 1
         return RaceOdds(
             race_id=f"{target_date:%Y%m%d}06{race_no:02d}",
             bet_type=bet_type,
@@ -54,6 +60,7 @@ class FakeAnalysisService:
         )
 
     async def get_race_result_by_number(self, target_date: date, course: str, race_no: int) -> RaceResult:
+        self.result_calls += 1
         if self.fail_result:
             raise LookupError("payout block not found")
         return RaceResult(
@@ -91,6 +98,57 @@ async def test_analysis_collector_collects_card_odds_and_result(tmp_path):
     assert store.count_rows("result_entries") == 1
     assert store.count_rows("payouts") == 1
     assert store.count_rows("collection_errors") == 0
+
+
+@pytest.mark.asyncio
+async def test_analysis_collector_stops_at_live_request_limit(tmp_path):
+    db_path = tmp_path / "analysis.sqlite"
+    store = AnalysisSQLiteStore(db_path)
+    collector = AnalysisCollector(service=FakeAnalysisService(), store=store)  # type: ignore[arg-type]
+
+    run_id = await collector.collect(
+        AnalysisCollectionOptions(
+            from_date=date(2026, 3, 22),
+            to_date=date(2026, 3, 22),
+            courses=["nakayama"],
+            include_card=True,
+            include_odds=False,
+            include_results=True,
+            max_live_requests=1,
+        )
+    )
+
+    with sqlite3.connect(db_path) as conn:
+        status = conn.execute("select status from collection_runs where run_id = ?", (run_id,)).fetchone()[0]
+
+    assert status == "partial"
+    assert store.count_rows("races") == 1
+    assert store.count_rows("runners") == 0
+    assert store.count_rows("result_entries") == 0
+
+
+@pytest.mark.asyncio
+async def test_analysis_collector_skip_existing_avoids_re_fetching_saved_payloads(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    service = FakeAnalysisService()
+    collector = AnalysisCollector(service=service, store=store)  # type: ignore[arg-type]
+    options = AnalysisCollectionOptions(
+        from_date=date(2026, 3, 22),
+        to_date=date(2026, 3, 22),
+        courses=["nakayama"],
+        include_card=True,
+        include_odds=True,
+        include_results=True,
+        bet_types=["wide"],
+        skip_existing=True,
+    )
+
+    await collector.collect(options)
+    await collector.collect(options)
+
+    assert service.card_calls == 1
+    assert service.odds_calls == 1
+    assert service.result_calls == 1
 
 
 @pytest.mark.asyncio

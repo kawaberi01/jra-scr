@@ -30,6 +30,7 @@ rtk .venv-win\Scripts\pytest.exe -q
 - `netkeiba_result_entries`
 - `netkeiba_payouts`
 - `netkeiba_odds_entries`
+- `netkeiba_race_mappings`
 
 既存の JRA 公式向けテーブルは変更しません。
 
@@ -45,6 +46,38 @@ netkeiba : 202603020201
 ```
 
 そのため、バッチ収集には対応表 CSV を渡します。
+
+## 重要: JRA の開催回次をそのまま netkeiba meeting_no に使わない
+
+`meeting_calendar_csv` の `meeting_no` は、JRA の開催回次ではなく
+`netkeiba race_id` 側の meeting_no を入れる必要があります。
+
+同じ「東京」「京都」でも、JRA の回次と netkeiba の meeting_no は一致しない場合があります。
+
+実例:
+
+```text
+2025-10-04 東京1R
+  netkeiba race_id: 202505040101
+  -> meeting_no=4
+
+2025-10-04 京都1R
+  netkeiba race_id: 202508030101
+  -> meeting_no=3
+
+2025-11-01 東京1R
+  netkeiba race_id: 202505041001
+  -> 5回東京1日目ではなく、4回東京10日目
+```
+
+この差を無視して JRA 回次をそのまま入れると、以下のような問題が起きます。
+
+- 別日・別開催の race_id にずれる
+- `low_name_match` が大量に出る
+- 汎用ページに当たり `missing_result_or_payout` が大量に出る
+
+validation / holdout 用の meeting calendar は、netkeiba 実ページの title または
+meta description と照合して確定させてください。
 
 ## 対応表 CSV の形式
 
@@ -115,6 +148,33 @@ nakayama,5,2025-12-06,1
 
 開催カレンダーを渡さない場合、`meeting_no=1` の推定値として `mapping_status=mapped_estimated` を出力します。validation 本番用途では開催カレンダー CSV を使ってください。
 
+## 対応表を DB に保存する
+
+CSV ではなく `analysis.sqlite` の `netkeiba_race_mappings` に保存できます。
+
+```powershell
+jra-srb generate-netkeiba-mapping `
+  --from-date 2026-06-01 `
+  --to-date 2026-06-30 `
+  --db data/analysis.sqlite `
+  --meeting-calendar-csv data/netkeiba_meeting_calendar.2026_06.csv `
+  --save-to-db
+```
+
+CSV と DB 保存は同時に指定できます。
+
+```powershell
+jra-srb generate-netkeiba-mapping `
+  --from-date 2026-06-01 `
+  --to-date 2026-06-30 `
+  --db data/analysis.sqlite `
+  --output data/netkeiba_race_mapping.2026_06.csv `
+  --meeting-calendar-csv data/netkeiba_meeting_calendar.2026_06.csv `
+  --save-to-db
+```
+
+同じ `jra_race_id` がすでにある場合は upsert します。`unmapped` も原因確認用に保存しますが、収集対象にはしません。
+
 ## race_result を保存する
 
 ```powershell
@@ -135,6 +195,20 @@ jra-srb collect-netkeiba-results `
 - 取得成功後、結果詳細と払戻を SQLite に保存する
 - 取得失敗は `collection_errors` に `stage = netkeiba-result` で記録する
 
+DB 保存済み mapping を使う場合:
+
+```powershell
+jra-srb collect-netkeiba-results `
+  --from-date 2026-06-01 `
+  --to-date 2026-06-30 `
+  --db data/analysis.sqlite `
+  --use-db-mapping `
+  --max-live-requests 30 `
+  --min-interval-seconds 10
+```
+
+`--mapping-csv` と `--use-db-mapping` の両方が指定された場合は、明示された CSV を優先します。
+
 ## dry-run で確認する
 
 netkeiba にアクセスせず、対象件数と取得予定件数だけ確認できます。
@@ -144,7 +218,7 @@ jra-srb collect-netkeiba-results `
   --from-date 2025-10-01 `
   --to-date 2025-12-31 `
   --db data/analysis.sqlite `
-  --mapping-csv data/netkeiba_race_mapping.validation_2025q4.csv `
+  --use-db-mapping `
   --max-live-requests 30 `
   --dry-run
 ```

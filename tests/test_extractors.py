@@ -42,6 +42,23 @@ def test_parse_race_card_keeps_apprentice_marker_with_jockey_name():
     assert runner.trainer == "天間 昭一"
 
 
+def test_parse_jra_race_card_extracts_horse_weight_from_fixture():
+    fixture = Path("tests/fixtures/jradb_accessD_race_202603220611.html").read_text(
+        encoding="shift_jis",
+        errors="ignore",
+    )
+
+    parsed = parse_race_card(fixture, load_parser_config("race_card"))
+
+    runners_by_no = {runner.horse_no: runner for runner in parsed["runners"]}
+    assert runners_by_no["1"].horse_weight == "470"
+    assert runners_by_no["1"].horse_weight_diff == "+4"
+    assert runners_by_no["2"].horse_weight == "504"
+    assert runners_by_no["2"].horse_weight_diff == "-4"
+    assert runners_by_no["8"].horse_weight == "466"
+    assert runners_by_no["8"].horse_weight_diff == "0"
+
+
 def test_parse_race_result_supports_jra_result_page_fixture():
     fixture = Path("tests/fixtures/jradb_accessS_race_202603220611.html").read_text(
         encoding="shift_jis",

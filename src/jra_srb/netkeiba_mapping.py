@@ -33,17 +33,21 @@ class NetkeibaMappingGenerationSummary:
     total_count: int
     mapped_count: int
     unmapped_count: int
-    output: Path
+    output: Path | None
+    saved_to_db: bool = False
 
 
 def generate_netkeiba_mapping_csv(
     store: AnalysisSQLiteStore,
     from_date: date,
     to_date: date,
-    output: Path,
+    output: Path | None = None,
     meeting_calendar_csv: Path | None = None,
     limit: int | None = None,
+    save_to_db: bool = False,
 ) -> NetkeibaMappingGenerationSummary:
+    if output is None and not save_to_db:
+        raise ValueError("either output or save_to_db is required")
     calendar = _load_meeting_calendar(meeting_calendar_csv) if meeting_calendar_csv is not None else {}
     context_from_date = _context_from_date(from_date, calendar)
     context_rows = store.list_races_for_netkeiba_mapping(context_from_date, to_date)
@@ -56,24 +60,23 @@ def generate_netkeiba_mapping_csv(
         rows = rows[:limit]
     race_dates_by_course = _race_dates_by_course(context_rows)
 
-    output.parent.mkdir(parents=True, exist_ok=True)
-    mapped = 0
-    unmapped = 0
-    with output.open("w", encoding="utf-8", newline="") as stream:
-        writer = csv.DictWriter(stream, fieldnames=MAPPING_COLUMNS)
-        writer.writeheader()
-        for row in rows:
-            generated = _generate_mapping_row(row, calendar, race_dates_by_course)
-            if generated["netkeiba_race_id"]:
-                mapped += 1
-            else:
-                unmapped += 1
-            writer.writerow(generated)
+    mappings = [_generate_mapping_row(row, calendar, race_dates_by_course) for row in rows]
+    mapped = sum(1 for mapping in mappings if mapping["netkeiba_race_id"])
+    unmapped = len(mappings) - mapped
+    if output is not None:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        with output.open("w", encoding="utf-8", newline="") as stream:
+            writer = csv.DictWriter(stream, fieldnames=MAPPING_COLUMNS)
+            writer.writeheader()
+            writer.writerows(mappings)
+    if save_to_db:
+        store.write_netkeiba_race_mappings(mappings)
     return NetkeibaMappingGenerationSummary(
         total_count=len(rows),
         mapped_count=mapped,
         unmapped_count=unmapped,
         output=output,
+        saved_to_db=save_to_db,
     )
 
 

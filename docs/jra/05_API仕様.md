@@ -210,9 +210,153 @@ job status:
 
 job の記録は in-memory です。API サーバーを再起動すると job 一覧と状態は消えます。
 
+## 実買い記録 API
+
+### `POST /bet-records`
+
+実際に購入した券を `analysis.sqlite` に保存します。`mode=box` の券は保存時に必ず展開されます。
+
+Request body:
+
+```json
+{
+  "race_id": "202607051011",
+  "prediction_id": "pred_xxx",
+  "theory_version": "v86",
+  "decision_source": "agent_plus_manual",
+  "purchased_at": "2026-07-05T15:40:00+09:00",
+  "total_amount": 400,
+  "note": "参考判定を見て購入",
+  "tickets": [
+    {
+      "bet_type": "wide",
+      "mode": "box",
+      "selection": ["2", "4", "10"],
+      "amount_per_ticket": 100
+    },
+    {
+      "bet_type": "trio",
+      "mode": "normal",
+      "selection": ["2", "4", "10"],
+      "amount": 100
+    }
+  ]
+}
+```
+
+Response:
+
+```json
+{
+  "bet_record_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "race_id": "202607051011",
+  "prediction_id": "pred_xxx",
+  "theory_version": "v86",
+  "decision_source": "agent_plus_manual",
+  "purchased_at": "2026-07-05T15:40:00+09:00",
+  "total_amount": 400,
+  "note": "参考判定を見て購入",
+  "tickets": [
+    {
+      "bet_type": "wide",
+      "selection": "2-4",
+      "selection_json": ["2", "4"],
+      "amount": 100,
+      "is_box_expanded": true
+    },
+    {
+      "bet_type": "wide",
+      "selection": "2-10",
+      "selection_json": ["2", "10"],
+      "amount": 100,
+      "is_box_expanded": true
+    },
+    {
+      "bet_type": "wide",
+      "selection": "4-10",
+      "selection_json": ["4", "10"],
+      "amount": 100,
+      "is_box_expanded": true
+    },
+    {
+      "bet_type": "trio",
+      "selection": "2-4-10",
+      "selection_json": ["2", "4", "10"],
+      "amount": 100,
+      "is_box_expanded": false
+    }
+  ]
+}
+```
+
+### `GET /bet-records/{bet_record_id}`
+
+保存済みの実買い記録を返します。`prediction_id` がある場合は、関連する `prediction` と `prediction_tickets` も含みます。
+
+Response:
+
+```json
+{
+  "bet_record_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "race_id": "202607051011",
+  "prediction_id": "pred_xxx",
+  "theory_version": "v86",
+  "decision_source": "agent_plus_manual",
+  "total_amount": 400,
+  "tickets": [],
+  "prediction": {
+    "prediction_id": "pred_xxx",
+    "race_id": "202607051011",
+    "theory_version": "v86",
+    "prediction_json": {}
+  },
+  "prediction_tickets": [],
+  "result": null
+}
+```
+
+### `GET /bet-records`
+
+保存済みの実買い記録を検索します。
+
+クエリ:
+
+- `from_date`: 対象レースの開催開始日
+- `to_date`: 対象レースの開催終了日
+- `race_id`: race_id で絞り込み
+- `course`: 開催場コード
+- `theory_version`: theory_version で絞り込み
+- `decision_source`: `agent`, `manual`, `agent_plus_manual`
+- `limit`: 返却件数。1 から 500
+- `offset`: スキップ件数。0 以上
+
+### `POST /bet-records/{bet_record_id}/settle`
+
+保存済みの実買い記録を、既存の `payouts` または `netkeiba_payouts` を使って精算します。
+
+Response:
+
+```json
+{
+  "bet_record_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "race_id": "202607051011",
+  "total_bet": 400,
+  "total_payout": 0,
+  "return_rate": 0.0,
+  "hit": false,
+  "settled_at": "2026-07-05T16:30:00+09:00",
+  "ticket_results": [
+    {"bet_type": "wide", "selection": "2-4", "selection_json": ["2", "4"], "amount": 100, "hit": false, "payout": 0},
+    {"bet_type": "wide", "selection": "2-10", "selection_json": ["2", "10"], "amount": 100, "hit": false, "payout": 0},
+    {"bet_type": "wide", "selection": "4-10", "selection_json": ["4", "10"], "amount": 100, "hit": false, "payout": 0},
+    {"bet_type": "trio", "selection": "2-4-10", "selection_json": ["2", "4", "10"], "amount": 100, "hit": false, "payout": 0}
+  ]
+}
+```
+
 ## 分析用 SQLite DB
 
-分析用の一次保存は CLI の `collect-analysis` で行います。API endpoint はまだありません。
+分析用の一次保存は CLI の `collect-analysis` で行います。実買い記録だけは API からも保存できます。
 
 ```bash
 jra-srb collect-analysis \
@@ -241,6 +385,9 @@ jra-srb collect-analysis \
 - `evaluations`
 - `evaluation_ticket_results`
 - `theory_versions`
+- `bet_records`
+- `bet_record_tickets`
+- `bet_record_results`
 
 発走前 snapshot は `races`, `runners`, `odds_snapshots`, `odds_entries` から構成し、結果・払戻・評価結果を含めません。Prediction Agent へ渡す入力はこの発走前 snapshot に限定します。
 

@@ -14,6 +14,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from fastapi_mcp import FastApiMCP
 
+from .analysis_store import AnalysisSQLiteStore
 from .batch import JsonlRaceResultStorage, ResultStorage, SQLiteRaceResultStorage
 from .cache import SQLiteTTLCache
 from .errors import BadRequestError, JraApiError
@@ -21,8 +22,13 @@ from .jobs import ResultCollectionJobRegistry
 from .models import (
     ApiError,
     ApiErrorResponse,
+    BetRecord,
+    BetRecordCreateRequest,
+    BetRecordPage,
+    BetRecordSettlement,
     BetType,
     CourseCode,
+    NarCalendarPage,
     RaceSearchItem,
     RaceSearchPage,
     ResultCollectionJobCreated,
@@ -32,6 +38,8 @@ from .models import (
     ResultStorageKind,
     StoredRaceResultPage,
 )
+from .nar_netkeiba_provider import NarNetkeibaHttpProvider
+from .nar_netkeiba_service import NarNetkeibaService
 from .netkeiba_provider import NetkeibaHttpProvider
 from .netkeiba_service import NetkeibaService
 from .normalization import normalize_race_input, parse_bet_types
@@ -86,6 +94,16 @@ def build_netkeiba_service() -> NetkeibaService:
     return NetkeibaService(provider=provider)
 
 
+def build_nar_netkeiba_service() -> NarNetkeibaService:
+    cache_path = os.environ.get("JRA_SRB_CACHE_PATH")
+    provider = NarNetkeibaHttpProvider(
+        min_interval_seconds=_env_float("JRA_SRB_NAR_NETKEIBA_MIN_INTERVAL_SECONDS", default=1.0, minimum=0.0),
+    )
+    if cache_path:
+        return NarNetkeibaService(provider=provider, cache=SQLiteTTLCache(cache_path))
+    return NarNetkeibaService(provider=provider)
+
+
 def _env_int(name: str, default: int, minimum: int) -> int:
     value = os.environ.get(name)
     if value is None or not value.strip():
@@ -108,6 +126,7 @@ def _env_float(name: str, default: float, minimum: float) -> float:
 
 service = build_service()
 netkeiba_service = build_netkeiba_service()
+nar_netkeiba_service = build_nar_netkeiba_service()
 result_collection_jobs = ResultCollectionJobRegistry()
 
 
@@ -117,6 +136,10 @@ def get_service() -> JraService:
 
 def get_netkeiba_service() -> NetkeibaService:
     return netkeiba_service
+
+
+def get_nar_netkeiba_service() -> NarNetkeibaService:
+    return nar_netkeiba_service
 
 
 def get_result_collection_job_registry() -> ResultCollectionJobRegistry:
@@ -146,6 +169,14 @@ def build_result_storage(storage_kind: ResultStorageKind, output: str) -> Result
 
 def get_result_storage() -> ResultStorage:
     return build_result_storage(_default_result_storage_kind(), _default_result_storage_path())
+
+
+def _default_analysis_db_path() -> str:
+    return os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/analysis.sqlite")
+
+
+def get_analysis_store() -> AnalysisSQLiteStore:
+    return AnalysisSQLiteStore(_default_analysis_db_path())
 
 
 @app.middleware("http")
@@ -482,6 +513,79 @@ async def get_netkeiba_race_odds(
 
 
 @app.get(
+    "/nar/calendar",
+    tags=["nar"],
+    summary="nar calendar",
+    response_model=NarCalendarPage,
+)
+async def get_nar_calendar(
+    year: int = Query(description="year"),
+    month: int = Query(ge=1, le=12, description="month"),
+    course: str | None = Query(default=None, description="course key or Japanese venue name"),
+    svc: NarNetkeibaService = Depends(get_nar_netkeiba_service),
+):
+    return await svc.get_calendar(year=year, month=month, course=course)
+
+
+@app.get(
+    "/nar/meetings/{date_}/{course}",
+    tags=["nar"],
+    summary="nar meeting races",
+)
+async def get_nar_meeting(
+    date_: date,
+    course: str,
+    svc: NarNetkeibaService = Depends(get_nar_netkeiba_service),
+):
+    return await svc.get_meeting(date_, course)
+
+
+@app.get(
+    "/nar/races/{race_id}/card",
+    tags=["nar"],
+    summary="nar race card",
+)
+async def get_nar_race_card(
+    race_id: RaceIdPath,
+    svc: NarNetkeibaService = Depends(get_nar_netkeiba_service),
+):
+    return await svc.get_race_card(race_id)
+
+
+@app.get(
+    "/nar/races/{race_id}/result",
+    tags=["nar"],
+    summary="nar race result",
+)
+async def get_nar_race_result(
+    race_id: RaceIdPath,
+    svc: NarNetkeibaService = Depends(get_nar_netkeiba_service),
+):
+    return await svc.get_race_result(race_id)
+
+
+@app.get(
+    "/nar/races/{race_id}/odds",
+    tags=["nar"],
+    summary="nar race odds",
+)
+async def get_nar_race_odds(
+    race_id: RaceIdPath,
+    bet_type: str | None = Query(default=None, description="bet type"),
+    combination: str | None = Query(default=None, description="combination"),
+    refresh: bool = Query(default=False, description="refresh cache"),
+    svc: NarNetkeibaService = Depends(get_nar_netkeiba_service),
+):
+    parsed_combination = [item.strip() for item in combination.split(",")] if combination else None
+    return await svc.get_race_odds(
+        race_id,
+        bet_type=bet_type,
+        combination=parsed_combination,
+        refresh=refresh,
+    )
+
+
+@app.get(
     "/stored/results",
     tags=["races"],
     summary="保存済み結果を検索",
@@ -519,6 +623,75 @@ async def get_stored_result(
     if record is None:
         raise LookupError(f"stored result not found for race_id={race_id}")
     return record
+
+
+@app.post(
+    "/bet-records",
+    tags=["analysis"],
+    summary="å®Ÿè²·ã„è¨˜éŒ²ã‚’ä¿å­˜",
+    response_model=BetRecord,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_bet_record(
+    request: BetRecordCreateRequest,
+    store: AnalysisSQLiteStore = Depends(get_analysis_store),
+):
+    return store.create_bet_record(request)
+
+
+@app.get(
+    "/bet-records",
+    tags=["analysis"],
+    summary="å®Ÿè²·ã„è¨˜éŒ²ã‚’æ¤œç´¢",
+    response_model=BetRecordPage,
+)
+async def list_bet_records(
+    from_date: date | None = Query(default=None, description="å¯¾è±¡ãƒ¬ãƒ¼ã‚¹ã®é–‹å‚¬é–‹å§‹æ—¥"),
+    to_date: date | None = Query(default=None, description="å¯¾è±¡ãƒ¬ãƒ¼ã‚¹ã®é–‹å‚¬çµ‚äº†æ—¥"),
+    race_id: str | None = Query(default=None, description="race_id ã§çµžã‚Šè¾¼ã¿"),
+    course: CourseCode | None = Query(default=None, description="é–‹å‚¬å ´ã‚³ãƒ¼ãƒ‰ã§çµžã‚Šè¾¼ã¿"),
+    theory_version: str | None = Query(default=None, description="theory_version ã§çµžã‚Šè¾¼ã¿"),
+    decision_source: str | None = Query(default=None, description="agent, manual, agent_plus_manual"),
+    limit: int = Query(default=DEFAULT_PAGE_LIMIT, ge=1, le=MAX_PAGE_LIMIT, description="è¿”å´ä»¶æ•°ã€‚æœ€å¤§500ä»¶ã€‚"),
+    offset: int = Query(default=0, ge=0, description="å…ˆé ­ã‹ã‚‰ã‚¹ã‚­ãƒƒãƒ—ã™ã‚‹ä»¶æ•°ã€‚"),
+    store: AnalysisSQLiteStore = Depends(get_analysis_store),
+):
+    return store.list_bet_records(
+        from_date=from_date,
+        to_date=to_date,
+        race_id=race_id,
+        course=str(course) if course else None,
+        theory_version=theory_version,
+        decision_source=decision_source,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@app.get(
+    "/bet-records/{bet_record_id}",
+    tags=["analysis"],
+    summary="å®Ÿè²·ã„è¨˜éŒ²ã‚’å–å¾—",
+    response_model=BetRecord,
+)
+async def get_bet_record(
+    bet_record_id: str,
+    store: AnalysisSQLiteStore = Depends(get_analysis_store),
+):
+    return store.get_bet_record(bet_record_id)
+
+
+@app.post(
+    "/bet-records/{bet_record_id}/settle",
+    tags=["analysis"],
+    summary="å®Ÿè²·ã„è¨˜éŒ²ã‚’ç²¾ç®—",
+    response_model=BetRecordSettlement,
+)
+async def settle_bet_record(
+    bet_record_id: str,
+    store: AnalysisSQLiteStore = Depends(get_analysis_store),
+):
+    return store.settle_bet_record(bet_record_id)
 
 
 @app.post(

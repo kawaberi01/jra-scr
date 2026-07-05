@@ -42,16 +42,21 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "collect-netkeiba-results":
         if args.from_date > args.to_date:
             parser.error("--from-date must be earlier than or equal to --to-date")
+        if args.mapping_csv is None and not args.use_db_mapping:
+            parser.error("either --mapping-csv or --use-db-mapping is required")
         summary = asyncio.run(collect_netkeiba_results(args))
         print(format_netkeiba_collection_summary(summary))
         return 1 if summary.failed_count else 0
     if args.command == "generate-netkeiba-mapping":
         if args.from_date > args.to_date:
             parser.error("--from-date must be earlier than or equal to --to-date")
+        if args.output is None and not args.save_to_db:
+            parser.error("either --output or --save-to-db is required")
         summary = generate_netkeiba_mapping(args)
         print(
-            "output={output} total={total} mapped={mapped} unmapped={unmapped}".format(
-                output=summary.output,
+            "output={output} saved_to_db={saved_to_db} total={total} mapped={mapped} unmapped={unmapped}".format(
+                output=summary.output or "-",
+                saved_to_db=summary.saved_to_db,
                 total=summary.total_count,
                 mapped=summary.mapped_count,
                 unmapped=summary.unmapped_count,
@@ -97,6 +102,9 @@ def build_parser() -> argparse.ArgumentParser:
     analysis.add_argument("--bet-types", default=",".join(SUPPORTED_JRA_BET_TYPES))
     analysis.add_argument("--odds-timing", default="final_or_near_final")
     analysis.add_argument("--retries", type=int, default=0)
+    analysis.add_argument("--min-interval-seconds", type=float, default=0.0)
+    analysis.add_argument("--max-live-requests", type=int)
+    analysis.add_argument("--skip-existing", action="store_true")
 
     netkeiba_results = subparsers.add_parser(
         "collect-netkeiba-results",
@@ -109,7 +117,8 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=Path(os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/analysis.sqlite")),
     )
-    netkeiba_results.add_argument("--mapping-csv", type=Path, required=True)
+    netkeiba_results.add_argument("--mapping-csv", type=Path)
+    netkeiba_results.add_argument("--use-db-mapping", action="store_true")
     netkeiba_results.add_argument("--max-live-requests", type=int, default=30)
     netkeiba_results.add_argument("--min-interval-seconds", type=float, default=10.0)
     netkeiba_results.add_argument("--refresh", action="store_true")
@@ -128,8 +137,9 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=Path(os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/analysis.sqlite")),
     )
-    netkeiba_mapping.add_argument("--output", type=Path, required=True)
+    netkeiba_mapping.add_argument("--output", type=Path)
     netkeiba_mapping.add_argument("--meeting-calendar-csv", type=Path)
+    netkeiba_mapping.add_argument("--save-to-db", action="store_true")
     netkeiba_mapping.add_argument("--limit", type=int)
 
     backfill = subparsers.add_parser(
@@ -184,6 +194,9 @@ async def collect_analysis(args: argparse.Namespace, service: JraService | None 
             odds_timing=args.odds_timing,
             bet_types=bet_types,
             retries=args.retries,
+            min_interval_seconds=getattr(args, "min_interval_seconds", 0.0),
+            max_live_requests=getattr(args, "max_live_requests", None),
+            skip_existing=getattr(args, "skip_existing", False),
         )
     )
 
@@ -196,6 +209,7 @@ async def collect_netkeiba_results(args: argparse.Namespace, service: NetkeibaSe
             from_date=args.from_date,
             to_date=args.to_date,
             mapping_csv=args.mapping_csv,
+            use_db_mapping=args.use_db_mapping,
             max_live_requests=args.max_live_requests,
             min_interval_seconds=args.min_interval_seconds,
             refresh=args.refresh,
@@ -215,6 +229,7 @@ def generate_netkeiba_mapping(args: argparse.Namespace):
         output=args.output,
         meeting_calendar_csv=args.meeting_calendar_csv,
         limit=args.limit,
+        save_to_db=args.save_to_db,
     )
 
 

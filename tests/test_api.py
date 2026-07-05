@@ -1,12 +1,24 @@
 from datetime import UTC, date, datetime
+import sqlite3
 
 from fastapi.testclient import TestClient
 
-from jra_srb.app import app, get_netkeiba_service, get_result_collection_job_registry, get_result_storage, get_service
+from jra_srb.analysis_store import AnalysisSQLiteStore
+from jra_srb.app import (
+    app,
+    get_analysis_store,
+    get_nar_netkeiba_service,
+    get_netkeiba_service,
+    get_result_collection_job_registry,
+    get_result_storage,
+    get_service,
+)
 from jra_srb.batch import JsonlRaceResultStorage, SQLiteRaceResultStorage
 from jra_srb.errors import BadRequestError, ResourceNotFoundError
 from jra_srb.jobs import ResultCollectionJobRegistry
 from jra_srb.models import MeetingRace, MeetingSnapshot, PayoutEntry, RaceResult, RaceSummary, ResultEntry
+from jra_srb.nar_netkeiba_provider import NarNetkeibaFixtureProvider
+from jra_srb.nar_netkeiba_service import NarNetkeibaService
 from jra_srb.netkeiba_provider import NetkeibaFixtureProvider
 from jra_srb.netkeiba_service import NetkeibaService
 from jra_srb.provider import FixtureProvider, ProviderError
@@ -65,6 +77,12 @@ def test_get_race_card_by_meeting_coordinates_endpoint():
         assert body["race_id"] == "202603220611"
         assert body["race_name"] == CHIBA_STAKES
         assert len(body["runners"]) == 16
+        assert body["runners"][0]["horse_weight"] == "470"
+        assert body["runners"][0]["horse_weight_diff"] == "+4"
+        assert body["runners"][1]["horse_weight"] == "504"
+        assert body["runners"][1]["horse_weight_diff"] == "-4"
+        assert body["runners"][7]["horse_weight"] == "466"
+        assert body["runners"][7]["horse_weight_diff"] == "0"
     finally:
         app.dependency_overrides.clear()
 
@@ -221,6 +239,113 @@ def test_get_netkeiba_race_odds_endpoint_preserves_ordered_bet_type_combinations
         app.dependency_overrides.clear()
 
 
+def test_get_nar_calendar_endpoint_filters_course():
+    service = NarNetkeibaService(provider=NarNetkeibaFixtureProvider("tests/fixtures"))
+    app.dependency_overrides[get_nar_netkeiba_service] = lambda: service
+    try:
+        response = TestClient(app).get("/nar/calendar?year=2026&month=6&course=kawasaki")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["year"] == 2026
+        assert body["month"] == 6
+        assert len(body["entries"]) == 5
+        assert body["entries"][0]["date"] == "2026-06-15"
+        assert body["entries"][0]["course_key"] == "kawasaki"
+        assert body["entries"][0]["kaisai_id"] == "2026450615"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_get_nar_meeting_endpoint_returns_races():
+    service = NarNetkeibaService(provider=NarNetkeibaFixtureProvider("tests/fixtures"))
+    app.dependency_overrides[get_nar_netkeiba_service] = lambda: service
+    try:
+        response = TestClient(app).get("/nar/meetings/2026-06-15/kawasaki")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["course"] == "川崎"
+        assert len(body["races"]) == 12
+        assert body["races"][0]["race_id"] == "202645061501"
+        assert body["races"][0]["race_no"] == 1
+        assert body["races"][0]["race_name"] == "ラファール賞(3歳)"
+        assert body["races"][0]["start_time"] == "15:00"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_get_nar_race_card_endpoint_returns_weight_and_odds():
+    service = NarNetkeibaService(provider=NarNetkeibaFixtureProvider("tests/fixtures"))
+    app.dependency_overrides[get_nar_netkeiba_service] = lambda: service
+    try:
+        response = TestClient(app).get("/nar/races/202645061501/card")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["race_id"] == "202645061501"
+        assert body["race_name"] == "ラファール賞(3歳)"
+        assert body["surface"] == "ダート"
+        assert body["distance"] == "900"
+        assert body["start_time"] == "15:00"
+        assert body["runners"][0]["horse_name"] == "イアソン"
+        assert body["runners"][0]["horse_weight"] == "440"
+        assert body["runners"][0]["horse_weight_diff"] == "-7"
+        assert body["runners"][0]["odds"] == "129.3"
+        assert body["runners"][0]["popularity"] == "8"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_get_nar_race_result_endpoint_returns_payouts():
+    service = NarNetkeibaService(provider=NarNetkeibaFixtureProvider("tests/fixtures"))
+    app.dependency_overrides[get_nar_netkeiba_service] = lambda: service
+    try:
+        response = TestClient(app).get("/nar/races/202645061501/result")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["race_id"] == "202645061501"
+        assert body["race_name"] == "ラファール賞(3歳)"
+        assert body["date"] == "2026-06-15"
+        assert body["course"] == "川崎"
+        assert body["results"][0]["horse_name"] == "グランドマーメイド"
+        assert body["results"][0]["horse_weight"] == "457"
+        assert body["results"][0]["horse_weight_diff"] == "-2"
+        assert body["results"][0]["win_odds"] == "3.3"
+        assert any(payout["bet_type"] == "trifecta" and payout["combination"] == "2-9-4" for payout in body["payouts"])
+        assert body["corner_passages"][0].startswith("2")
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_get_nar_race_odds_endpoint_filters_and_normalizes_combination():
+    service = NarNetkeibaService(provider=NarNetkeibaFixtureProvider("tests/fixtures"))
+    app.dependency_overrides[get_nar_netkeiba_service] = lambda: service
+    try:
+        client = TestClient(app)
+        wide_reverse = client.get("/nar/races/202645061501/odds?bet_type=wide&combination=4,2")
+        exacta_forward = client.get("/nar/races/202645061501/odds?bet_type=exacta&combination=2,4")
+        exacta_reverse = client.get("/nar/races/202645061501/odds?bet_type=exacta&combination=4,2")
+
+        assert wide_reverse.status_code == 200
+        assert wide_reverse.json()["entries"] == [
+            {
+                "bet_type": "wide",
+                "combination": ["2", "4"],
+                "odds": None,
+                "odds_min": "1.6",
+                "odds_max": "2.0",
+                "popularity": None,
+            }
+        ]
+
+        assert exacta_forward.status_code == 200
+        assert exacta_reverse.status_code == 200
+        assert exacta_forward.json()["entries"][0]["combination"] == ["2", "4"]
+        assert exacta_forward.json()["entries"][0]["odds"] == "7.3"
+        assert exacta_reverse.json()["entries"][0]["combination"] == ["4", "2"]
+        assert exacta_reverse.json()["entries"][0]["odds"] == "7.8"
+    finally:
+        app.dependency_overrides.clear()
+
+
 def test_mcp_endpoint_is_mounted():
     client = TestClient(app)
     response = client.get("/mcp")
@@ -268,6 +393,131 @@ def test_openapi_contains_japanese_api_guidance():
     assert parameters["bet_type"]["description"] == BET_TYPE_DESCRIPTION
     assert parameters["combination"]["description"] == COMBINATION_DESCRIPTION
     assert "ApiErrorResponse" in body["components"]["schemas"]
+
+
+def test_post_bet_records_endpoint_expands_wide_box(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    app.dependency_overrides[get_analysis_store] = lambda: store
+    try:
+        client = TestClient(app)
+        response = client.post(
+            "/bet-records",
+            json={
+                "race_id": "202607051011",
+                "decision_source": "manual",
+                "total_amount": 400,
+                "tickets": [
+                    {
+                        "bet_type": "wide",
+                        "mode": "box",
+                        "selection": ["2", "4", "10"],
+                        "amount_per_ticket": 100,
+                    },
+                    {
+                        "bet_type": "trio",
+                        "selection": ["2", "4", "10"],
+                        "amount": 100,
+                    },
+                ],
+            },
+        )
+
+        assert response.status_code == 201
+        body = response.json()
+        assert body["race_id"] == "202607051011"
+        assert body["total_amount"] == 400
+        assert [ticket["selection"] for ticket in body["tickets"]] == ["2-4", "2-10", "4-10", "2-4-10"]
+        assert [ticket["is_box_expanded"] for ticket in body["tickets"]] == [True, True, True, False]
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_get_bet_record_endpoint_returns_prediction_link(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    record = store.create_bet_record(
+        {
+            "race_id": "202607051011",
+            "prediction_id": "pred-1",
+            "theory_version": "v1",
+            "decision_source": "agent",
+            "total_amount": 100,
+            "tickets": [
+                {
+                    "prediction_ticket_id": "pt-1",
+                    "bucket": "core",
+                    "bet_type": "wide",
+                    "selection": ["2", "10"],
+                    "amount": 100,
+                }
+            ],
+        }
+    )
+    with sqlite3.connect(store.path) as conn:
+        conn.execute(
+            """
+            insert into predictions
+            (prediction_id, race_id, theory_version, mode, budget, pre_race_snapshot_json, prediction_json, created_at)
+            values (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            ("pred-1", "202607051011", "v1", "auto", 1000, "{}", "{\"score\": 0.8}", datetime.now(UTC).isoformat()),
+        )
+        conn.execute(
+            """
+            insert into prediction_tickets
+            (ticket_id, prediction_id, race_id, bucket, bet_type, selection, selection_json, amount, reason)
+            values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            ("pt-1", "pred-1", "202607051011", "core", "wide", "2-10", "[\"2\", \"10\"]", 100, "seed"),
+        )
+
+    app.dependency_overrides[get_analysis_store] = lambda: store
+    try:
+        response = TestClient(app).get(f"/bet-records/{record.bet_record_id}")
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["prediction"]["prediction_id"] == "pred-1"
+        assert body["prediction_tickets"][0]["ticket_id"] == "pt-1"
+        assert body["tickets"][0]["prediction_ticket_id"] == "pt-1"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_settle_bet_record_endpoint_returns_zero_for_all_miss(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    store.write_result(
+        RaceResult(
+            race_id="202607051011",
+            race_name="Kitakyushu Kinen",
+            results=[],
+            payouts=[PayoutEntry(bet_type="wide", combination="1-3", payout="800")],
+            fetched_at=datetime.now(UTC),
+            source="result",
+        )
+    )
+    record = store.create_bet_record(
+        {
+            "race_id": "202607051011",
+            "decision_source": "manual",
+            "total_amount": 400,
+            "tickets": [
+                {"bet_type": "wide", "mode": "box", "selection": ["2", "4", "10"], "amount_per_ticket": 100},
+                {"bet_type": "trio", "selection": ["2", "4", "10"], "amount": 100},
+            ],
+        }
+    )
+
+    app.dependency_overrides[get_analysis_store] = lambda: store
+    try:
+        response = TestClient(app).post(f"/bet-records/{record.bet_record_id}/settle")
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["total_bet"] == 400
+        assert body["total_payout"] == 0
+        assert body["hit"] is False
+    finally:
+        app.dependency_overrides.clear()
 
 
 class MissingRaceService:

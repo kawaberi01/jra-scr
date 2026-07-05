@@ -21,6 +21,7 @@ class CourseCode(StrEnum):
 
 class BetType(StrEnum):
     win = "win"
+    place = "place"
     quinella = "quinella"
     wide = "wide"
     exacta = "exacta"
@@ -40,6 +41,12 @@ class ResultCollectionJobStatus(StrEnum):
     failed = "failed"
 
 
+class DecisionSource(StrEnum):
+    agent = "agent"
+    manual = "manual"
+    agent_plus_manual = "agent_plus_manual"
+
+
 class RaceSummary(BaseModel):
     race_id: str
     race_number: str | None = None
@@ -57,6 +64,8 @@ class Runner(BaseModel):
     weight_carried: str | None = None
     jockey: str | None = None
     trainer: str | None = None
+    horse_weight: str | None = None
+    horse_weight_diff: str | None = None
     odds: str | None = None
     popularity: str | None = None
 
@@ -118,6 +127,25 @@ class NetkeibaRaceResult(BaseModel):
     results: list[NetkeibaResultEntry] = Field(default_factory=list)
     payouts: list[PayoutEntry] = Field(default_factory=list)
     corner_passages: list[str] = Field(default_factory=list)
+    fetched_at: datetime
+    source: str
+    cache_hit: bool = False
+
+
+class NarCalendarEntry(BaseModel):
+    date: date
+    course: str
+    course_key: str
+    kaisai_id: str
+    race_list_url: str | None = None
+    tags: list[str] = Field(default_factory=list)
+
+
+class NarCalendarPage(BaseModel):
+    year: int
+    month: int
+    course: str | None = None
+    entries: list[NarCalendarEntry] = Field(default_factory=list)
     fetched_at: datetime
     source: str
     cache_hit: bool = False
@@ -262,3 +290,111 @@ class ApiError(BaseModel):
 
 class ApiErrorResponse(BaseModel):
     error: ApiError
+
+
+class BetRecordTicketRequest(BaseModel):
+    prediction_ticket_id: str | None = None
+    bucket: str | None = None
+    bet_type: BetType
+    mode: str = "normal"
+    selection: list[str] = Field(default_factory=list)
+    amount: int | None = Field(default=None, ge=1)
+    amount_per_ticket: int | None = Field(default=None, ge=1)
+    odds_at_buy: float | None = None
+    reason: str | None = None
+
+    @model_validator(mode="after")
+    def validate_ticket(self) -> "BetRecordTicketRequest":
+        if self.mode not in {"normal", "box"}:
+            raise ValueError("mode must be normal or box")
+        if not self.selection:
+            raise ValueError("selection must not be empty")
+        if self.mode == "normal" and self.amount is None:
+            raise ValueError("amount is required for normal mode")
+        if self.mode == "box" and self.amount_per_ticket is None:
+            raise ValueError("amount_per_ticket is required for box mode")
+        return self
+
+
+class BetRecordCreateRequest(BaseModel):
+    race_id: str = Field(pattern=r"^\d{12}$")
+    prediction_id: str | None = None
+    theory_version: str | None = None
+    decision_source: DecisionSource
+    purchased_at: datetime | None = None
+    total_amount: int = Field(ge=1)
+    note: str | None = None
+    tickets: list[BetRecordTicketRequest] = Field(min_length=1)
+
+
+class BetRecordTicket(BaseModel):
+    bet_ticket_id: str
+    bet_record_id: str
+    race_id: str
+    prediction_ticket_id: str | None = None
+    bucket: str | None = None
+    bet_type: str
+    selection: str
+    selection_json: list[str] = Field(default_factory=list)
+    amount: int
+    odds_at_buy: float | None = None
+    is_box_expanded: bool
+    reason: str | None = None
+    created_at: datetime
+
+
+class BetRecordResultTicket(BaseModel):
+    bet_type: str
+    selection: str
+    selection_json: list[str] = Field(default_factory=list)
+    amount: int
+    hit: bool
+    payout: int
+
+
+class BetRecordResult(BaseModel):
+    bet_record_result_id: str
+    bet_record_id: str
+    race_id: str
+    total_bet: int
+    total_payout: int
+    return_rate: float
+    hit: bool
+    settled_at: datetime
+    result_json: dict
+    created_at: datetime
+
+
+class BetRecordSettlement(BaseModel):
+    bet_record_id: str
+    race_id: str
+    total_bet: int
+    total_payout: int
+    return_rate: float
+    hit: bool
+    settled_at: datetime
+    ticket_results: list[BetRecordResultTicket] = Field(default_factory=list)
+
+
+class BetRecord(BaseModel):
+    bet_record_id: str
+    race_id: str
+    prediction_id: str | None = None
+    theory_version: str | None = None
+    decision_source: DecisionSource
+    purchased_at: datetime | None = None
+    total_amount: int
+    note: str | None = None
+    created_at: datetime
+    updated_at: datetime
+    tickets: list[BetRecordTicket] = Field(default_factory=list)
+    prediction: dict | None = None
+    prediction_tickets: list[dict] = Field(default_factory=list)
+    result: BetRecordResult | None = None
+
+
+class BetRecordPage(BaseModel):
+    items: list[BetRecord] = Field(default_factory=list)
+    total: int
+    limit: int
+    offset: int

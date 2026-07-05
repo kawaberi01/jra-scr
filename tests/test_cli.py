@@ -3,8 +3,9 @@ from datetime import UTC, date, datetime
 import pytest
 
 from jra_srb.analysis_store import AnalysisSQLiteStore
-from jra_srb.cli import build_parser, collect_netkeiba_results, collect_results, generate_netkeiba_mapping
+from jra_srb.cli import build_parser, collect_analysis, collect_netkeiba_results, collect_results, generate_netkeiba_mapping
 from jra_srb.models import MeetingRace, MeetingSnapshot, NetkeibaRaceResult, RaceResult
+from jra_srb.models import NetkeibaResultEntry, PayoutEntry
 
 
 class FakeCliService:
@@ -27,6 +28,18 @@ class FakeCliService:
             source="fake",
         )
 
+    async def get_race_card_by_number(self, target_date: date, course: str, race_no: int):
+        from jra_srb.models import RaceCard, Runner
+
+        return RaceCard(
+            race_id=f"{target_date:%Y%m%d}06{race_no:02d}",
+            race_name="Fake Race",
+            course=course,
+            runners=[Runner(horse_no="1", horse_name="Fake Horse")],
+            fetched_at=datetime.now(UTC),
+            source="fake",
+        )
+
 
 class FakeNetkeibaCliService:
     def __init__(self) -> None:
@@ -40,6 +53,15 @@ class FakeNetkeibaCliService:
             date="2026-05-02",
             course="Tokyo",
             race_no="11",
+            results=[
+                NetkeibaResultEntry(
+                    rank="1",
+                    horse_no="1",
+                    horse_name="Sample Horse",
+                    win_odds="5.0",
+                )
+            ],
+            payouts=[PayoutEntry(bet_type="wide", combination="1-2", payout="1,000", popularity="1")],
             fetched_at=datetime.now(UTC),
             source="fake-netkeiba",
         )
@@ -129,6 +151,61 @@ def test_cli_parser_accepts_analysis_maintenance_commands(tmp_path):
     assert verify.sample_size == 3
 
 
+def test_cli_parser_accepts_collect_analysis_min_interval(tmp_path):
+    parser = build_parser()
+
+    args = parser.parse_args(
+        [
+            "collect-analysis",
+            "--db",
+            str(tmp_path / "analysis.sqlite"),
+            "--from-date",
+            "2026-03-22",
+            "--to-date",
+            "2026-03-22",
+            "--courses",
+            "nakayama",
+            "--include-card",
+            "--include-results",
+            "--min-interval-seconds",
+            "1.5",
+            "--max-live-requests",
+            "10",
+            "--skip-existing",
+        ]
+    )
+
+    assert args.command == "collect-analysis"
+    assert args.min_interval_seconds == 1.5
+    assert args.max_live_requests == 10
+    assert args.skip_existing is True
+
+
+@pytest.mark.asyncio
+async def test_collect_analysis_passes_min_interval_option(tmp_path):
+    args = type(
+        "Args",
+        (),
+        {
+            "db": tmp_path / "analysis.sqlite",
+            "courses": "nakayama",
+            "from_date": date(2026, 3, 22),
+            "to_date": date(2026, 3, 22),
+            "include_card": True,
+            "include_odds": False,
+            "include_results": True,
+            "bet_types": "wide",
+            "odds_timing": "final_or_near_final",
+            "retries": 0,
+            "min_interval_seconds": 0.0,
+        },
+    )()
+
+    run_id = await collect_analysis(args, service=FakeCliService())  # type: ignore[arg-type]
+
+    assert run_id
+
+
 def test_cli_parser_accepts_collect_netkeiba_results(tmp_path):
     parser = build_parser()
 
@@ -160,6 +237,24 @@ def test_cli_parser_accepts_collect_netkeiba_results(tmp_path):
     assert args.dry_run is True
     assert args.limit == 2
 
+    db_args = parser.parse_args(
+        [
+            "collect-netkeiba-results",
+            "--db",
+            str(tmp_path / "analysis.sqlite"),
+            "--use-db-mapping",
+            "--from-date",
+            "2026-05-01",
+            "--to-date",
+            "2026-05-31",
+            "--dry-run",
+        ]
+    )
+
+    assert db_args.command == "collect-netkeiba-results"
+    assert db_args.mapping_csv is None
+    assert db_args.use_db_mapping is True
+
 
 @pytest.mark.asyncio
 async def test_collect_netkeiba_results_writes_and_skips_saved_results(tmp_path):
@@ -179,6 +274,7 @@ async def test_collect_netkeiba_results_writes_and_skips_saved_results(tmp_path)
         {
             "db": tmp_path / "analysis.sqlite",
             "mapping_csv": mapping,
+            "use_db_mapping": False,
             "from_date": date(2026, 5, 1),
             "to_date": date(2026, 5, 31),
             "max_live_requests": 30,
@@ -220,6 +316,7 @@ async def test_collect_netkeiba_results_stops_at_live_request_limit(tmp_path):
         {
             "db": tmp_path / "analysis.sqlite",
             "mapping_csv": mapping,
+            "use_db_mapping": False,
             "from_date": date(2026, 5, 1),
             "to_date": date(2026, 5, 31),
             "max_live_requests": 1,
@@ -258,6 +355,7 @@ async def test_collect_netkeiba_results_dry_run_does_not_call_live_service_and_r
         {
             "db": tmp_path / "analysis.sqlite",
             "mapping_csv": mapping,
+            "use_db_mapping": False,
             "from_date": date(2026, 5, 1),
             "to_date": date(2026, 5, 31),
             "max_live_requests": 30,
@@ -300,6 +398,7 @@ async def test_collect_netkeiba_results_limit_restricts_targets_before_collectio
         {
             "db": tmp_path / "analysis.sqlite",
             "mapping_csv": mapping,
+            "use_db_mapping": False,
             "from_date": date(2026, 5, 1),
             "to_date": date(2026, 5, 31),
             "max_live_requests": 30,
@@ -345,6 +444,7 @@ def test_generate_netkeiba_mapping_restores_course_from_jra_race_id_and_writes_u
             "to_date": date(2026, 5, 31),
             "output": output,
             "meeting_calendar_csv": None,
+            "save_to_db": False,
             "limit": None,
         },
     )()
@@ -360,6 +460,73 @@ def test_generate_netkeiba_mapping_restores_course_from_jra_race_id_and_writes_u
     assert ",tokyo," in lines[1]
     assert "unmapped" in lines[2]
     assert "invalid jra_race_id=bad-race-id" in lines[2]
+
+
+@pytest.mark.asyncio
+async def test_generate_netkeiba_mapping_saves_to_db_and_collect_dry_run_uses_db_mapping(tmp_path):
+    db = tmp_path / "analysis.sqlite"
+    store = AnalysisSQLiteStore(db)
+    store.write_race(
+        date(2026, 5, 2),
+        "course: 1,600m dirt left",
+        MeetingRace(race_no=11, race_id="202605020511", race_name="Mapped"),
+    )
+    with store._connect() as conn:
+        conn.execute(
+            """
+            insert into races (race_id, race_date, course, race_no, race_name)
+            values (?, ?, ?, ?, ?)
+            """,
+            ("bad-race-id", "2026-05-02", "tokyo", 12, "Unmapped"),
+        )
+    generate_args = type(
+        "Args",
+        (),
+        {
+            "db": db,
+            "from_date": date(2026, 5, 1),
+            "to_date": date(2026, 5, 31),
+            "output": None,
+            "meeting_calendar_csv": None,
+            "save_to_db": True,
+            "limit": None,
+        },
+    )()
+
+    summary = generate_netkeiba_mapping(generate_args)
+
+    assert summary.output is None
+    assert summary.saved_to_db is True
+    assert summary.mapped_count == 1
+    assert summary.unmapped_count == 1
+
+    collect_args = type(
+        "Args",
+        (),
+        {
+            "db": db,
+            "mapping_csv": None,
+            "use_db_mapping": True,
+            "from_date": date(2026, 5, 1),
+            "to_date": date(2026, 5, 31),
+            "max_live_requests": 30,
+            "min_interval_seconds": 0.0,
+            "refresh": False,
+            "retries": 0,
+            "dry_run": True,
+            "limit": None,
+        },
+    )()
+    service = FakeNetkeibaCliService()
+
+    collect_summary = await collect_netkeiba_results(collect_args, service=service)  # type: ignore[arg-type]
+
+    assert collect_summary.dry_run is True
+    assert collect_summary.target_count == 2
+    assert collect_summary.unsaved_count == 1
+    assert collect_summary.unmappable_count == 1
+    assert collect_summary.planned_request_count == 1
+    assert service.calls == []
 
 
 def test_generate_netkeiba_mapping_uses_calendar_context_before_from_date(tmp_path):
@@ -395,6 +562,7 @@ def test_generate_netkeiba_mapping_uses_calendar_context_before_from_date(tmp_pa
             "to_date": date(2025, 10, 5),
             "output": output,
             "meeting_calendar_csv": calendar,
+            "save_to_db": False,
             "limit": None,
         },
     )()

@@ -5,6 +5,7 @@ import pytest
 
 from jra_srb.analysis_store import AnalysisSQLiteStore
 from jra_srb.models import (
+    BetRecordCreateRequest,
     MeetingRace,
     NetkeibaRaceResult,
     NetkeibaResultEntry,
@@ -38,6 +39,10 @@ def test_analysis_store_creates_schema(tmp_path):
     assert "netkeiba_result_entries" in tables
     assert "netkeiba_payouts" in tables
     assert "netkeiba_odds_entries" in tables
+    assert "netkeiba_race_mappings" in tables
+    assert "bet_records" in tables
+    assert "bet_record_tickets" in tables
+    assert "bet_record_results" in tables
 
 
 def test_analysis_store_writes_pre_race_and_result_data_without_leaking_result_to_snapshot(tmp_path):
@@ -109,6 +114,9 @@ def test_analysis_store_writes_pre_race_and_result_data_without_leaking_result_t
     assert "payouts" not in snapshot
     assert store.count_rows("result_entries") == 1
     assert store.count_rows("payouts") == 1
+    assert store.has_card("202603220611") is True
+    assert store.has_result("202603220611") is True
+    assert store.has_odds_snapshot("202603220611", "wide") is True
 
 
 def test_analysis_store_upserts_card_and_odds_without_duplicates(tmp_path):
@@ -223,6 +231,71 @@ def test_analysis_store_writes_netkeiba_result_and_odds(tmp_path):
     assert stored_odds["odds_min"] == 16.1
 
 
+def test_analysis_store_treats_incomplete_netkeiba_result_as_missing(tmp_path):
+    path = tmp_path / "analysis.sqlite"
+    store = AnalysisSQLiteStore(path)
+
+    with sqlite3.connect(path) as conn:
+        conn.execute(
+            """
+            insert into netkeiba_race_results
+            (netkeiba_race_id, jra_race_id, source, fetched_at)
+            values (?, ?, ?, ?)
+            """,
+            ("202605021211", "202606280301", "fixture", datetime.now(UTC).isoformat()),
+        )
+
+    assert store.has_netkeiba_result("202605021211") is False
+
+
+def test_analysis_store_upserts_and_lists_netkeiba_race_mappings(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    store.write_netkeiba_race_mappings(
+        [
+            {
+                "jra_race_id": "202605020511",
+                "netkeiba_race_id": "202605010111",
+                "race_date": "2026-05-02",
+                "course": "tokyo",
+                "race_no": "11",
+                "mapping_status": "mapped_estimated",
+                "mapping_note": "first",
+            },
+            {
+                "jra_race_id": "202605020512",
+                "netkeiba_race_id": "",
+                "race_date": "2026-05-02",
+                "course": "tokyo",
+                "race_no": "12",
+                "mapping_status": "unmapped",
+                "mapping_note": "no calendar",
+            },
+        ]
+    )
+    store.write_netkeiba_race_mappings(
+        [
+            {
+                "jra_race_id": "202605020511",
+                "netkeiba_race_id": "202605040111",
+                "race_date": "2026-05-02",
+                "course": "tokyo",
+                "race_no": "11",
+                "mapping_status": "mapped",
+                "mapping_note": "updated",
+            }
+        ]
+    )
+
+    mappings = store.list_netkeiba_race_mappings(date(2026, 5, 1), date(2026, 5, 31))
+
+    assert store.count_rows("netkeiba_race_mappings") == 2
+    assert mappings[0]["jra_race_id"] == "202605020511"
+    assert mappings[0]["netkeiba_race_id"] == "202605040111"
+    assert mappings[0]["mapping_status"] == "mapped"
+    assert mappings[0]["mapping_note"] == "updated"
+    assert mappings[1]["mapping_status"] == "unmapped"
+
+
 def test_analysis_store_records_collection_error(tmp_path):
     store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
     store.write_error(
@@ -236,6 +309,195 @@ def test_analysis_store_records_collection_error(tmp_path):
     )
 
     assert store.count_rows("collection_errors") == 1
+
+
+def test_analysis_store_creates_bet_record_with_box_expansion(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+
+    record = store.create_bet_record(
+        BetRecordCreateRequest.model_validate(
+            {
+                "race_id": "202607051011",
+                "decision_source": "manual",
+                "total_amount": 400,
+                "tickets": [
+                    {
+                        "bet_type": "wide",
+                        "mode": "box",
+                        "selection": ["2", "4", "10"],
+                        "amount_per_ticket": 100,
+                    },
+                    {
+                        "bet_type": "trio",
+                        "mode": "normal",
+                        "selection": ["2", "4", "10"],
+                        "amount": 100,
+                    },
+                ],
+            }
+        )
+    )
+
+    assert record.total_amount == 400
+    assert [ticket.selection for ticket in record.tickets] == ["2-4", "2-10", "4-10", "2-4-10"]
+    assert [ticket.is_box_expanded for ticket in record.tickets] == [True, True, True, False]
+    assert store.count_rows("bet_records") == 1
+    assert store.count_rows("bet_record_tickets") == 4
+
+
+def test_analysis_store_gets_bet_record_with_prediction_link(tmp_path):
+    path = tmp_path / "analysis.sqlite"
+    store = AnalysisSQLiteStore(path)
+    record = store.create_bet_record(
+        BetRecordCreateRequest.model_validate(
+            {
+                "race_id": "202607051011",
+                "prediction_id": "pred-1",
+                "theory_version": "v1",
+                "decision_source": "agent",
+                "total_amount": 100,
+                "tickets": [
+                    {
+                        "prediction_ticket_id": "pt-1",
+                        "bucket": "core",
+                        "bet_type": "wide",
+                        "selection": ["2", "10"],
+                        "amount": 100,
+                    }
+                ],
+            }
+        )
+    )
+
+    with sqlite3.connect(path) as conn:
+        conn.execute(
+            """
+            insert into predictions
+            (prediction_id, race_id, theory_version, mode, budget, pre_race_snapshot_json, prediction_json, created_at)
+            values (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            ("pred-1", "202607051011", "v1", "auto", 1000, "{}", "{\"score\": 0.8}", datetime.now(UTC).isoformat()),
+        )
+        conn.execute(
+            """
+            insert into prediction_tickets
+            (ticket_id, prediction_id, race_id, bucket, bet_type, selection, selection_json, amount, reason)
+            values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            ("pt-1", "pred-1", "202607051011", "core", "wide", "2-10", "[\"2\", \"10\"]", 100, "seed"),
+        )
+
+    loaded = store.get_bet_record(record.bet_record_id)
+
+    assert loaded.prediction is not None
+    assert loaded.prediction["prediction_id"] == "pred-1"
+    assert loaded.prediction_tickets[0]["ticket_id"] == "pt-1"
+    assert loaded.tickets[0].prediction_ticket_id == "pt-1"
+
+
+def test_analysis_store_settles_all_miss_to_zero_payout(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    store.write_result(
+        RaceResult(
+            race_id="202607051011",
+            race_name="Kitakyushu Kinen",
+            results=[],
+            payouts=[PayoutEntry(bet_type="wide", combination="1-3", payout="800")],
+            fetched_at=datetime.now(UTC),
+            source="result",
+        )
+    )
+    record = store.create_bet_record(
+        BetRecordCreateRequest.model_validate(
+            {
+                "race_id": "202607051011",
+                "decision_source": "manual",
+                "total_amount": 400,
+                "tickets": [
+                    {"bet_type": "wide", "mode": "box", "selection": ["2", "4", "10"], "amount_per_ticket": 100},
+                    {"bet_type": "trio", "mode": "normal", "selection": ["2", "4", "10"], "amount": 100},
+                ],
+            }
+        )
+    )
+
+    settlement = store.settle_bet_record(record.bet_record_id)
+
+    assert settlement.total_bet == 400
+    assert settlement.total_payout == 0
+    assert settlement.hit is False
+    assert all(ticket.hit is False and ticket.payout == 0 for ticket in settlement.ticket_results)
+    assert store.count_rows("bet_record_results") == 1
+
+
+def test_analysis_store_settles_unordered_bet_type_with_normalized_match(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    store.write_result(
+        RaceResult(
+            race_id="202607051011",
+            race_name="Kitakyushu Kinen",
+            results=[],
+            payouts=[PayoutEntry(bet_type="wide", combination="10-2", payout="1,610")],
+            fetched_at=datetime.now(UTC),
+            source="result",
+        )
+    )
+    record = store.create_bet_record(
+        BetRecordCreateRequest.model_validate(
+            {
+                "race_id": "202607051011",
+                "decision_source": "manual",
+                "total_amount": 100,
+                "tickets": [{"bet_type": "wide", "selection": ["2", "10"], "amount": 100}],
+            }
+        )
+    )
+
+    settlement = store.settle_bet_record(record.bet_record_id)
+
+    assert settlement.hit is True
+    assert settlement.total_payout == 1610
+    assert settlement.ticket_results[0].selection == "2-10"
+    assert settlement.ticket_results[0].payout == 1610
+
+
+def test_analysis_store_settles_ordered_bet_types_with_order_preserved(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    store.write_result(
+        RaceResult(
+            race_id="202607051011",
+            race_name="Kitakyushu Kinen",
+            results=[],
+            payouts=[
+                PayoutEntry(bet_type="馬単", combination="1-2", payout="900"),
+                PayoutEntry(bet_type="3連単", combination="1-2-3", payout="2,400"),
+            ],
+            fetched_at=datetime.now(UTC),
+            source="result",
+        )
+    )
+    record = store.create_bet_record(
+        BetRecordCreateRequest.model_validate(
+            {
+                "race_id": "202607051011",
+                "decision_source": "manual",
+                "total_amount": 200,
+                "tickets": [
+                    {"bet_type": "exacta", "selection": ["1", "2"], "amount": 100},
+                    {"bet_type": "trifecta", "selection": ["1", "3", "2"], "amount": 100},
+                ],
+            }
+        )
+    )
+
+    settlement = store.settle_bet_record(record.bet_record_id)
+
+    assert settlement.total_payout == 900
+    assert settlement.ticket_results[0].hit is True
+    assert settlement.ticket_results[0].payout == 900
+    assert settlement.ticket_results[1].selection == "1-3-2"
+    assert settlement.ticket_results[1].hit is False
+    assert settlement.ticket_results[1].payout == 0
 
 
 def test_analysis_store_rejects_invalid_count_table(tmp_path):

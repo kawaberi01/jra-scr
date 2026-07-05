@@ -220,10 +220,11 @@ class JraService:
         logger.info("get_meeting", extra={"target_date": target_date.isoformat(), "course": course})
         cache_key = f"meeting:{target_date.isoformat()}:{course}"
         cached = self.cache.get(cache_key)
-        if cached is not None:
+        if cached is not None and cached.races:
             return cached.model_copy(update={"cache_hit": True})
         meeting = await self._load_meeting_for_date(target_date, course)
-        self.cache.set(cache_key, meeting, ttl_seconds=60)
+        if meeting.races:
+            self.cache.set(cache_key, meeting, ttl_seconds=60)
         return meeting
 
     async def get_meetings_for_date(self, target_date: date) -> list[MeetingSnapshot]:
@@ -232,13 +233,13 @@ class JraService:
             courses = {summary.course for summary in await self.get_races(target_date) if summary.course}
             return [await self.get_meeting(target_date, course) for course in sorted(courses)]
         meetings = await self._get_meetings_for_date(target_date)
-        if meetings:
+        if self._has_meeting_races(meetings):
             return meetings
         meetings = await self._get_meetings_for_date_from_kind(target_date, kind="payout")
-        if meetings:
+        if self._has_meeting_races(meetings):
             return meetings
         meetings = await self._get_meetings_for_date_from_result_selection(target_date)
-        if meetings:
+        if self._has_meeting_races(meetings):
             return meetings
         return await self._get_meetings_for_date_from_calendar(target_date)
 
@@ -372,14 +373,17 @@ class JraService:
         for resolved in self.navigation.list_meetings_from_selection(select_page, target_date, kind=kind):
             cache_key = f"meeting:{target_date.isoformat()}:{resolved.course}"
             cached = self.cache.get(cache_key)
-            if cached is not None:
+            if cached is not None and cached.races:
                 meetings.append(cached.model_copy(update={"cache_hit": True}))
                 continue
             meeting_page = await self.provider.post_jradb(path, resolved.cname)
+            races = parse_meeting_races(meeting_page.content)
+            if not races:
+                continue
             meeting = MeetingSnapshot(
                 date=target_date,
                 course=resolved.course,
-                races=parse_meeting_races(meeting_page.content),
+                races=races,
                 fetched_at=datetime.now(UTC),
                 source=meeting_page.source,
             )
@@ -448,7 +452,7 @@ class JraService:
             course = item["course"]
             cache_key = f"meeting:{target_date.isoformat()}:{course}"
             cached = self.cache.get(cache_key)
-            if cached is not None:
+            if cached is not None and cached.races:
                 meetings.append(cached.model_copy(update={"cache_hit": True}))
                 continue
             races = [
@@ -478,11 +482,13 @@ class JraService:
         for resolved in self.navigation.list_meetings_from_selection(select_page, target_date, kind="result"):
             cache_key = f"meeting:{target_date.isoformat()}:{resolved.course}"
             cached = self.cache.get(cache_key)
-            if cached is not None:
+            if cached is not None and cached.races:
                 meetings.append(cached.model_copy(update={"cache_hit": True}))
                 continue
             meeting_page = await self.provider.post_jradb("/JRADB/accessS.html", resolved.cname)
             race_navigation = parse_result_race_navigation(meeting_page.content)
+            if not race_navigation:
+                continue
             races = [
                 MeetingRace(
                     race_no=race_no,
@@ -514,10 +520,13 @@ class JraService:
                     kind=kind,
                 )
                 meeting_page = await self.provider.post_jradb(path, resolved.cname)
+                races = parse_meeting_races(meeting_page.content)
+                if not races:
+                    continue
                 return MeetingSnapshot(
                     date=target_date,
                     course=course,
-                    races=parse_meeting_races(meeting_page.content),
+                    races=races,
                     fetched_at=datetime.now(UTC),
                     source=meeting_page.source,
                 )
@@ -537,6 +546,10 @@ class JraService:
         if kind == "payout":
             return "/JRADB/accessH.html", "pw01hli00/03"
         raise BadRequestError(f"unsupported meeting selection kind={kind}")
+
+    @staticmethod
+    def _has_meeting_races(meetings: list[MeetingSnapshot]) -> bool:
+        return any(meeting.races for meeting in meetings)
 
     async def _get_jra_race_odds_bundle(
         self,
