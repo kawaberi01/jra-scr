@@ -56,6 +56,7 @@ class TheoryConfig:
     max_field_size_to_bet: int | None = None
     surface_to_bet: str | None = None
     excluded_course_codes: tuple[str, ...] | None = None
+    allowed_course_codes: tuple[str, ...] | None = None
     axis_odds_max: float | None = None
     max_axis_odds_to_bet: float | None = None
     first_middle_min_axis_score_gap: float | None = None
@@ -2897,6 +2898,56 @@ THEORIES: dict[str, TheoryConfig] = {
         axis_field_size_ge_14_bonus=1.0,
         axis_field_size_le_10_penalty=2.0,
     ),
+    "v89": TheoryConfig(
+        version="v89",
+        score_note="v86 main-venue branch: only course_code 05/06/08/09 (Tokyo/Nakayama/Kyoto/Hanshin)",
+        recent_top3_weight=45.0,
+        top3_weight=25.0,
+        same_surface_weight=20.0,
+        same_dist_weight=20.0,
+        starts_bonus_cap=8.0,
+        starts_bonus_weight=0.8,
+        recent_avg_rank_penalty=1.8,
+        middle_odds_min=8.0,
+        middle_odds_max=20.0,
+        min_middles_to_bet=2,
+        max_race_no_to_bet=8,
+        min_field_size_to_bet=14,
+        allowed_course_codes=("05", "06", "08", "09"),
+        axis_odds_max=10.0,
+        second_middle_min_axis_score_gap=5.0,
+        single_middle_min_axis_score_gap=10.0,
+        single_middle_min_odds_ratio=5.0,
+        standard_max_middles=1,
+        axis_popularity_max=3,
+        middle_max_abs_weight_diff=4,
+        ticket_allowed_axis_popularity_buckets=("1", "2"),
+        ticket_allowed_middle_popularity_buckets=("4", "5"),
+        ticket_allowed_axis_odds_buckets=("le_2_5", "2_5_4", "gt_6"),
+        ticket_allowed_middle_jockey_recent_top3_rate_buckets=("lt_0_15", "0_25_0_35", "ge_0_35", "missing"),
+        middle_same_dist_lt_0_15_bonus=8.0,
+        middle_same_dist_0_25_0_35_bonus=4.0,
+        middle_same_dist_0_25_0_35_bonus_axis_odds_max=2.0,
+        middle_same_dist_ge_0_35_penalty=6.0,
+        middle_same_dist_missing_bonus=2.0,
+        middle_jockey_same_surface_lt_0_15_bonus=4.0,
+        middle_jockey_same_surface_0_25_0_35_bonus=2.0,
+        middle_jockey_same_surface_ge_0_35_penalty=4.0,
+        middle_field_size_ge_14_bonus=2.0,
+        middle_field_size_le_10_penalty=6.0,
+        middle_large_field_odds_over_10_penalty=2.0,
+        axis_same_dist_ge_0_35_bonus=5.0,
+        axis_same_dist_0_25_0_35_bonus=2.0,
+        axis_same_dist_lt_0_15_penalty=4.0,
+        axis_jockey_recent_ge_0_35_bonus=3.0,
+        axis_jockey_recent_lt_0_15_penalty=2.0,
+        axis_trainer_recent_ge_0_35_bonus=2.0,
+        axis_trainer_recent_lt_0_15_penalty=2.0,
+        axis_same_surface_ge_0_35_bonus=3.0,
+        axis_same_surface_lt_0_15_penalty=2.0,
+        axis_field_size_ge_14_bonus=1.0,
+        axis_field_size_le_10_penalty=2.0,
+    ),
 } 
 
 # netkeiba uses YYYY + course_code + meeting_no + day_no + race_no.
@@ -3809,6 +3860,21 @@ async def evaluate_race(
             **base,
             status="evaluated",
             reason=f"course_code_excluded:{base['course_code']}",
+            axis_name=axis["nk"].horse_name,
+            axis_no=axis["nk"].horse_no,
+            axis_rank=int(axis["nk"].rank),
+            axis_odds=odds_to_float(axis["nk"].win_odds),
+            axis_top3=int(axis["nk"].rank) <= 3,
+            middle_top3_count=sum(1 for middle in middles if int(middle["nk"].rank) <= 3),
+            tickets=[],
+            hit_tickets=[],
+            payouts=[],
+        )
+    if theory.allowed_course_codes is not None and base["course_code"] not in theory.allowed_course_codes:
+        return RaceEvaluation(
+            **base,
+            status="evaluated",
+            reason=f"course_code_not_allowed:{base['course_code']}",
             axis_name=axis["nk"].horse_name,
             axis_no=axis["nk"].horse_no,
             axis_rank=int(axis["nk"].rank),

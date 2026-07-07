@@ -87,6 +87,20 @@ These improved isolated pockets, but none passed train and validation together.
   - formal adoption reject
   - diagnostic comparison branch only
 
+## Current venue-group branch
+
+- current branch: `v89`
+- branch meaning:
+  - `v86` base logic
+  - apply only to main venues: Tokyo / Nakayama / Kyoto / Hanshin
+- branch memo:
+  - `v86_venue_group_decision.md`
+  - `v89_main_venue_decision.md`
+- current handling:
+  - better structured than `v88`
+  - next operating candidate
+  - not final adoption because train walk-forward coverage is incomplete
+
 ## Current working direction
 
 The next theory line should be explored under this fixed rule:

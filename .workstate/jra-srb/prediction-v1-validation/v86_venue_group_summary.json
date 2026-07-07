@@ -1,0 +1,502 @@
+{
+  "theory_version": "v86",
+  "groups": {
+    "main": {
+      "course_codes": [
+        "05",
+        "06",
+        "08",
+        "09"
+      ],
+      "courses": [
+        "tokyo",
+        "nakayama",
+        "kyoto",
+        "hanshin"
+      ]
+    },
+    "local": {
+      "course_codes": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "10"
+      ],
+      "courses": [
+        "sapporo",
+        "hakodate",
+        "fukushima",
+        "niigata",
+        "kokura"
+      ]
+    },
+    "chukyo": {
+      "course_codes": [
+        "07"
+      ],
+      "courses": [
+        "chukyo"
+      ]
+    }
+  },
+  "splits": {
+    "wf1_2025_07": {
+      "chukyo": {
+        "candidate_races": 24,
+        "evaluated_races": 19,
+        "excluded_races": 5,
+        "bet_races": 2,
+        "tickets": 2,
+        "hits": 0,
+        "total_bet": 200,
+        "total_payout": 0,
+        "return_rate": 0.0,
+        "return_rate_without_max_payout": 0.0,
+        "return_rate_without_top3_payouts": 0.0,
+        "wide_hit_rate": 0.0,
+        "max_payout": 0,
+        "courses": {
+          "chukyo": {
+            "candidate_races": 24,
+            "bet_races": 2,
+            "tickets": 2
+          }
+        }
+      },
+      "local": {
+        "candidate_races": 264,
+        "evaluated_races": 211,
+        "excluded_races": 53,
+        "bet_races": 8,
+        "tickets": 8,
+        "hits": 4,
+        "total_bet": 800,
+        "total_payout": 2010,
+        "return_rate": 2.5125,
+        "return_rate_without_max_payout": 1.4,
+        "return_rate_without_top3_payouts": 0.375,
+        "wide_hit_rate": 0.5,
+        "max_payout": 890,
+        "courses": {
+          "sapporo": {
+            "candidate_races": 24,
+            "bet_races": 0,
+            "tickets": 0
+          },
+          "hakodate": {
+            "candidate_races": 72,
+            "bet_races": 0,
+            "tickets": 0
+          },
+          "fukushima": {
+            "candidate_races": 72,
+            "bet_races": 4,
+            "tickets": 4
+          },
+          "niigata": {
+            "candidate_races": 24,
+            "bet_races": 1,
+            "tickets": 1
+          },
+          "kokura": {
+            "candidate_races": 72,
+            "bet_races": 3,
+            "tickets": 3
+          }
+        }
+      }
+    },
+    "wf2_2025_08": {
+      "chukyo": {
+        "candidate_races": 120,
+        "evaluated_races": 92,
+        "excluded_races": 28,
+        "bet_races": 4,
+        "tickets": 4,
+        "hits": 0,
+        "total_bet": 400,
+        "total_payout": 0,
+        "return_rate": 0.0,
+        "return_rate_without_max_payout": 0.0,
+        "return_rate_without_top3_payouts": 0.0,
+        "wide_hit_rate": 0.0,
+        "max_payout": 0,
+        "courses": {
+          "chukyo": {
+            "candidate_races": 120,
+            "bet_races": 4,
+            "tickets": 4
+          }
+        }
+      },
+      "local": {
+        "candidate_races": 240,
+        "evaluated_races": 188,
+        "excluded_races": 52,
+        "bet_races": 12,
+        "tickets": 12,
+        "hits": 5,
+        "total_bet": 1200,
+        "total_payout": 1950,
+        "return_rate": 1.625,
+        "return_rate_without_max_payout": 1.225,
+        "return_rate_without_top3_payouts": 0.5417,
+        "wide_hit_rate": 0.4167,
+        "max_payout": 480,
+        "courses": {
+          "sapporo": {
+            "candidate_races": 120,
+            "bet_races": 7,
+            "tickets": 7
+          },
+          "niigata": {
+            "candidate_races": 120,
+            "bet_races": 5,
+            "tickets": 5
+          }
+        }
+      }
+    },
+    "wf3_2025_09": {
+      "local": {
+        "candidate_races": 24,
+        "evaluated_races": 19,
+        "excluded_races": 5,
+        "bet_races": 2,
+        "tickets": 2,
+        "hits": 1,
+        "total_bet": 200,
+        "total_payout": 500,
+        "return_rate": 2.5,
+        "return_rate_without_max_payout": 0.0,
+        "return_rate_without_top3_payouts": 0.0,
+        "wide_hit_rate": 0.5,
+        "max_payout": 500,
+        "courses": {
+          "sapporo": {
+            "candidate_races": 24,
+            "bet_races": 2,
+            "tickets": 2
+          }
+        }
+      },
+      "main": {
+        "candidate_races": 216,
+        "evaluated_races": 142,
+        "excluded_races": 74,
+        "bet_races": 8,
+        "tickets": 8,
+        "hits": 3,
+        "total_bet": 800,
+        "total_payout": 1980,
+        "return_rate": 2.475,
+        "return_rate_without_max_payout": 1.6,
+        "return_rate_without_top3_payouts": 0.0,
+        "wide_hit_rate": 0.375,
+        "max_payout": 700,
+        "courses": {
+          "nakayama": {
+            "candidate_races": 108,
+            "bet_races": 4,
+            "tickets": 4
+          },
+          "hanshin": {
+            "candidate_races": 108,
+            "bet_races": 4,
+            "tickets": 4
+          }
+        }
+      }
+    },
+    "validation_2025Q4": {
+      "chukyo": {
+        "candidate_races": 72,
+        "evaluated_races": 54,
+        "excluded_races": 18,
+        "bet_races": 1,
+        "tickets": 1,
+        "hits": 0,
+        "total_bet": 100,
+        "total_payout": 0,
+        "return_rate": 0.0,
+        "return_rate_without_max_payout": 0.0,
+        "return_rate_without_top3_payouts": 0.0,
+        "wide_hit_rate": 0.0,
+        "max_payout": 0,
+        "courses": {
+          "chukyo": {
+            "candidate_races": 72,
+            "bet_races": 1,
+            "tickets": 1
+          }
+        }
+      },
+      "local": {
+        "candidate_races": 120,
+        "evaluated_races": 107,
+        "excluded_races": 13,
+        "bet_races": 9,
+        "tickets": 9,
+        "hits": 3,
+        "total_bet": 900,
+        "total_payout": 1350,
+        "return_rate": 1.5,
+        "return_rate_without_max_payout": 0.8778,
+        "return_rate_without_top3_payouts": 0.0,
+        "wide_hit_rate": 0.3333,
+        "max_payout": 560,
+        "courses": {
+          "fukushima": {
+            "candidate_races": 72,
+            "bet_races": 3,
+            "tickets": 3
+          },
+          "niigata": {
+            "candidate_races": 48,
+            "bet_races": 6,
+            "tickets": 6
+          }
+        }
+      },
+      "main": {
+        "candidate_races": 648,
+        "evaluated_races": 389,
+        "excluded_races": 259,
+        "bet_races": 12,
+        "tickets": 12,
+        "hits": 5,
+        "total_bet": 1200,
+        "total_payout": 2580,
+        "return_rate": 2.15,
+        "return_rate_without_max_payout": 1.5083,
+        "return_rate_without_top3_payouts": 0.575,
+        "wide_hit_rate": 0.4167,
+        "max_payout": 770,
+        "courses": {
+          "tokyo": {
+            "candidate_races": 228,
+            "bet_races": 5,
+            "tickets": 5
+          },
+          "nakayama": {
+            "candidate_races": 96,
+            "bet_races": 2,
+            "tickets": 2
+          },
+          "kyoto": {
+            "candidate_races": 228,
+            "bet_races": 4,
+            "tickets": 4
+          },
+          "hanshin": {
+            "candidate_races": 96,
+            "bet_races": 1,
+            "tickets": 1
+          }
+        }
+      }
+    },
+    "holdout_2026H1": {
+      "chukyo": {
+        "candidate_races": 72,
+        "evaluated_races": 63,
+        "excluded_races": 9,
+        "bet_races": 4,
+        "tickets": 4,
+        "hits": 1,
+        "total_bet": 400,
+        "total_payout": 600,
+        "return_rate": 1.5,
+        "return_rate_without_max_payout": 0.0,
+        "return_rate_without_top3_payouts": 0.0,
+        "wide_hit_rate": 0.25,
+        "max_payout": 600,
+        "courses": {
+          "chukyo": {
+            "candidate_races": 72,
+            "bet_races": 4,
+            "tickets": 4
+          }
+        }
+      },
+      "local": {
+        "candidate_races": 335,
+        "evaluated_races": 270,
+        "excluded_races": 65,
+        "bet_races": 11,
+        "tickets": 11,
+        "hits": 2,
+        "total_bet": 1100,
+        "total_payout": 1110,
+        "return_rate": 1.0091,
+        "return_rate_without_max_payout": 0.4636,
+        "return_rate_without_top3_payouts": 0.0,
+        "wide_hit_rate": 0.1818,
+        "max_payout": 600,
+        "courses": {
+          "hakodate": {
+            "candidate_races": 24,
+            "bet_races": 0,
+            "tickets": 0
+          },
+          "fukushima": {
+            "candidate_races": 96,
+            "bet_races": 3,
+            "tickets": 3
+          },
+          "niigata": {
+            "candidate_races": 48,
+            "bet_races": 1,
+            "tickets": 1
+          },
+          "kokura": {
+            "candidate_races": 167,
+            "bet_races": 7,
+            "tickets": 7
+          }
+        }
+      },
+      "main": {
+        "candidate_races": 931,
+        "evaluated_races": 774,
+        "excluded_races": 157,
+        "bet_races": 33,
+        "tickets": 33,
+        "hits": 9,
+        "total_bet": 3300,
+        "total_payout": 5070,
+        "return_rate": 1.5364,
+        "return_rate_without_max_payout": 1.2879,
+        "return_rate_without_top3_payouts": 0.8818,
+        "wide_hit_rate": 0.2727,
+        "max_payout": 820,
+        "courses": {
+          "tokyo": {
+            "candidate_races": 163,
+            "bet_races": 5,
+            "tickets": 5
+          },
+          "nakayama": {
+            "candidate_races": 300,
+            "bet_races": 11,
+            "tickets": 11
+          },
+          "kyoto": {
+            "candidate_races": 252,
+            "bet_races": 10,
+            "tickets": 10
+          },
+          "hanshin": {
+            "candidate_races": 216,
+            "bet_races": 7,
+            "tickets": 7
+          }
+        }
+      }
+    }
+  },
+  "combined": {
+    "chukyo": {
+      "candidate_races": 288,
+      "evaluated_races": 228,
+      "excluded_races": 60,
+      "bet_races": 11,
+      "tickets": 11,
+      "hits": 1,
+      "total_bet": 1100,
+      "total_payout": 600,
+      "return_rate": 0.5455,
+      "return_rate_without_max_payout": 0.0,
+      "return_rate_without_top3_payouts": 0.0,
+      "wide_hit_rate": 0.0909,
+      "max_payout": 600,
+      "courses": {
+        "chukyo": {
+          "candidate_races": 288,
+          "bet_races": 11,
+          "tickets": 11
+        }
+      }
+    },
+    "local": {
+      "candidate_races": 983,
+      "evaluated_races": 795,
+      "excluded_races": 188,
+      "bet_races": 42,
+      "tickets": 42,
+      "hits": 15,
+      "total_bet": 4200,
+      "total_payout": 6920,
+      "return_rate": 1.6476,
+      "return_rate_without_max_payout": 1.4357,
+      "return_rate_without_top3_payouts": 1.1595,
+      "wide_hit_rate": 0.3571,
+      "max_payout": 890,
+      "courses": {
+        "sapporo": {
+          "candidate_races": 168,
+          "bet_races": 9,
+          "tickets": 9
+        },
+        "hakodate": {
+          "candidate_races": 96,
+          "bet_races": 0,
+          "tickets": 0
+        },
+        "fukushima": {
+          "candidate_races": 240,
+          "bet_races": 10,
+          "tickets": 10
+        },
+        "niigata": {
+          "candidate_races": 240,
+          "bet_races": 13,
+          "tickets": 13
+        },
+        "kokura": {
+          "candidate_races": 239,
+          "bet_races": 10,
+          "tickets": 10
+        }
+      }
+    },
+    "main": {
+      "candidate_races": 1795,
+      "evaluated_races": 1305,
+      "excluded_races": 490,
+      "bet_races": 53,
+      "tickets": 53,
+      "hits": 17,
+      "total_bet": 5300,
+      "total_payout": 9630,
+      "return_rate": 1.817,
+      "return_rate_without_max_payout": 1.6623,
+      "return_rate_without_top3_payouts": 1.3792,
+      "wide_hit_rate": 0.3208,
+      "max_payout": 820,
+      "courses": {
+        "tokyo": {
+          "candidate_races": 391,
+          "bet_races": 10,
+          "tickets": 10
+        },
+        "nakayama": {
+          "candidate_races": 504,
+          "bet_races": 17,
+          "tickets": 17
+        },
+        "kyoto": {
+          "candidate_races": 480,
+          "bet_races": 14,
+          "tickets": 14
+        },
+        "hanshin": {
+          "candidate_races": 420,
+          "bet_races": 12,
+          "tickets": 12
+        }
+      }
+    }
+  }
+}
