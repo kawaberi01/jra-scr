@@ -43,6 +43,10 @@ def test_analysis_store_creates_schema(tmp_path):
     assert "bet_records" in tables
     assert "bet_record_tickets" in tables
     assert "bet_record_results" in tables
+    with sqlite3.connect(path) as conn:
+        columns = {row[1] for row in conn.execute("pragma table_info(races)").fetchall()}
+    assert "meeting_no" in columns
+    assert "meeting_day" in columns
 
 
 def test_analysis_store_writes_pre_race_and_result_data_without_leaking_result_to_snapshot(tmp_path):
@@ -145,6 +149,30 @@ def test_analysis_store_upserts_card_and_odds_without_duplicates(tmp_path):
     assert store.count_rows("runners") == 1
     assert store.count_rows("odds_snapshots") == 1
     assert store.count_rows("odds_entries") == 1
+
+
+def test_analysis_store_extracts_meeting_fields_from_16_digit_race_id(tmp_path):
+    path = tmp_path / "analysis.sqlite"
+    store = AnalysisSQLiteStore(path)
+    race = MeetingRace(race_no=1, race_id="2026070419040501", race_name="Sample", start_time="15:00")
+    card = RaceCard(
+        race_id="2026070419040501",
+        race_name="Sample",
+        course="funabashi",
+        runners=[Runner(horse_no="1", horse_name="Runner")],
+        fetched_at=datetime.now(UTC),
+        source="card",
+    )
+
+    store.write_race(date(2026, 7, 4), "funabashi", race, source="meeting", fetched_at=datetime.now(UTC))
+    store.write_card(date(2026, 7, 4), "funabashi", 1, card)
+
+    with sqlite3.connect(path) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute("select meeting_no, meeting_day from races where race_id = ?", ("2026070419040501",)).fetchone()
+
+    assert row["meeting_no"] == 4
+    assert row["meeting_day"] == 5
 
 
 def test_analysis_store_writes_netkeiba_result_and_odds(tmp_path):
@@ -345,6 +373,40 @@ def test_analysis_store_creates_bet_record_with_box_expansion(tmp_path):
     assert store.count_rows("bet_record_tickets") == 4
 
 
+def test_analysis_store_creates_bet_record_with_16_digit_nankan_race_id(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+
+    record = store.create_bet_record(
+        BetRecordCreateRequest.model_validate(
+            {
+                "race_id": "2026070419040501",
+                "decision_source": "manual",
+                "total_amount": 100,
+                "tickets": [{"bet_type": "win", "selection": ["1"], "amount": 100}],
+            }
+        )
+    )
+    listed = store.list_bet_records(race_id="2026070419040501")
+
+    assert record.race_id == "2026070419040501"
+    assert record.tickets[0].race_id == "2026070419040501"
+    assert listed.total == 1
+    assert listed.items[0].bet_record_id == record.bet_record_id
+
+
+def test_bet_record_create_request_rejects_invalid_race_id_lengths():
+    for race_id in ("20260705101", "202607041904050", "race20260704"):
+        with pytest.raises(ValueError):
+            BetRecordCreateRequest.model_validate(
+                {
+                    "race_id": race_id,
+                    "decision_source": "manual",
+                    "total_amount": 100,
+                    "tickets": [{"bet_type": "win", "selection": ["1"], "amount": 100}],
+                }
+            )
+
+
 def test_analysis_store_gets_bet_record_with_prediction_link(tmp_path):
     path = tmp_path / "analysis.sqlite"
     store = AnalysisSQLiteStore(path)
@@ -428,6 +490,39 @@ def test_analysis_store_settles_all_miss_to_zero_payout(tmp_path):
     assert settlement.hit is False
     assert all(ticket.hit is False and ticket.payout == 0 for ticket in settlement.ticket_results)
     assert store.count_rows("bet_record_results") == 1
+
+
+def test_analysis_store_settles_16_digit_nankan_race_id(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    store.write_result(
+        RaceResult(
+            race_id="2026070419040501",
+            race_name="Nankan Sample",
+            results=[],
+            payouts=[PayoutEntry(bet_type="単勝", combination="1", payout="1,830")],
+            fetched_at=datetime.now(UTC),
+            source="nankan-result",
+        )
+    )
+    record = store.create_bet_record(
+        BetRecordCreateRequest.model_validate(
+            {
+                "race_id": "2026070419040501",
+                "decision_source": "manual",
+                "total_amount": 100,
+                "tickets": [{"bet_type": "win", "selection": ["1"], "amount": 100}],
+            }
+        )
+    )
+
+    settlement = store.settle_bet_record(record.bet_record_id)
+    loaded = store.get_bet_record(record.bet_record_id)
+
+    assert settlement.race_id == "2026070419040501"
+    assert settlement.total_payout == 1830
+    assert settlement.hit is True
+    assert loaded.result is not None
+    assert loaded.result.race_id == "2026070419040501"
 
 
 def test_analysis_store_settles_unordered_bet_type_with_normalized_match(tmp_path):

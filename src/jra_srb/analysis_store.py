@@ -54,6 +54,8 @@ class AnalysisSQLiteStore:
                     race_id text primary key,
                     race_date text not null,
                     course text not null,
+                    meeting_no integer,
+                    meeting_day integer,
                     race_no integer not null,
                     race_name text,
                     start_time text,
@@ -352,6 +354,8 @@ class AnalysisSQLiteStore:
                 on bet_record_results (race_id);
                 """
             )
+            _ensure_column(conn, "races", "meeting_no", "integer")
+            _ensure_column(conn, "races", "meeting_day", "integer")
 
     def create_run(
         self,
@@ -402,15 +406,18 @@ class AnalysisSQLiteStore:
         source: str | None = None,
         fetched_at: datetime | None = None,
     ) -> None:
+        meeting_no, meeting_day = _parse_meeting_fields_from_race_id(race.race_id)
         with self._connect() as conn:
             conn.execute(
                 """
                 insert into races
-                (race_id, race_date, course, race_no, race_name, start_time, source, fetched_at)
-                values (?, ?, ?, ?, ?, ?, ?, ?)
+                (race_id, race_date, course, meeting_no, meeting_day, race_no, race_name, start_time, source, fetched_at)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 on conflict(race_id) do update set
                     race_date = excluded.race_date,
                     course = excluded.course,
+                    meeting_no = coalesce(excluded.meeting_no, races.meeting_no),
+                    meeting_day = coalesce(excluded.meeting_day, races.meeting_day),
                     race_no = excluded.race_no,
                     race_name = coalesce(excluded.race_name, races.race_name),
                     start_time = coalesce(excluded.start_time, races.start_time),
@@ -421,6 +428,8 @@ class AnalysisSQLiteStore:
                     race.race_id,
                     target_date.isoformat(),
                     course,
+                    meeting_no,
+                    meeting_day,
                     race.race_no,
                     race.race_name,
                     race.start_time,
@@ -430,15 +439,18 @@ class AnalysisSQLiteStore:
             )
 
     def write_card(self, target_date: date, course: str, race_no: int, card: RaceCard) -> None:
+        meeting_no, meeting_day = _parse_meeting_fields_from_race_id(card.race_id)
         with self._connect() as conn:
             conn.execute(
                 """
                 insert into races
-                (race_id, race_date, course, race_no, race_name, start_time, surface, distance, source, fetched_at)
-                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (race_id, race_date, course, meeting_no, meeting_day, race_no, race_name, start_time, surface, distance, source, fetched_at)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 on conflict(race_id) do update set
                     race_date = excluded.race_date,
                     course = excluded.course,
+                    meeting_no = coalesce(excluded.meeting_no, races.meeting_no),
+                    meeting_day = coalesce(excluded.meeting_day, races.meeting_day),
                     race_no = excluded.race_no,
                     race_name = coalesce(excluded.race_name, races.race_name),
                     start_time = coalesce(excluded.start_time, races.start_time),
@@ -451,6 +463,8 @@ class AnalysisSQLiteStore:
                     card.race_id,
                     target_date.isoformat(),
                     card.course or course,
+                    meeting_no,
+                    meeting_day,
                     race_no,
                     card.race_name,
                     card.start_time,
@@ -1710,6 +1724,18 @@ def _row_to_dict(row: sqlite3.Row) -> dict:
 
 def _scalar(conn: sqlite3.Connection, sql: str, params: tuple[object, ...]) -> int:
     return int(conn.execute(sql, params).fetchone()[0])
+
+
+def _ensure_column(conn: sqlite3.Connection, table: str, column: str, column_type: str) -> None:
+    existing = {row["name"] for row in conn.execute(f"pragma table_info({table})").fetchall()}
+    if column not in existing:
+        conn.execute(f"alter table {table} add column {column} {column_type}")
+
+
+def _parse_meeting_fields_from_race_id(race_id: str) -> tuple[int | None, int | None]:
+    if re.fullmatch(r"\d{16}", race_id):
+        return int(race_id[10:12]), int(race_id[12:14])
+    return None, None
 
 
 def _is_all_courses(courses: list[str]) -> bool:

@@ -70,6 +70,157 @@ race summary 一覧を取得します。
 
 `race_id` で結果と払戻を取得します。
 
+## 南関東公式 API
+
+南関東4競馬場公式サイトから開催一覧、出走表、オッズ、結果を取得します。JRA公式の12桁 `race_id` とは分け、南関東では16桁 `race_id` を使います。
+
+対象場:
+
+- `urawa`
+- `funabashi`
+- `ohi`
+- `kawasaki`
+
+### `GET /nankan/meetings/{date}/{course}`
+
+開催日と開催場からレース一覧を取得します。
+
+クエリ:
+
+- `refresh`: 任意。`true` の場合は cache を避けます。
+
+### `GET /nankan/meetings/{date}/{course}/trend`
+
+開催日と開催場から、南関東公式の当日開催傾向を取得します。予想本体ではなく、枠傾向、脚質傾向、騎手傾向、厩舎傾向などの当日補正用データです。
+
+内部では開催一覧から南関東公式の開催IDを解決し、`race_trend/{meeting_id}.do?open_date={YYYYMMDD}` を取得します。trend ページが未作成または集計前の場合は 404 にせず、`race_count_completed: 0` と空の `summary` を返します。
+
+クエリ:
+
+- `refresh`: 任意。`true` の場合は cache を避けます。
+
+主なレスポンス:
+
+```json
+{
+  "date": "2026-07-06",
+  "course": "kawasaki",
+  "meeting_id": "2026210401",
+  "open_date": "20260706",
+  "updated_at": "2026-07-06T21:24:00+09:00",
+  "race_count_completed": 12,
+  "summary": {
+    "frame": [{ "frame_no": "6", "top3_count": 8 }],
+    "running_style": {
+      "front_group_top3_count": 27,
+      "back_group_top3_count": 9
+    },
+    "jockey": [{ "name": "笹川翼", "affiliation": "大井", "top3_count": 5 }],
+    "trainer": [{ "name": "高月賢一", "affiliation": "川崎", "top3_count": 5 }],
+    "sire": [{ "name": "パイロ", "top3_count": 2 }],
+    "broodmare_sire": [{ "name": "クロフネ", "top3_count": 4 }],
+    "payout": {
+      "trifecta_max_payout": 109080,
+      "trifecta_max_payout_race_no": 7
+    }
+  },
+  "source": "https://www.nankankeiba.com/race_trend/2026210401.do?open_date=20260706"
+}
+```
+
+### `GET /nankan/leading/jockeys`
+
+南関東公式のリーディングジョッキー情報を取得します。予想では主材料ではなく、`pattern_kis` / `pattern_kis_cho` の裏取り、短距離戦の騎手補正、接戦時の順位補正に使います。
+
+クエリ:
+
+- `course`: 任意。`urawa`, `funabashi`, `ohi`, `kawasaki`
+- `distance`: 任意。例: `1400`
+- `track_condition`: 任意。`good`, `slightly_heavy`, `heavy`, `bad`
+- `period`: 任意。既定値は `recent_3months`。`recent_1year` または年も指定可能です。
+- `sort`: 任意。既定値は `win_rate`。`wins`, `earnings`, `win_rate`, `quinella_rate`
+- `refresh`: 任意。`true` の場合は cache を避けます。
+
+ランキング表が見つからない場合は、取得失敗ではなく `items: []` を返します。
+条件付きURLが 404/400 などで取得できない場合はベースページへフォールバックし、`fallback: true`、`requested_condition_code`、`effective_condition_code` で要求条件と実取得条件を示します。
+
+### `GET /nankan/meetings/{date}/{course}/races/{race_no}/card`
+
+開催日、開催場、レース番号から出走表を取得します。
+
+### `GET /nankan/meetings/{date}/{course}/races/{race_no}/best-time`
+
+開催日、開催場、レース番号から南関東公式の持ち時計を取得します。
+
+同条件のベース能力比較用です。公式の `best/{race_id}000000.do` を取得し、タイム、順位、場、馬場、距離、同場/同距離フラグを構造化して返します。公式ページ上で source race_id / source date が表示されない場合、`best_time_source_race_id` と `best_time_source_date` は `null` です。
+
+クエリ:
+
+- `refresh`: 任意。`true` の場合は cache を避けます。
+
+### `GET /nankan/meetings/{date}/{course}/races/{race_no}/closing-speed`
+
+開催日、開催場、レース番号から南関東公式の上がり時計を取得します。
+
+終い性能比較用です。公式の `best/{race_id}22{distance}.do` を取得し、3F、順位、馬場、同場/同距離フラグを構造化して返します。`closing_section_distance` は 3F として `600` を返します。公式ページ上で source race_id / source date が表示されない場合、`closing_time_source_race_id` と `closing_time_source_date` は `null` です。
+
+クエリ:
+
+- `refresh`: 任意。`true` の場合は cache を避けます。
+
+### `GET /nankan/meetings/{date}/{course}/races/{race_no}/style-profile`
+
+開催日、開催場、レース番号から南関東公式の近走通過順を使って脚質傾向を推定します。
+
+`best-time` ページから各馬の `uma_info` ID を解決し、各馬ページの近走成績にある `コーナー 通過順` を最大5走取得します。通過順平均を頭数比に正規化し、`front`, `stalker`, `midpack`, `closer` のスコアと `expected_style` を返します。
+
+クエリ:
+
+- `refresh`: 任意。`true` の場合は cache を避けます。
+
+### `GET /nankan/meetings/{date}/{course}/races/{race_no}/odds`
+
+開催日、開催場、レース番号から南関東公式オッズを取得します。
+
+クエリ:
+
+- `bet_type`: 単一券種。`win`, `place`, `quinella`, `wide`, `exacta`, `trio`, `trifecta`
+- `bet_types`: 複数券種。例 `win,trifecta`
+- `combination`: 任意。例 `5,7,6`
+- `refresh`: 任意。`true` の場合は cache を避けます。
+
+### `GET /nankan/meetings/{date}/{course}/races/{race_no}/result`
+
+開催日、開催場、レース番号から南関東公式結果を取得します。開催一覧で16桁 `race_id` を解決してから、単レース結果ページを取得します。
+
+クエリ:
+
+- `refresh`: 任意。`true` の場合は cache を避けます。
+
+### `GET /nankan/races/{race_id}/card`
+
+16桁 `race_id` で出走表を取得します。
+
+### `GET /nankan/races/{race_id}/best-time`
+
+16桁 `race_id` で南関東公式の持ち時計を取得します。
+
+### `GET /nankan/races/{race_id}/closing-speed`
+
+16桁 `race_id` で南関東公式の上がり時計を取得します。
+
+### `GET /nankan/races/{race_id}/style-profile`
+
+16桁 `race_id` で南関東公式の近走通過順を使った脚質傾向推定を取得します。
+
+### `GET /nankan/races/{race_id}/odds`
+
+16桁 `race_id` で南関東公式オッズを取得します。発売前などで公式オッズページが404の場合は `not_found` として返します。
+
+### `GET /nankan/races/{race_id}/result`
+
+16桁 `race_id` で南関東公式結果を取得します。公式結果ページが404の場合は `not_found`、結果表が見つからない場合も `not_found` として返します。払戻表が見つからない場合は `payouts: []` を返します。
+
 ## 保存済み結果
 
 ### `GET /stored/results/{race_id}`
@@ -214,7 +365,7 @@ job の記録は in-memory です。API サーバーを再起動すると job �
 
 ### `POST /bet-records`
 
-実際に購入した券を `analysis.sqlite` に保存します。`mode=box` の券は保存時に必ず展開されます。
+実際に購入した券を `analysis.sqlite` に保存します。`mode=box` の券は保存時に必ず展開されます。`race_id` は JRA の12桁、または南関東公式の16桁を指定できます。
 
 Request body:
 
@@ -323,7 +474,7 @@ Response:
 
 - `from_date`: 対象レースの開催開始日
 - `to_date`: 対象レースの開催終了日
-- `race_id`: race_id で絞り込み
+- `race_id`: race_id で絞り込み。JRA の12桁、または南関東公式の16桁
 - `course`: 開催場コード
 - `theory_version`: theory_version で絞り込み
 - `decision_source`: `agent`, `manual`, `agent_plus_manual`

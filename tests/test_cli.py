@@ -1,11 +1,21 @@
 from datetime import UTC, date, datetime
+import json
 
 import pytest
 
 from jra_srb.analysis_store import AnalysisSQLiteStore
-from jra_srb.cli import build_parser, collect_analysis, collect_netkeiba_results, collect_results, generate_netkeiba_mapping
+from jra_srb.cli import (
+    build_parser,
+    collect_analysis,
+    collect_netkeiba_results,
+    collect_results,
+    fetch_nankankeiba_pattern,
+    generate_netkeiba_mapping,
+)
 from jra_srb.models import MeetingRace, MeetingSnapshot, NetkeibaRaceResult, RaceResult
 from jra_srb.models import NetkeibaResultEntry, PayoutEntry
+from jra_srb.nankankeiba_pattern_provider import NankankeibaPatternFixtureProvider
+from jra_srb.nankankeiba_pattern_service import NankankeibaPatternService
 
 
 class FakeCliService:
@@ -64,6 +74,40 @@ class FakeNetkeibaCliService:
             payouts=[PayoutEntry(bet_type="wide", combination="1-2", payout="1,000", popularity="1")],
             fetched_at=datetime.now(UTC),
             source="fake-netkeiba",
+        )
+
+
+class FakeNarCliService:
+    async def get_meeting(self, target_date: date, course: str) -> MeetingSnapshot:
+        return MeetingSnapshot(
+            date=target_date,
+            course=course,
+            races=[MeetingRace(race_no=1, race_id="202645061501", race_name="Nar Sample")],
+            fetched_at=datetime.now(UTC),
+            source="nar-meeting",
+        )
+
+    async def get_race_card(self, race_id: str):
+        from jra_srb.models import RaceCard, Runner
+
+        return RaceCard(
+            race_id=race_id,
+            race_name="Nar Sample",
+            course="kawasaki",
+            runners=[Runner(horse_no="1", horse_name="Nar Horse")],
+            fetched_at=datetime.now(UTC),
+            source="nar-card",
+        )
+
+    async def get_race_result(self, race_id: str) -> NetkeibaRaceResult:
+        return NetkeibaRaceResult(
+            race_id=race_id,
+            race_name="Nar Sample",
+            race_no="1",
+            results=[NetkeibaResultEntry(rank="1", horse_no="1", horse_name="Nar Horse")],
+            payouts=[PayoutEntry(bet_type="wide", combination="1-2", payout="860", popularity="3")],
+            fetched_at=datetime.now(UTC),
+            source="nar-result",
         )
 
 
@@ -151,6 +195,77 @@ def test_cli_parser_accepts_analysis_maintenance_commands(tmp_path):
     assert verify.sample_size == 3
 
 
+def test_cli_parser_accepts_fetch_nankankeiba_pattern(tmp_path):
+    parser = build_parser()
+
+    args = parser.parse_args(
+        [
+            "fetch-nankankeiba-pattern",
+            "--date",
+            "2026-07-06",
+            "--course",
+            "kawasaki",
+            "--meeting",
+            "4",
+            "--day",
+            "1",
+            "--race",
+            "1",
+            "--periods",
+            "lifetime",
+            "--output",
+            str(tmp_path / "pattern.json"),
+        ]
+    )
+
+    assert args.command == "fetch-nankankeiba-pattern"
+    assert args.target_date == date(2026, 7, 6)
+    assert args.meeting_no == 4
+    assert args.meeting_day == 1
+    assert args.race_no == 1
+
+
+@pytest.mark.asyncio
+async def test_fetch_nankankeiba_pattern_writes_json(tmp_path):
+    parser = build_parser()
+    output = tmp_path / "pattern.json"
+    args = parser.parse_args(
+        [
+            "fetch-nankankeiba-pattern",
+            "--date",
+            "2026-07-06",
+            "--course",
+            "kawasaki",
+            "--meeting",
+            "4",
+            "--day",
+            "1",
+            "--race",
+            "1",
+            "--output",
+            str(output),
+        ]
+    )
+    service = NankankeibaPatternService(provider=NankankeibaPatternFixtureProvider("tests/fixtures"))
+
+    text = await fetch_nankankeiba_pattern(args, service=service)
+
+    assert output.read_text(encoding="utf-8") == text + "\n"
+    assert '"race_id": "202607062104010101"' in text
+    assert '"horse_name": "ヘヴンリーゴール"' in text
+    body = json.loads(text)
+    assert body["runners"][4]["categories"]["pattern_uma"]["rates"]["medium"] == {
+        "rate": 16.7,
+        "wins": 2,
+        "starts": 12,
+    }
+    assert body["runners"][4]["categories"]["pattern_uma"]["rates"]["short"] == {
+        "rate": 50.0,
+        "wins": 1,
+        "starts": 2,
+    }
+
+
 def test_cli_parser_accepts_collect_analysis_min_interval(tmp_path):
     parser = build_parser()
 
@@ -204,6 +319,42 @@ async def test_collect_analysis_passes_min_interval_option(tmp_path):
     run_id = await collect_analysis(args, service=FakeCliService())  # type: ignore[arg-type]
 
     assert run_id
+
+
+@pytest.mark.asyncio
+async def test_collect_analysis_accepts_kawasaki_and_writes_sqlite(tmp_path):
+    args = type(
+        "Args",
+        (),
+        {
+            "db": tmp_path / "analysis.sqlite",
+            "courses": "kawasaki",
+            "from_date": date(2026, 6, 15),
+            "to_date": date(2026, 6, 15),
+            "include_card": True,
+            "include_odds": False,
+            "include_results": True,
+            "bet_types": "wide",
+            "odds_timing": "final_or_near_final",
+            "retries": 0,
+            "min_interval_seconds": 0.0,
+            "max_live_requests": 10,
+            "skip_existing": True,
+        },
+    )()
+
+    run_id = await collect_analysis(
+        args,
+        service=FakeCliService(),  # type: ignore[arg-type]
+        nar_service=FakeNarCliService(),  # type: ignore[arg-type]
+    )
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+
+    assert run_id
+    assert store.count_rows("races") == 1
+    assert store.count_rows("runners") == 1
+    assert store.count_rows("result_entries") == 1
+    assert store.count_rows("payouts") == 1
 
 
 def test_cli_parser_accepts_collect_netkeiba_results(tmp_path):

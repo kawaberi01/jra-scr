@@ -21,7 +21,9 @@ from .batch import JsonlRaceResultStorage, PastResultCollector, ResultStorage, S
 from .netkeiba_analysis_collector import NetkeibaAnalysisCollector, NetkeibaResultCollectionOptions
 from .netkeiba_mapping import generate_netkeiba_mapping_csv
 from .netkeiba_service import NetkeibaService
-from .normalization import normalize_course
+from .nar_netkeiba_service import NarNetkeibaService
+from .nankankeiba_pattern_service import NankankeibaPatternService
+from .normalization import normalize_course, normalize_nar_course
 from .service import JraService, SUPPORTED_JRA_BET_TYPES
 
 
@@ -75,6 +77,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         result = verify_analysis_joins(args)
         print(format_join_verification(result))
         return 0 if result.ok else 1
+    if args.command == "fetch-nankankeiba-pattern":
+        asyncio.run(fetch_nankankeiba_pattern(args))
+        return 0
     parser.print_help()
     return 1
 
@@ -164,6 +169,19 @@ def build_parser() -> argparse.ArgumentParser:
     verify.add_argument("--from-date", type=date.fromisoformat, required=True)
     verify.add_argument("--to-date", type=date.fromisoformat, required=True)
     verify.add_argument("--sample-size", type=int, default=10)
+
+    nankankeiba_pattern = subparsers.add_parser(
+        "fetch-nankankeiba-pattern",
+        help="Fetch and structure nankankeiba win pattern analysis.",
+    )
+    nankankeiba_pattern.add_argument("--date", dest="target_date", type=date.fromisoformat, required=True)
+    nankankeiba_pattern.add_argument("--course", required=True)
+    nankankeiba_pattern.add_argument("--meeting", dest="meeting_no", type=int, required=True)
+    nankankeiba_pattern.add_argument("--day", dest="meeting_day", type=int, required=True)
+    nankankeiba_pattern.add_argument("--race", dest="race_no", type=int, required=True)
+    nankankeiba_pattern.add_argument("--periods", default="lifetime")
+    nankankeiba_pattern.add_argument("--categories")
+    nankankeiba_pattern.add_argument("--output", type=Path)
     return parser
 
 
@@ -178,11 +196,19 @@ async def collect_results(args: argparse.Namespace, service: JraService | None =
     await collector.collect(args.from_date, args.to_date, courses)
 
 
-async def collect_analysis(args: argparse.Namespace, service: JraService | None = None) -> str:
+async def collect_analysis(
+    args: argparse.Namespace,
+    service: JraService | None = None,
+    nar_service: NarNetkeibaService | None = None,
+) -> str:
     courses = parse_course_list(args.courses)
     bet_types = [item.strip() for item in args.bet_types.split(",") if item.strip()]
     store = AnalysisSQLiteStore(args.db)
-    collector = AnalysisCollector(service=service or JraService(), store=store)
+    collector = AnalysisCollector(
+        service=service or JraService(),
+        store=store,
+        nar_service=nar_service or NarNetkeibaService(),
+    )
     return await collector.collect(
         AnalysisCollectionOptions(
             from_date=args.from_date,
@@ -277,6 +303,26 @@ def verify_analysis_joins(args: argparse.Namespace):
     return verifier.verify(args.from_date, args.to_date, args.sample_size)
 
 
+async def fetch_nankankeiba_pattern(args: argparse.Namespace, service: NankankeibaPatternService | None = None) -> str:
+    svc = service or NankankeibaPatternService()
+    bundle = await svc.get_pattern_bundle(
+        args.target_date,
+        args.course,
+        args.meeting_no,
+        args.meeting_day,
+        args.race_no,
+        periods=_parse_optional_csv(args.periods) or ["lifetime"],
+        categories=_parse_optional_csv(args.categories),
+    )
+    output = bundle.model_dump_json(indent=2)
+    if args.output:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(output + "\n", encoding="utf-8")
+    else:
+        print(output)
+    return output
+
+
 def build_storage(kind: str, path: Path) -> ResultStorage:
     if kind == "sqlite":
         return SQLiteRaceResultStorage(path)
@@ -287,7 +333,20 @@ def parse_course_list(value: str) -> list[str]:
     items = [item.strip() for item in value.split(",") if item.strip()]
     if len(items) == 1 and items[0].lower() in AnalysisCollector.AUTO_COURSE_TOKENS:
         return [items[0].lower()]
-    return [str(normalize_course(item)) for item in items]
+    return [_normalize_analysis_course(item) for item in items]
+
+
+def _normalize_analysis_course(value: str) -> str:
+    try:
+        return str(normalize_course(value))
+    except Exception:
+        return normalize_nar_course(value)
+
+
+def _parse_optional_csv(value: str | None) -> list[str] | None:
+    if value is None:
+        return None
+    return [item.strip() for item in value.split(",") if item.strip()]
 
 
 def _configure_stdout() -> None:

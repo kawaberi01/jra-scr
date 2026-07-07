@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 
 from .errors import BadRequestError
-from .models import BetType, CourseCode, NormalizedRaceInput
+from .models import BetType, CourseCode, NankanCourseCode, NormalizedRaceInput
 
 
 COURSE_ALIASES: dict[str, CourseCode] = {
@@ -47,12 +47,76 @@ BET_TYPE_ALIASES: dict[str, BetType] = {
     "三連単": BetType.trifecta,
 }
 
+NANKAN_COURSE_ALIASES: dict[str, NankanCourseCode] = {
+    "urawa": NankanCourseCode.urawa,
+    "浦和": NankanCourseCode.urawa,
+    "funabashi": NankanCourseCode.funabashi,
+    "船橋": NankanCourseCode.funabashi,
+    "ohi": NankanCourseCode.ohi,
+    "大井": NankanCourseCode.ohi,
+    "kawasaki": NankanCourseCode.kawasaki,
+    "川崎": NankanCourseCode.kawasaki,
+}
+
+NAR_COURSE_ALIASES: dict[str, str] = {
+    "monbetsu": "monbetsu",
+    "mombetsu": "monbetsu",
+    "門別": "monbetsu",
+    "morioka": "morioka",
+    "盛岡": "morioka",
+    "mizusawa": "mizusawa",
+    "水沢": "mizusawa",
+    "urawa": "urawa",
+    "浦和": "urawa",
+    "funabashi": "funabashi",
+    "船橋": "funabashi",
+    "oi": "oi",
+    "ohi": "oi",
+    "ooi": "oi",
+    "大井": "oi",
+    "kawasaki": "kawasaki",
+    "川崎": "kawasaki",
+    "kanazawa": "kanazawa",
+    "金沢": "kanazawa",
+    "kasamatsu": "kasamatsu",
+    "笠松": "kasamatsu",
+    "nagoya": "nagoya",
+    "名古屋": "nagoya",
+    "sonoda": "sonoda",
+    "園田": "sonoda",
+    "himeji": "himeji",
+    "姫路": "himeji",
+    "kochi": "kochi",
+    "高知": "kochi",
+    "saga": "saga",
+    "佐賀": "saga",
+    "obihiro": "obihiro",
+    "帯広ば": "obihiro",
+    "帯広(ば)": "obihiro",
+}
+
 
 def normalize_course(value: str) -> CourseCode:
     key = value.strip()
     course = COURSE_ALIASES.get(key) or COURSE_ALIASES.get(key.lower())
     if course is None:
         raise BadRequestError(f"unsupported course={value}")
+    return course
+
+
+def normalize_nankan_course(value: str) -> NankanCourseCode:
+    key = value.strip()
+    course = NANKAN_COURSE_ALIASES.get(key) or NANKAN_COURSE_ALIASES.get(key.lower())
+    if course is None:
+        raise BadRequestError(f"unsupported nankan course={value}")
+    return course
+
+
+def normalize_nar_course(value: str) -> str:
+    key = value.strip()
+    course = NAR_COURSE_ALIASES.get(key) or NAR_COURSE_ALIASES.get(key.lower())
+    if course is None:
+        raise BadRequestError(f"unsupported nar course={value}")
     return course
 
 

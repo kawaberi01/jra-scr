@@ -6,7 +6,9 @@ from datetime import date, timedelta
 from time import monotonic
 
 from .analysis_store import AnalysisSQLiteStore
-from .models import MeetingSnapshot
+from .models import MeetingSnapshot, NetkeibaRaceResult, PayoutEntry, RaceResult, ResultEntry
+from .nar_netkeiba_service import NarNetkeibaService, SUPPORTED_NAR_NETKEIBA_BET_TYPES
+from .normalization import normalize_nar_course
 from .service import JraService, SUPPORTED_JRA_BET_TYPES
 
 
@@ -29,9 +31,15 @@ class AnalysisCollectionOptions:
 class AnalysisCollector:
     AUTO_COURSE_TOKENS = {"all", "*", "auto"}
 
-    def __init__(self, service: JraService, store: AnalysisSQLiteStore) -> None:
+    def __init__(
+        self,
+        service: JraService,
+        store: AnalysisSQLiteStore,
+        nar_service: NarNetkeibaService | None = None,
+    ) -> None:
         self.service = service
         self.store = store
+        self.nar_service = nar_service
 
     async def collect(self, options: AnalysisCollectionOptions) -> str:
         run_id = self.store.create_run(
@@ -72,7 +80,7 @@ class AnalysisCollector:
                 current += timedelta(days=1)
                 continue
             for meeting in meetings:
-                course = meeting.course
+                course = self._normalize_course_value(meeting.course)
                 for race in meeting.races:
                     self.store.write_race(current, course, race, source=meeting.source, fetched_at=meeting.fetched_at)
                     if options.include_card:
@@ -91,20 +99,16 @@ class AnalysisCollector:
                             )
                             if live_request_limit_reached:
                                 break
-                            card = await self._with_retry(
-                                options.retries,
-                                self.service.get_race_card_by_number,
-                                current,
-                                course,
-                                race.race_no,
-                            )
+                            card = await self._get_race_card(options.retries, current, course, race.race_id, race.race_no)
                         except Exception as exc:
                             failed = True
                             self.store.write_error(run_id, current, course, "card", exc, race.race_id, race.race_no)
                         else:
+                            if self._is_nar_course(course):
+                                card = card.model_copy(update={"course": self._normalize_course_value(card.course or course)})
                             self.store.write_card(current, course, race.race_no, card)
                     if options.include_odds:
-                        for bet_type in options.bet_types or list(SUPPORTED_JRA_BET_TYPES):
+                        for bet_type in self._bet_types_for_course(course, options.bet_types):
                             if options.skip_existing and self.store.has_odds_snapshot(
                                 race.race_id,
                                 bet_type,
@@ -124,11 +128,11 @@ class AnalysisCollector:
                                 )
                                 if live_request_limit_reached:
                                     break
-                                odds = await self._with_retry(
+                                odds = await self._get_race_odds(
                                     options.retries,
-                                    self.service.get_race_odds_by_number,
                                     current,
                                     course,
+                                    race.race_id,
                                     race.race_no,
                                     bet_type,
                                 )
@@ -163,11 +167,11 @@ class AnalysisCollector:
                             )
                             if live_request_limit_reached:
                                 break
-                            result = await self._with_retry(
+                            result = await self._get_race_result(
                                 options.retries,
-                                self.service.get_race_result_by_number,
                                 current,
                                 course,
+                                race.race_id,
                                 race.race_no,
                             )
                         except Exception as exc:
@@ -206,7 +210,13 @@ class AnalysisCollector:
                 )
                 if limit_reached:
                     return last_request_started, live_requests, True, None, False
-                return last_request_started, live_requests, False, await self.service.get_meetings_for_date(target_date), False
+                return (
+                    last_request_started,
+                    live_requests,
+                    False,
+                    await self.service.get_meetings_for_date(target_date),
+                    False,
+                )
             except Exception as exc:
                 self.store.write_error(run_id, target_date, "all", "meeting-list", exc)
                 return last_request_started, live_requests, False, None, True
@@ -223,7 +233,7 @@ class AnalysisCollector:
                 )
                 if limit_reached:
                     return last_request_started, live_requests, True, meetings, had_error
-                meetings.append(await self.service.get_meeting(target_date, course))
+                meetings.append(await self._get_meeting(target_date, course))
             except Exception as exc:
                 had_error = True
                 self.store.write_error(run_id, target_date, course, "meeting", exc)
@@ -264,3 +274,95 @@ class AnalysisCollector:
                 last_error = exc
         assert last_error is not None
         raise last_error
+
+    async def _get_meeting(self, target_date: date, course: str) -> MeetingSnapshot:
+        if self._is_nar_course(course):
+            return await self._require_nar_service().get_meeting(target_date, course)
+        return await self.service.get_meeting(target_date, course)
+
+    async def _get_race_card(self, retries: int, target_date: date, course: str, race_id: str, race_no: int):
+        if self._is_nar_course(course):
+            return await self._with_retry(retries, self._require_nar_service().get_race_card, race_id)
+        return await self._with_retry(retries, self.service.get_race_card_by_number, target_date, course, race_no)
+
+    async def _get_race_odds(
+        self,
+        retries: int,
+        target_date: date,
+        course: str,
+        race_id: str,
+        race_no: int,
+        bet_type: str,
+    ):
+        if self._is_nar_course(course):
+            return await self._with_retry(retries, self._require_nar_service().get_race_odds, race_id, bet_type)
+        return await self._with_retry(retries, self.service.get_race_odds_by_number, target_date, course, race_no, bet_type)
+
+    async def _get_race_result(
+        self,
+        retries: int,
+        target_date: date,
+        course: str,
+        race_id: str,
+        race_no: int,
+    ) -> RaceResult:
+        if self._is_nar_course(course):
+            result = await self._with_retry(retries, self._require_nar_service().get_race_result, race_id)
+            return self._convert_netkeiba_result(result)
+        return await self._with_retry(retries, self.service.get_race_result_by_number, target_date, course, race_no)
+
+    @staticmethod
+    def _convert_netkeiba_result(result: NetkeibaRaceResult) -> RaceResult:
+        return RaceResult(
+            race_id=result.race_id,
+            race_name=result.race_name,
+            results=[
+                ResultEntry(
+                    rank=entry.rank,
+                    horse_no=entry.horse_no,
+                    horse_name=entry.horse_name,
+                    jockey=entry.jockey,
+                    time=entry.finish_time,
+                )
+                for entry in result.results
+            ],
+            payouts=[
+                PayoutEntry(
+                    bet_type=payout.bet_type,
+                    combination=payout.combination,
+                    payout=payout.payout,
+                    popularity=payout.popularity,
+                )
+                for payout in result.payouts
+            ],
+            fetched_at=result.fetched_at,
+            source=result.source,
+            cache_hit=result.cache_hit,
+        )
+
+    @staticmethod
+    def _is_nar_course(course: str) -> bool:
+        try:
+            normalize_nar_course(course)
+        except Exception:
+            return False
+        return True
+
+    def _require_nar_service(self) -> NarNetkeibaService:
+        if self.nar_service is None:
+            raise LookupError("nar service is not configured")
+        return self.nar_service
+
+    @staticmethod
+    def _normalize_course_value(course: str) -> str:
+        try:
+            return normalize_nar_course(course)
+        except Exception:
+            return course
+
+    def _bet_types_for_course(self, course: str, requested_bet_types: list[str] | None) -> list[str]:
+        if requested_bet_types is not None:
+            return requested_bet_types
+        if self._is_nar_course(course):
+            return list(SUPPORTED_NAR_NETKEIBA_BET_TYPES)
+        return list(SUPPORTED_JRA_BET_TYPES)

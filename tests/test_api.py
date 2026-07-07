@@ -1,4 +1,6 @@
+import asyncio
 from datetime import UTC, date, datetime
+import json
 import sqlite3
 
 from fastapi.testclient import TestClient
@@ -8,6 +10,8 @@ from jra_srb.app import (
     app,
     get_analysis_store,
     get_nar_netkeiba_service,
+    get_nankankeiba_pattern_service,
+    get_nankan_service,
     get_netkeiba_service,
     get_result_collection_job_registry,
     get_result_storage,
@@ -17,8 +21,12 @@ from jra_srb.batch import JsonlRaceResultStorage, SQLiteRaceResultStorage
 from jra_srb.errors import BadRequestError, ResourceNotFoundError
 from jra_srb.jobs import ResultCollectionJobRegistry
 from jra_srb.models import MeetingRace, MeetingSnapshot, PayoutEntry, RaceResult, RaceSummary, ResultEntry
+from jra_srb.nankankeiba_pattern_provider import NankankeibaPatternFixtureProvider
+from jra_srb.nankankeiba_pattern_service import NankankeibaPatternService
 from jra_srb.nar_netkeiba_provider import NarNetkeibaFixtureProvider
 from jra_srb.nar_netkeiba_service import NarNetkeibaService
+from jra_srb.nankan_provider import NankanFixtureProvider
+from jra_srb.nankan_service import NankanService
 from jra_srb.netkeiba_provider import NetkeibaFixtureProvider
 from jra_srb.netkeiba_service import NetkeibaService
 from jra_srb.provider import FixtureProvider, ProviderError
@@ -47,6 +55,57 @@ def test_get_race_card_endpoint():
         assert body["race_id"] == "202603220101"
         assert body["race_name"] == WAKABA_STAKES
         assert len(body["runners"]) == 2
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_get_nankan_leading_jockeys_endpoint():
+    service = NankanService(provider=NankanFixtureProvider("tests/fixtures"))
+    app.dependency_overrides[get_nankan_service] = lambda: service
+    try:
+        client = TestClient(app)
+        response = client.get(
+            "/nankan/leading/jockeys"
+            "?course=kawasaki&distance=1400&track_condition=good&period=recent_3months&sort=win_rate"
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["source"] == "nankankeiba"
+        assert body["course"] == "kawasaki"
+        assert body["distance"] == 1400
+        assert body["track_condition"] == "good"
+        assert body["period"] == "recent_3months"
+        assert body["sort"] == "win_rate"
+        assert body["requested_condition_code"] == "211400010004031"
+        assert body["effective_condition_code"] == "211400010004031"
+        assert body["fallback"] is False
+        assert body["items"][0]["jockey_name"] == "野畑凌"
+        assert body["items"][0]["win_rate"] == 20.0
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_get_nankan_leading_jockeys_endpoint_accepts_track_condition():
+    service = NankanService(provider=NankanFixtureProvider("tests/fixtures"))
+    app.dependency_overrides[get_nankan_service] = lambda: service
+    try:
+        client = TestClient(app)
+        response = client.get(
+            "/nankan/leading/jockeys"
+            "?course=kawasaki&distance=900&track_condition=good&period=2026&sort=wins"
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["source"] == "nankankeiba"
+        assert body["course"] == "kawasaki"
+        assert body["distance"] == 900
+        assert body["track_condition"] == "good"
+        assert body["period"] == "2026"
+        assert body["sort"] == "wins"
+        assert body["requested_condition_code"] == "210900012026011"
+        assert body["effective_condition_code"] == "210900012026011"
+        assert body["fallback"] is False
+        assert body["items"][0]["jockey_name"] == "川崎900良騎手"
     finally:
         app.dependency_overrides.clear()
 
@@ -346,6 +405,81 @@ def test_get_nar_race_odds_endpoint_filters_and_normalizes_combination():
         app.dependency_overrides.clear()
 
 
+def test_get_nankankeiba_pattern_endpoint_returns_merged_categories():
+    service = NankankeibaPatternService(provider=NankankeibaPatternFixtureProvider("tests/fixtures"))
+    app.dependency_overrides[get_nankankeiba_pattern_service] = lambda: service
+    try:
+        response = TestClient(app).get(
+            "/nankankeiba/pattern/meetings/2026-07-06/kawasaki/races/1?meeting_no=4&meeting_day=1"
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["race_id"] == "202607062104010101"
+        assert body["periods"] == ["01"]
+        assert body["categories"] == ["pattern_kis", "pattern_uma", "pattern_cho", "pattern_kis_cho"]
+        assert len(body["runners"]) == 7
+        assert body["runners"][4]["horse_name"] == "ヘヴンリーゴール"
+        assert body["runners"][4]["categories"]["pattern_kis"]["rates"]["kawasaki"] == {
+            "rate": 14.5,
+            "wins": 256,
+            "starts": 1770,
+        }
+        assert body["runners"][4]["categories"]["pattern_uma"]["rates"]["medium"] == {
+            "rate": 16.7,
+            "wins": 2,
+            "starts": 12,
+        }
+        assert body["runners"][4]["categories"]["pattern_uma"]["rates"]["short"] == {
+            "rate": 50.0,
+            "wins": 1,
+            "starts": 2,
+        }
+        assert body["runners"][4]["categories"]["pattern_uma"]["track_condition_rates"]["good"] == {
+            "rate": 33.3,
+            "wins": 2,
+            "starts": 6,
+        }
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_cli_and_api_return_same_nankankeiba_pattern_json_shape(tmp_path):
+    from jra_srb.cli import build_parser, fetch_nankankeiba_pattern
+
+    service = NankankeibaPatternService(provider=NankankeibaPatternFixtureProvider("tests/fixtures"))
+    output = tmp_path / "pattern.json"
+    args = build_parser().parse_args(
+        [
+            "fetch-nankankeiba-pattern",
+            "--date",
+            "2026-07-06",
+            "--course",
+            "kawasaki",
+            "--meeting",
+            "4",
+            "--day",
+            "1",
+            "--race",
+            "1",
+            "--output",
+            str(output),
+        ]
+    )
+    cli_body = json.loads(asyncio.run(fetch_nankankeiba_pattern(args, service=service)))
+
+    app.dependency_overrides[get_nankankeiba_pattern_service] = lambda: service
+    try:
+        api_body = TestClient(app).get(
+            "/nankankeiba/pattern/meetings/2026-07-06/kawasaki/races/1?meeting_no=4&meeting_day=1"
+        ).json()
+    finally:
+        app.dependency_overrides.clear()
+
+    cli_body["cache_hit"] = api_body["cache_hit"]
+    assert cli_body == api_body
+
+
 def test_mcp_endpoint_is_mounted():
     client = TestClient(app)
     response = client.get("/mcp")
@@ -428,6 +562,63 @@ def test_post_bet_records_endpoint_expands_wide_box(tmp_path):
         assert body["total_amount"] == 400
         assert [ticket["selection"] for ticket in body["tickets"]] == ["2-4", "2-10", "4-10", "2-4-10"]
         assert [ticket["is_box_expanded"] for ticket in body["tickets"]] == [True, True, True, False]
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_bet_records_endpoints_accept_16_digit_nankan_race_id(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    app.dependency_overrides[get_analysis_store] = lambda: store
+    try:
+        client = TestClient(app)
+        created = client.post(
+            "/bet-records",
+            json={
+                "race_id": "2026070419040501",
+                "decision_source": "manual",
+                "total_amount": 100,
+                "tickets": [{"bet_type": "win", "selection": ["1"], "amount": 100}],
+            },
+        )
+
+        assert created.status_code == 201
+        created_body = created.json()
+        assert created_body["race_id"] == "2026070419040501"
+        assert created_body["tickets"][0]["race_id"] == "2026070419040501"
+
+        by_id = client.get(f"/bet-records/{created_body['bet_record_id']}")
+        listed = client.get("/bet-records?race_id=2026070419040501")
+
+        assert by_id.status_code == 200
+        assert by_id.json()["race_id"] == "2026070419040501"
+        assert listed.status_code == 200
+        assert listed.json()["total"] == 1
+        assert listed.json()["items"][0]["bet_record_id"] == created_body["bet_record_id"]
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_bet_record_endpoint_rejects_invalid_race_id_lengths(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    app.dependency_overrides[get_analysis_store] = lambda: store
+    try:
+        client = TestClient(app)
+        for race_id in ("20260705101", "202607041904050"):
+            response = client.post(
+                "/bet-records",
+                json={
+                    "race_id": race_id,
+                    "decision_source": "manual",
+                    "total_amount": 100,
+                    "tickets": [{"bet_type": "win", "selection": ["1"], "amount": 100}],
+                },
+            )
+            assert response.status_code == 422
+            assert response.json()["error"]["code"] == "validation_error"
+
+            listed = client.get(f"/bet-records?race_id={race_id}")
+            assert listed.status_code == 422
+            assert listed.json()["error"]["code"] == "validation_error"
     finally:
         app.dependency_overrides.clear()
 
@@ -516,6 +707,39 @@ def test_settle_bet_record_endpoint_returns_zero_for_all_miss(tmp_path):
         assert body["total_bet"] == 400
         assert body["total_payout"] == 0
         assert body["hit"] is False
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_settle_bet_record_endpoint_supports_16_digit_nankan_race_id(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    store.write_result(
+        RaceResult(
+            race_id="2026070419040501",
+            race_name="Nankan Sample",
+            results=[],
+            payouts=[PayoutEntry(bet_type="単勝", combination="1", payout="1,830")],
+            fetched_at=datetime.now(UTC),
+            source="nankan-result",
+        )
+    )
+    record = store.create_bet_record(
+        {
+            "race_id": "2026070419040501",
+            "decision_source": "manual",
+            "total_amount": 100,
+            "tickets": [{"bet_type": "win", "selection": ["1"], "amount": 100}],
+        }
+    )
+    app.dependency_overrides[get_analysis_store] = lambda: store
+    try:
+        response = TestClient(app).post(f"/bet-records/{record.bet_record_id}/settle")
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["race_id"] == "2026070419040501"
+        assert body["total_payout"] == 1830
+        assert body["hit"] is True
     finally:
         app.dependency_overrides.clear()
 

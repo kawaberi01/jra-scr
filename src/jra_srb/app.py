@@ -26,9 +26,17 @@ from .models import (
     BetRecordCreateRequest,
     BetRecordPage,
     BetRecordSettlement,
+    BET_RECORD_RACE_ID_PATTERN,
     BetType,
     CourseCode,
     NarCalendarPage,
+    NankankeibaPatternBundle,
+    NankanCourseCode,
+    NankanLeadingJockeyPage,
+    NankanMeetingTrend,
+    NankanRaceBestTime,
+    NankanRaceClosingSpeed,
+    NankanRaceStyleProfile,
     RaceSearchItem,
     RaceSearchPage,
     ResultCollectionJobCreated,
@@ -38,8 +46,12 @@ from .models import (
     ResultStorageKind,
     StoredRaceResultPage,
 )
+from .nankankeiba_pattern_provider import NankankeibaPatternHttpProvider
+from .nankankeiba_pattern_service import NankankeibaPatternService
 from .nar_netkeiba_provider import NarNetkeibaHttpProvider
 from .nar_netkeiba_service import NarNetkeibaService
+from .nankan_provider import NankanHttpProvider
+from .nankan_service import NankanService
 from .netkeiba_provider import NetkeibaHttpProvider
 from .netkeiba_service import NetkeibaService
 from .normalization import normalize_race_input, parse_bet_types
@@ -49,6 +61,7 @@ from .service import JraService
 logger = logging.getLogger(__name__)
 
 RaceIdPath = Annotated[str, Path(pattern=r"^\d{12}$", description="12桁のrace_id")]
+NankanRaceIdPath = Annotated[str, Path(pattern=r"^\d{16}$", description="16桁の南関東race_id")]
 RaceNoPath = Annotated[int, Path(ge=1, le=12, description="1から12までのレース番号")]
 DEFAULT_PAGE_LIMIT = 100
 MAX_PAGE_LIMIT = 500
@@ -66,6 +79,8 @@ app = FastAPI(
         {"name": "health", "description": "ヘルスチェック用 endpoint"},
         {"name": "races", "description": "race_id ベースまたは fixture ベースの API"},
         {"name": "meetings", "description": "開催日・開催地・レース番号ベースの API"},
+        {"name": "nankan", "description": "南関東4競馬場公式サイトの API"},
+        {"name": "nankankeiba", "description": "南関東4競馬場サイト由来の分析 API"},
         {"name": "search", "description": "race_id を探すための検索 API"},
         {"name": "jobs", "description": "長時間処理を非同期に実行する job API"},
         {"name": "mcp", "description": "FastAPI API を公開する MCP HTTP 入口"},
@@ -104,6 +119,27 @@ def build_nar_netkeiba_service() -> NarNetkeibaService:
     return NarNetkeibaService(provider=provider)
 
 
+def build_nankan_service() -> NankanService:
+    cache_path = os.environ.get("JRA_SRB_CACHE_PATH")
+    provider = NankanHttpProvider(
+        max_concurrency=_env_int("JRA_SRB_NANKAN_MAX_CONCURRENCY", default=3, minimum=1),
+        min_interval_seconds=_env_float("JRA_SRB_NANKAN_MIN_INTERVAL_SECONDS", default=1.0, minimum=0.0),
+    )
+    if cache_path:
+        return NankanService(provider=provider, cache=SQLiteTTLCache(cache_path))
+    return NankanService(provider=provider)
+
+
+def build_nankankeiba_pattern_service() -> NankankeibaPatternService:
+    cache_path = os.environ.get("JRA_SRB_CACHE_PATH")
+    provider = NankankeibaPatternHttpProvider(
+        min_interval_seconds=_env_float("JRA_SRB_NANKANKEIBA_MIN_INTERVAL_SECONDS", default=1.0, minimum=0.0),
+    )
+    if cache_path:
+        return NankankeibaPatternService(provider=provider, cache=SQLiteTTLCache(cache_path))
+    return NankankeibaPatternService(provider=provider)
+
+
 def _env_int(name: str, default: int, minimum: int) -> int:
     value = os.environ.get(name)
     if value is None or not value.strip():
@@ -127,6 +163,8 @@ def _env_float(name: str, default: float, minimum: float) -> float:
 service = build_service()
 netkeiba_service = build_netkeiba_service()
 nar_netkeiba_service = build_nar_netkeiba_service()
+nankan_service = build_nankan_service()
+nankankeiba_pattern_service = build_nankankeiba_pattern_service()
 result_collection_jobs = ResultCollectionJobRegistry()
 
 
@@ -140,6 +178,14 @@ def get_netkeiba_service() -> NetkeibaService:
 
 def get_nar_netkeiba_service() -> NarNetkeibaService:
     return nar_netkeiba_service
+
+
+def get_nankan_service() -> NankanService:
+    return nankan_service
+
+
+def get_nankankeiba_pattern_service() -> NankankeibaPatternService:
+    return nankankeiba_pattern_service
 
 
 def get_result_collection_job_registry() -> ResultCollectionJobRegistry:
@@ -586,6 +632,285 @@ async def get_nar_race_odds(
 
 
 @app.get(
+    "/nankan/leading/jockeys",
+    tags=["nankan"],
+    summary="南関東公式のリーディングジョッキーを取得",
+    response_model=NankanLeadingJockeyPage,
+)
+async def get_nankan_leading_jockeys(
+    course: NankanCourseCode | None = Query(default=None, description="競馬場。例: kawasaki"),
+    distance: int | None = Query(default=None, description="距離。例: 1400"),
+    track_condition: str | None = Query(default=None, description="馬場状態。good/slightly_heavy/heavy/bad"),
+    period: str = Query(default="recent_3months", description="表示期間。recent_3months/recent_1year/年"),
+    sort: str = Query(default="win_rate", description="表示順。wins/earnings/win_rate/quinella_rate"),
+    refresh: bool = Query(default=False, description="true の場合はキャッシュを使わず再取得します。"),
+    svc: NankanService = Depends(get_nankan_service),
+):
+    return await svc.get_leading_jockeys(
+        course=str(course) if course else None,
+        distance=distance,
+        track_condition=track_condition,
+        period=period,
+        sort=sort,
+        refresh=refresh,
+    )
+
+
+@app.get(
+    "/nankan/meetings/{date_}/{course}",
+    tags=["nankan"],
+    summary="南関東公式の開催一覧を取得",
+)
+async def get_nankan_meeting(
+    date_: date,
+    course: NankanCourseCode,
+    refresh: bool = Query(default=False, description="true の場合はキャッシュを使わず再取得します。"),
+    svc: NankanService = Depends(get_nankan_service),
+):
+    return await svc.get_meeting(date_, str(course), refresh=refresh)
+
+
+@app.get(
+    "/nankan/meetings/{date_}/{course}/trend",
+    tags=["nankan"],
+    summary="南関東公式の当日開催傾向を取得",
+    response_model=NankanMeetingTrend,
+)
+async def get_nankan_meeting_trend(
+    date_: date,
+    course: NankanCourseCode,
+    refresh: bool = Query(default=False, description="true の場合はキャッシュを使わず再取得します。"),
+    svc: NankanService = Depends(get_nankan_service),
+):
+    return await svc.get_meeting_trend(date_, str(course), refresh=refresh)
+
+
+@app.get(
+    "/nankan/races/{race_id}/card",
+    tags=["nankan"],
+    summary="南関東公式の出走表を取得",
+)
+async def get_nankan_race_card(
+    race_id: NankanRaceIdPath,
+    refresh: bool = Query(default=False, description="true の場合はキャッシュを使わず再取得します。"),
+    svc: NankanService = Depends(get_nankan_service),
+):
+    return await svc.get_race_card(race_id, refresh=refresh)
+
+
+@app.get(
+    "/nankan/races/{race_id}/best-time",
+    tags=["nankan"],
+    summary="南関東公式の持ち時計を取得",
+    response_model=NankanRaceBestTime,
+)
+async def get_nankan_race_best_time(
+    race_id: NankanRaceIdPath,
+    refresh: bool = Query(default=False, description="true の場合はキャッシュを使わず再取得します。"),
+    svc: NankanService = Depends(get_nankan_service),
+):
+    return await svc.get_race_best_time(race_id, refresh=refresh)
+
+
+@app.get(
+    "/nankan/races/{race_id}/closing-speed",
+    tags=["nankan"],
+    summary="南関東公式の上がり時計を取得",
+    response_model=NankanRaceClosingSpeed,
+)
+async def get_nankan_race_closing_speed(
+    race_id: NankanRaceIdPath,
+    refresh: bool = Query(default=False, description="true の場合はキャッシュを使わず再取得します。"),
+    svc: NankanService = Depends(get_nankan_service),
+):
+    return await svc.get_race_closing_speed(race_id, refresh=refresh)
+
+
+@app.get(
+    "/nankan/races/{race_id}/style-profile",
+    tags=["nankan"],
+    summary="南関東公式の近走通過順から脚質傾向を推定",
+    response_model=NankanRaceStyleProfile,
+)
+async def get_nankan_race_style_profile(
+    race_id: NankanRaceIdPath,
+    refresh: bool = Query(default=False, description="true の場合はキャッシュを使わず再取得します。"),
+    svc: NankanService = Depends(get_nankan_service),
+):
+    return await svc.get_race_style_profile(race_id, refresh=refresh)
+
+
+@app.get(
+    "/nankan/races/{race_id}/odds",
+    tags=["nankan"],
+    summary="南関東公式のオッズを取得",
+)
+async def get_nankan_race_odds(
+    race_id: NankanRaceIdPath,
+    bet_type: BetType | None = Query(default=None, description="単一券種コード。例: win, quinella, exacta, wide, trio, trifecta"),
+    bet_types: str | None = Query(default=None, description="複数券種をカンマ区切りで指定します。例: win,trifecta"),
+    combination: str | None = Query(default=None, description="組み合わせをカンマ区切りで指定します。例: 5,7,6"),
+    refresh: bool = Query(default=False, description="true の場合はキャッシュを使わず再取得します。"),
+    svc: NankanService = Depends(get_nankan_service),
+):
+    parsed = [str(item) for item in parse_bet_types(bet_types)] if bet_types else None
+    parsed_combination = [item.strip() for item in combination.split(",")] if combination else None
+    return await svc.get_race_odds(
+        race_id,
+        bet_type=str(bet_type) if bet_type else None,
+        bet_types=parsed,
+        combination=parsed_combination,
+        refresh=refresh,
+    )
+
+
+@app.get(
+    "/nankan/races/{race_id}/result",
+    tags=["nankan"],
+    summary="南関東公式の結果を取得",
+)
+async def get_nankan_race_result(
+    race_id: NankanRaceIdPath,
+    refresh: bool = Query(default=False, description="true の場合はキャッシュを使わず再取得します。"),
+    svc: NankanService = Depends(get_nankan_service),
+):
+    return await svc.get_race_result(race_id, refresh=refresh)
+
+
+@app.get(
+    "/nankan/meetings/{date_}/{course}/races/{race_no}/card",
+    tags=["nankan"],
+    summary="南関東公式の出走表を日付・場・Rで取得",
+)
+async def get_nankan_race_card_by_number(
+    date_: date,
+    course: NankanCourseCode,
+    race_no: RaceNoPath,
+    refresh: bool = Query(default=False, description="true の場合はキャッシュを使わず再取得します。"),
+    svc: NankanService = Depends(get_nankan_service),
+):
+    return await svc.get_race_card_by_number(date_, str(course), race_no, refresh=refresh)
+
+
+@app.get(
+    "/nankan/meetings/{date_}/{course}/races/{race_no}/best-time",
+    tags=["nankan"],
+    summary="南関東公式の持ち時計を日付・場・Rで取得",
+    response_model=NankanRaceBestTime,
+)
+async def get_nankan_race_best_time_by_number(
+    date_: date,
+    course: NankanCourseCode,
+    race_no: RaceNoPath,
+    refresh: bool = Query(default=False, description="true の場合はキャッシュを使わず再取得します。"),
+    svc: NankanService = Depends(get_nankan_service),
+):
+    return await svc.get_race_best_time_by_number(date_, str(course), race_no, refresh=refresh)
+
+
+@app.get(
+    "/nankan/meetings/{date_}/{course}/races/{race_no}/closing-speed",
+    tags=["nankan"],
+    summary="南関東公式の上がり時計を日付・場・Rで取得",
+    response_model=NankanRaceClosingSpeed,
+)
+async def get_nankan_race_closing_speed_by_number(
+    date_: date,
+    course: NankanCourseCode,
+    race_no: RaceNoPath,
+    refresh: bool = Query(default=False, description="true の場合はキャッシュを使わず再取得します。"),
+    svc: NankanService = Depends(get_nankan_service),
+):
+    return await svc.get_race_closing_speed_by_number(date_, str(course), race_no, refresh=refresh)
+
+
+@app.get(
+    "/nankan/meetings/{date_}/{course}/races/{race_no}/style-profile",
+    tags=["nankan"],
+    summary="南関東公式の近走通過順から脚質傾向を日付・場・Rで推定",
+    response_model=NankanRaceStyleProfile,
+)
+async def get_nankan_race_style_profile_by_number(
+    date_: date,
+    course: NankanCourseCode,
+    race_no: RaceNoPath,
+    refresh: bool = Query(default=False, description="true の場合はキャッシュを使わず再取得します。"),
+    svc: NankanService = Depends(get_nankan_service),
+):
+    return await svc.get_race_style_profile_by_number(date_, str(course), race_no, refresh=refresh)
+
+
+@app.get(
+    "/nankan/meetings/{date_}/{course}/races/{race_no}/odds",
+    tags=["nankan"],
+    summary="南関東公式のオッズを日付・場・Rで取得",
+)
+async def get_nankan_race_odds_by_number(
+    date_: date,
+    course: NankanCourseCode,
+    race_no: RaceNoPath,
+    bet_type: BetType | None = Query(default=None, description="単一券種コード。例: win, quinella, exacta, wide, trio, trifecta"),
+    bet_types: str | None = Query(default=None, description="複数券種をカンマ区切りで指定します。例: win,trifecta"),
+    combination: str | None = Query(default=None, description="組み合わせをカンマ区切りで指定します。例: 5,7,6"),
+    refresh: bool = Query(default=False, description="true の場合はキャッシュを使わず再取得します。"),
+    svc: NankanService = Depends(get_nankan_service),
+):
+    parsed = [str(item) for item in parse_bet_types(bet_types)] if bet_types else None
+    parsed_combination = [item.strip() for item in combination.split(",")] if combination else None
+    return await svc.get_race_odds_by_number(
+        date_,
+        str(course),
+        race_no,
+        bet_type=str(bet_type) if bet_type else None,
+        bet_types=parsed,
+        combination=parsed_combination,
+        refresh=refresh,
+    )
+
+
+@app.get(
+    "/nankan/meetings/{date_}/{course}/races/{race_no}/result",
+    tags=["nankan"],
+    summary="南関東公式の結果を日付・場・Rで取得",
+)
+async def get_nankan_race_result_by_number(
+    date_: date,
+    course: NankanCourseCode,
+    race_no: RaceNoPath,
+    refresh: bool = Query(default=False, description="true の場合はキャッシュを使わず再取得します。"),
+    svc: NankanService = Depends(get_nankan_service),
+):
+    return await svc.get_race_result_by_number(date_, str(course), race_no, refresh=refresh)
+
+
+@app.get(
+    "/nankankeiba/pattern/meetings/{date_}/{course}/races/{race_no}",
+    tags=["nankankeiba"],
+    summary="南関東 勝ちパターン分析を取得",
+    response_model=NankankeibaPatternBundle,
+)
+async def get_nankankeiba_pattern(
+    date_: date,
+    course: str,
+    race_no: RaceNoPath,
+    meeting_no: int = Query(ge=1, description="開催回。例: 4"),
+    meeting_day: int = Query(ge=1, description="開催日。例: 1"),
+    periods: str | None = Query(default="lifetime", description="期間コード。現時点では lifetime または 01。"),
+    categories: str | None = Query(default=None, description="カテゴリをカンマ区切りで指定します。"),
+    svc: NankankeibaPatternService = Depends(get_nankankeiba_pattern_service),
+):
+    return await svc.get_pattern_bundle(
+        date_,
+        course,
+        meeting_no,
+        meeting_day,
+        race_no,
+        periods=_parse_query_csv(periods) or ["lifetime"],
+        categories=_parse_query_csv(categories),
+    )
+
+
+@app.get(
     "/stored/results",
     tags=["races"],
     summary="保存済み結果を検索",
@@ -648,7 +973,7 @@ async def create_bet_record(
 async def list_bet_records(
     from_date: date | None = Query(default=None, description="å¯¾è±¡ãƒ¬ãƒ¼ã‚¹ã®é–‹å‚¬é–‹å§‹æ—¥"),
     to_date: date | None = Query(default=None, description="å¯¾è±¡ãƒ¬ãƒ¼ã‚¹ã®é–‹å‚¬çµ‚äº†æ—¥"),
-    race_id: str | None = Query(default=None, description="race_id ã§çµžã‚Šè¾¼ã¿"),
+    race_id: str | None = Query(default=None, pattern=BET_RECORD_RACE_ID_PATTERN, description="race_id ã§çµžã‚Šè¾¼ã¿"),
     course: CourseCode | None = Query(default=None, description="é–‹å‚¬å ´ã‚³ãƒ¼ãƒ‰ã§çµžã‚Šè¾¼ã¿"),
     theory_version: str | None = Query(default=None, description="theory_version ã§çµžã‚Šè¾¼ã¿"),
     decision_source: str | None = Query(default=None, description="agent, manual, agent_plus_manual"),
@@ -747,6 +1072,12 @@ def _extract_race_no(race_number: str | None) -> int | None:
     if not digits:
         return None
     return int(digits)
+
+
+def _parse_query_csv(value: str | None) -> list[str] | None:
+    if value is None:
+        return None
+    return [item.strip() for item in value.split(",") if item.strip()]
 
 
 def _to_course_code(course: str | None) -> CourseCode | None:

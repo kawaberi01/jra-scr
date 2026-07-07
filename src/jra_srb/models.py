@@ -19,6 +19,13 @@ class CourseCode(StrEnum):
     kokura = "kokura"
 
 
+class NankanCourseCode(StrEnum):
+    urawa = "urawa"
+    funabashi = "funabashi"
+    ohi = "ohi"
+    kawasaki = "kawasaki"
+
+
 class BetType(StrEnum):
     win = "win"
     place = "place"
@@ -157,7 +164,12 @@ class RaceCard(BaseModel):
     course: str | None = None
     distance: str | None = None
     surface: str | None = None
+    surface_label: str | None = None
     start_time: str | None = None
+    weather: str | None = None
+    weather_label: str | None = None
+    track_condition: str | None = None
+    track_condition_label: str | None = None
     runners: list[Runner] = Field(default_factory=list)
     fetched_at: datetime
     source: str
@@ -169,6 +181,13 @@ class MeetingRace(BaseModel):
     race_id: str
     race_name: str | None = None
     start_time: str | None = None
+    surface: str | None = None
+    surface_label: str | None = None
+    distance: str | None = None
+    weather: str | None = None
+    weather_label: str | None = None
+    track_condition: str | None = None
+    track_condition_label: str | None = None
     card_cname: str | None = None
     odds_cname: str | None = None
     result_cname: str | None = None
@@ -178,8 +197,181 @@ class MeetingSnapshot(BaseModel):
     date: date
     course: str
     races: list[MeetingRace] = Field(default_factory=list)
+    weather: str | None = None
+    weather_label: str | None = None
+    track_condition: str | None = None
+    track_condition_label: str | None = None
+    surface: str | None = None
+    surface_label: str | None = None
     fetched_at: datetime
     source: str
+    cache_hit: bool = False
+
+
+class NankanTrendFrameEntry(BaseModel):
+    frame_no: str
+    top3_count: int
+
+
+class NankanTrendPersonEntry(BaseModel):
+    name: str
+    affiliation: str | None = None
+    top3_count: int
+
+
+class NankanTrendBloodlineEntry(BaseModel):
+    name: str
+    top3_count: int
+
+
+class NankanTrendRunningStyleSummary(BaseModel):
+    front_group_top3_count: int | None = None
+    back_group_top3_count: int | None = None
+
+
+class NankanTrendPayoutSummary(BaseModel):
+    trifecta_max_payout: int | None = None
+    trifecta_max_payout_race_no: int | None = None
+
+
+class NankanTrendSummary(BaseModel):
+    frame: list[NankanTrendFrameEntry] = Field(default_factory=list)
+    running_style: NankanTrendRunningStyleSummary = Field(default_factory=NankanTrendRunningStyleSummary)
+    jockey: list[NankanTrendPersonEntry] = Field(default_factory=list)
+    trainer: list[NankanTrendPersonEntry] = Field(default_factory=list)
+    sire: list[NankanTrendBloodlineEntry] = Field(default_factory=list)
+    broodmare_sire: list[NankanTrendBloodlineEntry] = Field(default_factory=list)
+    payout: NankanTrendPayoutSummary = Field(default_factory=NankanTrendPayoutSummary)
+
+
+class NankanMeetingTrend(BaseModel):
+    date: date
+    course: str
+    meeting_id: str
+    open_date: str
+    updated_at: datetime | None = None
+    race_count_completed: int = 0
+    summary: NankanTrendSummary = Field(default_factory=NankanTrendSummary)
+    fetched_at: datetime
+    source: str
+    cache_hit: bool = False
+
+
+class NankanBestTimeRunner(BaseModel):
+    horse_no: str
+    horse_name: str
+    best_time: str | None = None
+    best_time_rank: int | None = None
+    best_time_source_race_id: str | None = None
+    best_time_source_date: date | None = None
+    best_time_source_course: str | None = None
+    best_time_source_distance: int | None = None
+    same_course_flag: bool | None = None
+    same_distance_flag: bool | None = None
+    track_condition: str | None = None
+    horse_profile_id: str | None = None
+
+
+class NankanRaceBestTime(BaseModel):
+    race_id: str
+    race_name: str | None = None
+    course: str | None = None
+    distance: int | None = None
+    surface: str | None = None
+    runners: list[NankanBestTimeRunner] = Field(default_factory=list)
+    fetched_at: datetime
+    source: str
+    cache_hit: bool = False
+
+
+class NankanClosingSpeedRunner(BaseModel):
+    horse_no: str
+    horse_name: str
+    best_closing_time: str | None = None
+    best_closing_rank: int | None = None
+    closing_time_source_race_id: str | None = None
+    closing_time_source_date: date | None = None
+    same_course_flag: bool | None = None
+    same_distance_flag: bool | None = None
+    track_condition: str | None = None
+    closing_section_distance: int | None = 600
+    horse_profile_id: str | None = None
+
+
+class NankanRaceClosingSpeed(BaseModel):
+    race_id: str
+    race_name: str | None = None
+    course: str | None = None
+    distance: int | None = None
+    surface: str | None = None
+    runners: list[NankanClosingSpeedRunner] = Field(default_factory=list)
+    fetched_at: datetime
+    source: str
+    cache_hit: bool = False
+
+
+class NankanStyleScores(BaseModel):
+    front: float = 0.0
+    stalker: float = 0.0
+    midpack: float = 0.0
+    closer: float = 0.0
+
+
+class NankanStyleRecentRace(BaseModel):
+    source_date: date | None = None
+    course: str | None = None
+    race_no: int | None = None
+    corner_positions: list[int] = Field(default_factory=list)
+    field_size: int | None = None
+    distance: int | None = None
+    track_condition: str | None = None
+    finish_rank: int | None = None
+
+
+class NankanStyleProfileRunner(BaseModel):
+    horse_no: str
+    horse_name: str
+    style_scores: NankanStyleScores = Field(default_factory=NankanStyleScores)
+    expected_style: str | None = None
+    sample_size: int = 0
+    recent_races: list[NankanStyleRecentRace] = Field(default_factory=list)
+    horse_profile_id: str | None = None
+
+
+class NankanRaceStyleProfile(BaseModel):
+    race_id: str
+    runners: list[NankanStyleProfileRunner] = Field(default_factory=list)
+    fetched_at: datetime
+    source: str
+    cache_hit: bool = False
+
+
+class NankanLeadingJockeyItem(BaseModel):
+    rank: int | None = None
+    jockey_code: str | None = None
+    jockey_name: str
+    rides: int | None = None
+    wins: int | None = None
+    seconds: int | None = None
+    thirds: int | None = None
+    win_rate: float | None = None
+    quinella_rate: float | None = None
+    trio_rate: float | None = None
+
+
+class NankanLeadingJockeyPage(BaseModel):
+    source: str = "nankankeiba"
+    source_url: str | None = None
+    requested_condition_code: str | None = None
+    effective_condition_code: str | None = None
+    fallback: bool = False
+    course: str | None = None
+    distance: int | None = None
+    track_condition: str | None = None
+    period: str
+    sort: str
+    generated_at: datetime
+    items: list[NankanLeadingJockeyItem] = Field(default_factory=list)
     cache_hit: bool = False
 
 
@@ -188,6 +380,62 @@ class RaceOdds(BaseModel):
     bet_type: str | None = None
     entries: list[OddsEntry] = Field(default_factory=list)
     odds: dict[str, list[OddsEntry]] = Field(default_factory=dict)
+    fetched_at: datetime
+    source: str
+    cache_hit: bool = False
+
+
+class NankankeibaPatternRate(BaseModel):
+    rate: float | None = None
+    wins: int | None = None
+    starts: int | None = None
+
+
+class NankankeibaPatternCategoryEntry(BaseModel):
+    category: str
+    frame_no: str | None = None
+    horse_no: str
+    horse_name: str
+    jockey: str | None = None
+    weight_carried: str | None = None
+    trainer: str | None = None
+    win_odds: str | None = None
+    rates: dict[str, NankankeibaPatternRate] = Field(default_factory=dict)
+    jockey_riding_rate: NankankeibaPatternRate | None = None
+    track_condition_rates: dict[str, NankankeibaPatternRate] = Field(default_factory=dict)
+    season_rates: dict[str, NankankeibaPatternRate] = Field(default_factory=dict)
+    frame_group_rates: dict[str, NankankeibaPatternRate] = Field(default_factory=dict)
+
+
+class NankankeibaPatternRunner(BaseModel):
+    frame_no: str | None = None
+    horse_no: str
+    horse_name: str
+    jockey: str | None = None
+    weight_carried: str | None = None
+    trainer: str | None = None
+    categories: dict[str, NankankeibaPatternCategoryEntry] = Field(default_factory=dict)
+
+
+class NankankeibaPatternCategoryPage(BaseModel):
+    race_id: str
+    category: str
+    entries: list[NankankeibaPatternCategoryEntry] = Field(default_factory=list)
+    fetched_at: datetime
+    source: str
+    cache_hit: bool = False
+
+
+class NankankeibaPatternBundle(BaseModel):
+    race_id: str
+    date: date
+    course: str
+    meeting_no: int
+    meeting_day: int
+    race_no: int
+    periods: list[str] = Field(default_factory=list)
+    categories: list[str] = Field(default_factory=list)
+    runners: list[NankankeibaPatternRunner] = Field(default_factory=list)
     fetched_at: datetime
     source: str
     cache_hit: bool = False
@@ -316,8 +564,11 @@ class BetRecordTicketRequest(BaseModel):
         return self
 
 
+BET_RECORD_RACE_ID_PATTERN = r"^(\d{12}|\d{16})$"
+
+
 class BetRecordCreateRequest(BaseModel):
-    race_id: str = Field(pattern=r"^\d{12}$")
+    race_id: str = Field(pattern=BET_RECORD_RACE_ID_PATTERN)
     prediction_id: str | None = None
     theory_version: str | None = None
     decision_source: DecisionSource
