@@ -1,10 +1,13 @@
-from datetime import date
+from datetime import UTC, date, datetime
 
 import pytest
 
+from jra_srb.analysis_store import AnalysisSQLiteStore
+from jra_srb.cache import SQLiteTTLCache
 from jra_srb.errors import BadRequestError, ResourceNotFoundError
+from jra_srb.models import RaceCard, Runner
 from jra_srb.nankan_provider import NankanFixtureProvider, NankanPageContent
-from jra_srb.nankan_service import NankanService
+from jra_srb.nankan_service import NankanCacheTtls, NankanService
 
 
 @pytest.mark.asyncio
@@ -17,6 +20,8 @@ async def test_nankan_service_get_meeting_and_card():
     assert meeting.races[0].race_id == "2026070419040501"
     assert card.race_id == "2026070419040501"
     assert card.runners[0].horse_name == "トーセンレクサム"
+    assert card.data_status is not None
+    assert card.data_status.horse_weight == "available"
 
 
 @pytest.mark.asyncio
@@ -116,6 +121,45 @@ async def test_nankan_service_get_meeting_trend():
     assert trend.summary.jockey[0].name == "笹川翼"
     assert trend.summary.trainer[0].name == "高月賢一"
     assert trend.summary.payout.trifecta_max_payout == 109080
+
+
+@pytest.mark.asyncio
+async def test_nankan_service_get_meeting_trend_context_rejects_future_snapshot_for_6r():
+    service = NankanService(provider=NankanFixtureProvider("tests/fixtures"))
+
+    context = await service.get_meeting_trend_context(date(2026, 7, 6), "kawasaki", 6)
+
+    assert context.race_no == 6
+    assert context.race_count_completed == 12
+    assert context.required_max_completed == 5
+    assert context.usable is False
+    assert context.reason == "latest trend is post-race snapshot"
+    assert context.summary.frame == []
+    assert context.trend is not None
+    assert context.trend.summary.frame[0].frame_no == "6"
+
+
+@pytest.mark.asyncio
+async def test_nankan_service_get_meeting_trend_context_rejects_future_snapshot_for_1r():
+    service = NankanService(provider=NankanFixtureProvider("tests/fixtures"))
+
+    context = await service.get_meeting_trend_context(date(2026, 7, 6), "kawasaki", 1)
+
+    assert context.race_count_completed == 12
+    assert context.required_max_completed == 0
+    assert context.usable is False
+
+
+@pytest.mark.asyncio
+async def test_nankan_service_get_meeting_trend_context_allows_empty_prerace_snapshot():
+    service = NankanService(provider=MissingTrendProvider("tests/fixtures"))
+
+    context = await service.get_meeting_trend_context(date(2026, 7, 6), "kawasaki", 1)
+
+    assert context.race_count_completed == 0
+    assert context.required_max_completed == 0
+    assert context.usable is True
+    assert context.reason is None
 
 
 @pytest.mark.asyncio
@@ -321,6 +365,157 @@ class MissingResultProvider(NankanFixtureProvider):
         raise ResourceNotFoundError(f"nankan result not available yet: race_id={race_id}")
 
 
+class MissingTrendProvider(NankanFixtureProvider):
+    async def fetch_trend(self, meeting_id: str, open_date: str) -> NankanPageContent:
+        raise ResourceNotFoundError(f"nankan trend not available yet: meeting_id={meeting_id} open_date={open_date}")
+
+
+class CountingCardProvider(NankanFixtureProvider):
+    def __init__(self, fixtures_dir: str) -> None:
+        super().__init__(fixtures_dir)
+        self.card_calls = 0
+
+    async def fetch_race_card(self, race_id: str) -> NankanPageContent:
+        self.card_calls += 1
+        return await super().fetch_race_card(race_id)
+
+
+class MissingCardProvider(NankanFixtureProvider):
+    async def fetch_race_card(self, race_id: str) -> NankanPageContent:
+        raise ResourceNotFoundError(f"nankan card not available yet: race_id={race_id}")
+
+
+class UnpublishedWeightCardProvider(NankanFixtureProvider):
+    async def fetch_race_card(self, race_id: str) -> NankanPageContent:
+        return NankanPageContent(source=f"fixture:{race_id}", content=_unpublished_weight_card_html())
+
+
+@pytest.mark.asyncio
+async def test_nankan_service_returns_db_cache_when_ttl_is_valid(tmp_path):
+    provider = CountingCardProvider("tests/fixtures")
+    service = NankanService(provider=provider, cache=SQLiteTTLCache(tmp_path / "cache.sqlite"))
+
+    first = await service.get_race_card("2026070419040501")
+    second = await service.get_race_card("2026070419040501")
+
+    assert provider.card_calls == 1
+    assert first.meta is not None
+    assert first.meta.data_source == "external"
+    assert first.meta.saved is True
+    assert second.cache_hit is True
+    assert second.meta is not None
+    assert second.meta.data_source == "db"
+    assert second.meta.db_hit is True
+    assert second.meta.ttl_expired is False
+
+
+@pytest.mark.asyncio
+async def test_nankan_service_backfills_data_status_for_legacy_cached_card(tmp_path):
+    cache = SQLiteTTLCache(tmp_path / "cache.sqlite")
+    legacy_card = RaceCard(
+        race_id="2026070721040201",
+        race_name="legacy",
+        runners=[
+            Runner(horse_no="1", horse_name="テストホースA"),
+            Runner(horse_no="2", horse_name="テストホースB"),
+        ],
+        fetched_at=datetime.now(UTC),
+        source="legacy-cache",
+        data_status=None,
+    )
+    cache.set("nankan:card:2026070721040201", legacy_card, ttl_seconds=60)
+    service = NankanService(provider=MissingCardProvider("tests/fixtures"), cache=cache)
+
+    card = await service.get_race_card("2026070721040201")
+
+    assert card.cache_hit is True
+    assert card.data_status is not None
+    assert card.data_status.horse_weight == "unpublished"
+    assert card.data_status.horse_weight_reason == "all runners have null horse_weight before official publication"
+
+
+@pytest.mark.asyncio
+async def test_nankan_service_refetches_when_ttl_is_expired(tmp_path):
+    cache = SQLiteTTLCache(tmp_path / "cache.sqlite")
+    provider = CountingCardProvider("tests/fixtures")
+    service = NankanService(provider=provider, cache=cache, ttl_config=NankanCacheTtls(card=60))
+    stale = await service.get_race_card("2026070419040501")
+    cache.set("nankan:card:2026070419040501", stale, ttl_seconds=-1)
+
+    refreshed = await service.get_race_card("2026070419040501")
+
+    assert provider.card_calls == 2
+    assert refreshed.meta is not None
+    assert refreshed.meta.data_source == "external"
+    assert refreshed.meta.db_hit is True
+    assert refreshed.meta.ttl_expired is True
+    assert refreshed.meta.saved is True
+
+
+@pytest.mark.asyncio
+async def test_nankan_service_refresh_true_forces_external_fetch(tmp_path):
+    provider = CountingCardProvider("tests/fixtures")
+    service = NankanService(provider=provider, cache=SQLiteTTLCache(tmp_path / "cache.sqlite"))
+
+    await service.get_race_card("2026070419040501")
+    refreshed = await service.get_race_card("2026070419040501", refresh=True)
+
+    assert provider.card_calls == 2
+    assert refreshed.meta is not None
+    assert refreshed.meta.data_source == "external"
+    assert refreshed.meta.db_hit is True
+    assert refreshed.meta.saved is True
+
+
+@pytest.mark.asyncio
+async def test_nankan_service_returns_stale_db_data_when_refresh_fails(tmp_path):
+    cache = SQLiteTTLCache(tmp_path / "cache.sqlite")
+    service = NankanService(provider=CountingCardProvider("tests/fixtures"), cache=cache)
+    stale = await service.get_race_card("2026070419040501")
+    cache.set("nankan:card:2026070419040501", stale, ttl_seconds=-1)
+
+    failing_service = NankanService(provider=MissingCardProvider("tests/fixtures"), cache=cache)
+    result = await failing_service.get_race_card("2026070419040501")
+
+    assert result.race_id == "2026070419040501"
+    assert result.meta is not None
+    assert result.meta.data_source == "db"
+    assert result.meta.db_hit is True
+    assert result.meta.ttl_expired is True
+    assert result.meta.stale is True
+    assert "card not available yet" in (result.meta.refresh_error or "")
+
+
+@pytest.mark.asyncio
+async def test_nankan_service_marks_unpublished_horse_weight():
+    service = NankanService(provider=UnpublishedWeightCardProvider("tests/fixtures"))
+
+    card = await service.get_race_card("2026070721040201")
+
+    assert card.data_status is not None
+    assert card.data_status.horse_weight == "unpublished"
+    assert card.data_status.horse_weight_reason == "all runners have null horse_weight before official publication"
+    assert all(runner.horse_weight is None for runner in card.runners)
+    assert all(runner.horse_weight_diff is None for runner in card.runners)
+
+
+@pytest.mark.asyncio
+async def test_nankan_service_writes_external_odds_to_analysis_snapshots(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    service = NankanService(
+        provider=NankanFixtureProvider("tests/fixtures"),
+        cache=SQLiteTTLCache(tmp_path / "cache.sqlite"),
+        analysis_store=store,
+    )
+
+    odds = await service.get_race_odds("2026070419040501", bet_type="win")
+
+    assert odds.meta is not None
+    assert odds.meta.saved is True
+    assert store.count_rows("odds_snapshots") == 1
+    assert store.count_rows("odds_entries") == len(odds.entries)
+
+
 @pytest.mark.asyncio
 async def test_nankan_service_propagates_not_available_404():
     service = NankanService(provider=MissingOddsProvider("tests/fixtures"))
@@ -335,3 +530,17 @@ async def test_nankan_service_propagates_result_not_available_404():
 
     with pytest.raises(ResourceNotFoundError, match="result not available yet"):
         await service.get_race_result("2026070419040501", refresh=True)
+
+
+def _unpublished_weight_card_html() -> str:
+    return """
+    <html><body>
+      <h1>1R 川崎 ダ1400m 発走時刻 15:00 天候:晴 馬場:ダ良</h1>
+      <p>Ｃ３(一)(二)</p>
+      <table>
+        <tr><th>枠</th><th>馬</th><th>馬名</th><th>性齢</th><th>単勝</th><th>馬体重</th><th>斤量</th><th>騎手</th><th></th><th>調教師</th><th></th></tr>
+        <tr><td>1</td><td>1</td><td>テストホースA</td><td>牡4</td><td>2.1</td><td></td><td>56.0</td><td>町田直希</td><td></td><td>テスト厩舎</td><td></td></tr>
+        <tr><td>2</td><td>2</td><td>テストホースB</td><td>牝5</td><td>4.8</td><td></td><td>54.0</td><td>野畑凌</td><td></td><td>テスト厩舎</td><td></td></tr>
+      </table>
+    </body></html>
+    """

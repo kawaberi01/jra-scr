@@ -128,6 +128,29 @@ race summary 一覧を取得します。
 }
 ```
 
+### `GET /nankan/meetings/{date}/{course}/races/{race_no}/trend-context`
+
+対象レースの事前予想で当日開催傾向を採用してよいかを判定して返します。
+`/trend` は公式ページの最新スナップショットを返すため、対象レースより後の情報を含む場合があります。
+`trend-context` は `required_max_completed = race_no - 1` を計算し、
+`race_count_completed <= required_max_completed` の場合だけ `usable: true` を返します。
+
+主なレスポンス:
+
+```json
+{
+  "date": "2026-07-06",
+  "course": "kawasaki",
+  "race_no": 6,
+  "race_count_completed": 12,
+  "required_max_completed": 5,
+  "usable": false,
+  "reason": "latest trend is post-race snapshot",
+  "summary": {},
+  "source": "https://www.nankankeiba.com/race_trend/2026210401.do?open_date=20260706"
+}
+```
+
 ### `GET /nankan/leading/jockeys`
 
 南関東公式のリーディングジョッキー情報を取得します。予想では主材料ではなく、`pattern_kis` / `pattern_kis_cho` の裏取り、短距離戦の騎手補正、接戦時の順位補正に使います。
@@ -147,6 +170,12 @@ race summary 一覧を取得します。
 ### `GET /nankan/meetings/{date}/{course}/races/{race_no}/card`
 
 開催日、開催場、レース番号から出走表を取得します。
+
+馬体重・増減の公開状態は `data_status.horse_weight` で返します。
+
+- `available`: 1頭以上で `horse_weight` または `horse_weight_diff` が取得できています。
+- `unpublished`: 出走表と runner は取得できていますが、全頭の馬体重・増減が未発表です。
+- `unavailable`: HTML構造変更などで馬体重欄を判定できません。
 
 ### `GET /nankan/meetings/{date}/{course}/races/{race_no}/best-time`
 

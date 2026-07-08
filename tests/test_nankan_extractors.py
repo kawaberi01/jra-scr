@@ -40,6 +40,25 @@ def test_parse_nankan_race_card_extracts_runner():
     assert parsed["runners"][0].horse_name == "トーセンレクサム"
     assert parsed["runners"][0].horse_weight == "503"
     assert parsed["runners"][0].horse_weight_diff == "+24"
+    assert parsed["data_status"]["horse_weight"] == "available"
+
+
+def test_parse_nankan_race_card_marks_horse_weight_unpublished_when_weight_cells_are_empty():
+    parsed = parse_nankan_race_card(_unpublished_weight_card_html())
+
+    assert len(parsed["runners"]) == 2
+    assert all(runner.horse_weight is None for runner in parsed["runners"])
+    assert all(runner.horse_weight_diff is None for runner in parsed["runners"])
+    assert parsed["data_status"]["horse_weight"] == "unpublished"
+    assert parsed["data_status"]["horse_weight_reason"] == "all runners have null horse_weight before official publication"
+
+
+def test_parse_nankan_race_card_marks_horse_weight_unavailable_when_weight_column_is_missing():
+    parsed = parse_nankan_race_card(_missing_weight_column_card_html())
+
+    assert len(parsed["runners"]) == 2
+    assert parsed["data_status"]["horse_weight"] == "unavailable"
+    assert parsed["data_status"]["horse_weight_reason"] == "horse_weight column could not be identified"
 
 
 def test_parse_nankan_race_card_keeps_runner_without_frame_no():
@@ -55,6 +74,34 @@ def test_parse_nankan_race_card_keeps_runner_without_frame_no():
     assert parsed["runners"][-1].horse_no == "9"
     assert parsed["runners"][-1].horse_name == "オウケンデューク 20.5.6(中同名)"
     assert parsed["runners"][-1].jockey == "野畑凌 (川崎)"
+
+
+def _unpublished_weight_card_html() -> str:
+    return """
+    <html><body>
+      <h1>1R 川崎 ダ1400m 発走時刻 15:00 天候:晴 馬場:ダ良</h1>
+      <p>Ｃ３(一)(二)</p>
+      <table>
+        <tr><th>枠</th><th>馬</th><th>馬名</th><th>性齢</th><th>単勝</th><th>馬体重</th><th>斤量</th><th>騎手</th><th></th><th>調教師</th><th></th></tr>
+        <tr><td>1</td><td>1</td><td>テストホースA</td><td>牡4</td><td>2.1</td><td></td><td>56.0</td><td>町田直希</td><td></td><td>テスト厩舎</td><td></td></tr>
+        <tr><td>2</td><td>2</td><td>テストホースB</td><td>牝5</td><td>4.8</td><td></td><td>54.0</td><td>野畑凌</td><td></td><td>テスト厩舎</td><td></td></tr>
+      </table>
+    </body></html>
+    """
+
+
+def _missing_weight_column_card_html() -> str:
+    return """
+    <html><body>
+      <h1>1R 川崎 ダ1400m 発走時刻 15:00 天候:晴 馬場:ダ良</h1>
+      <p>Ｃ３(一)(二)</p>
+      <table>
+        <tr><th>枠</th><th>馬</th><th>馬名</th><th>性齢</th><th>単勝</th><th>状態</th><th>斤量</th><th>騎手</th><th></th><th>調教師</th><th></th></tr>
+        <tr><td>1</td><td>1</td><td>テストホースA</td><td>牡4</td><td>2.1</td><td></td><td>56.0</td><td>町田直希</td><td></td><td>テスト厩舎</td><td></td></tr>
+        <tr><td>2</td><td>2</td><td>テストホースB</td><td>牝5</td><td>4.8</td><td></td><td>54.0</td><td>野畑凌</td><td></td><td>テスト厩舎</td><td></td></tr>
+      </table>
+    </body></html>
+    """
 
 
 def test_parse_nankan_meeting_extracts_conditions():

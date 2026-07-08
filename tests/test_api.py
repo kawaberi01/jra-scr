@@ -477,6 +477,7 @@ def test_cli_and_api_return_same_nankankeiba_pattern_json_shape(tmp_path):
         app.dependency_overrides.clear()
 
     cli_body["cache_hit"] = api_body["cache_hit"]
+    cli_body["meta"] = api_body["meta"]
     assert cli_body == api_body
 
 

@@ -54,6 +54,17 @@ class DecisionSource(StrEnum):
     agent_plus_manual = "agent_plus_manual"
 
 
+class CachePolicyMeta(BaseModel):
+    cache_policy: str = "db_first_ttl"
+    data_source: str
+    db_hit: bool = False
+    ttl_expired: bool = False
+    saved: bool = False
+    stale: bool = False
+    refresh_error: str | None = None
+    fetched_at: datetime | None = None
+
+
 class RaceSummary(BaseModel):
     race_id: str
     race_number: str | None = None
@@ -75,6 +86,11 @@ class Runner(BaseModel):
     horse_weight_diff: str | None = None
     odds: str | None = None
     popularity: str | None = None
+
+
+class RaceCardDataStatus(BaseModel):
+    horse_weight: str | None = None
+    horse_weight_reason: str | None = None
 
 
 class OddsEntry(BaseModel):
@@ -174,6 +190,8 @@ class RaceCard(BaseModel):
     fetched_at: datetime
     source: str
     cache_hit: bool = False
+    meta: CachePolicyMeta | None = None
+    data_status: RaceCardDataStatus | None = None
 
 
 class MeetingRace(BaseModel):
@@ -206,6 +224,7 @@ class MeetingSnapshot(BaseModel):
     fetched_at: datetime
     source: str
     cache_hit: bool = False
+    meta: CachePolicyMeta | None = None
 
 
 class NankanTrendFrameEntry(BaseModel):
@@ -255,6 +274,21 @@ class NankanMeetingTrend(BaseModel):
     fetched_at: datetime
     source: str
     cache_hit: bool = False
+    meta: CachePolicyMeta | None = None
+
+
+class NankanMeetingTrendContext(BaseModel):
+    date: date
+    course: str
+    race_no: int
+    race_count_completed: int
+    required_max_completed: int
+    usable: bool
+    reason: str | None = None
+    summary: NankanTrendSummary = Field(default_factory=NankanTrendSummary)
+    fetched_at: datetime
+    source: str
+    trend: NankanMeetingTrend | None = None
 
 
 class NankanBestTimeRunner(BaseModel):
@@ -282,6 +316,7 @@ class NankanRaceBestTime(BaseModel):
     fetched_at: datetime
     source: str
     cache_hit: bool = False
+    meta: CachePolicyMeta | None = None
 
 
 class NankanClosingSpeedRunner(BaseModel):
@@ -308,6 +343,7 @@ class NankanRaceClosingSpeed(BaseModel):
     fetched_at: datetime
     source: str
     cache_hit: bool = False
+    meta: CachePolicyMeta | None = None
 
 
 class NankanStyleScores(BaseModel):
@@ -344,6 +380,7 @@ class NankanRaceStyleProfile(BaseModel):
     fetched_at: datetime
     source: str
     cache_hit: bool = False
+    meta: CachePolicyMeta | None = None
 
 
 class NankanLeadingJockeyItem(BaseModel):
@@ -373,6 +410,7 @@ class NankanLeadingJockeyPage(BaseModel):
     generated_at: datetime
     items: list[NankanLeadingJockeyItem] = Field(default_factory=list)
     cache_hit: bool = False
+    meta: CachePolicyMeta | None = None
 
 
 class RaceOdds(BaseModel):
@@ -383,6 +421,7 @@ class RaceOdds(BaseModel):
     fetched_at: datetime
     source: str
     cache_hit: bool = False
+    meta: CachePolicyMeta | None = None
 
 
 class NankankeibaPatternRate(BaseModel):
@@ -424,6 +463,7 @@ class NankankeibaPatternCategoryPage(BaseModel):
     fetched_at: datetime
     source: str
     cache_hit: bool = False
+    meta: CachePolicyMeta | None = None
 
 
 class NankankeibaPatternBundle(BaseModel):
@@ -439,6 +479,7 @@ class NankankeibaPatternBundle(BaseModel):
     fetched_at: datetime
     source: str
     cache_hit: bool = False
+    meta: CachePolicyMeta | None = None
 
 
 class RaceResult(BaseModel):
@@ -449,6 +490,7 @@ class RaceResult(BaseModel):
     fetched_at: datetime
     source: str
     cache_hit: bool = False
+    meta: CachePolicyMeta | None = None
 
 
 class NormalizedRaceInput(BaseModel):

@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from jra_srb.app import app, get_nankankeiba_pattern_service
+from jra_srb.cache import SQLiteTTLCache
 from jra_srb.models import NankankeibaPatternCategoryEntry, NankankeibaPatternCategoryPage
 from jra_srb.nankankeiba_pattern_provider import (
     BaseNankankeibaPatternProvider,
@@ -42,6 +43,53 @@ async def test_get_pattern_bundle_merges_four_categories_by_horse_no():
     assert bundle.runners[4].categories["pattern_uma"].rates["medium"].rate == 16.7
     assert bundle.runners[4].categories["pattern_uma"].rates["short"].rate == 50.0
     assert bundle.runners[4].categories["pattern_uma"].track_condition_rates["good"].rate == 33.3
+
+
+@pytest.mark.asyncio
+async def test_get_pattern_category_uses_db_first_ttl_cache(tmp_path):
+    provider = CountingPatternProvider("tests/fixtures")
+    service = NankankeibaPatternService(
+        provider=provider,
+        cache=SQLiteTTLCache(tmp_path / "cache.sqlite"),
+    )
+
+    first = await service.get_pattern_category(date(2026, 7, 6), "kawasaki", 4, 1, 1, "pattern_kis")
+    second = await service.get_pattern_category(date(2026, 7, 6), "kawasaki", 4, 1, 1, "pattern_kis")
+
+    assert provider.calls == 1
+    assert first.meta is not None
+    assert first.meta.data_source == "external"
+    assert first.meta.saved is True
+    assert second.cache_hit is True
+    assert second.meta is not None
+    assert second.meta.data_source == "db"
+    assert second.meta.db_hit is True
+
+
+@pytest.mark.asyncio
+async def test_get_pattern_category_refresh_true_forces_external_fetch(tmp_path):
+    provider = CountingPatternProvider("tests/fixtures")
+    service = NankankeibaPatternService(
+        provider=provider,
+        cache=SQLiteTTLCache(tmp_path / "cache.sqlite"),
+    )
+
+    await service.get_pattern_category(date(2026, 7, 6), "kawasaki", 4, 1, 1, "pattern_kis")
+    refreshed = await service.get_pattern_category(
+        date(2026, 7, 6),
+        "kawasaki",
+        4,
+        1,
+        1,
+        "pattern_kis",
+        refresh=True,
+    )
+
+    assert provider.calls == 2
+    assert refreshed.meta is not None
+    assert refreshed.meta.data_source == "external"
+    assert refreshed.meta.db_hit is True
+    assert refreshed.meta.saved is True
 
 
 def test_merge_category_pages_sorts_numeric_horse_no_before_non_numeric():
@@ -90,6 +138,16 @@ def _entry(horse_no: str, horse_name: str) -> NankankeibaPatternCategoryEntry:
 class CancelledHorsePatternProvider(BaseNankankeibaPatternProvider):
     async def fetch_pattern(self, race_id: str, category: str) -> NankankeibaPatternPageContent:
         return NankankeibaPatternPageContent(source=f"fixture:{category}:{race_id}", content=_pattern_html())
+
+
+class CountingPatternProvider(NankankeibaPatternFixtureProvider):
+    def __init__(self, fixtures_dir: str) -> None:
+        super().__init__(fixtures_dir)
+        self.calls = 0
+
+    async def fetch_pattern(self, race_id: str, category: str) -> NankankeibaPatternPageContent:
+        self.calls += 1
+        return await super().fetch_pattern(race_id, category)
 
 
 def _pattern_html() -> str:

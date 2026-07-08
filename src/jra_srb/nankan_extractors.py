@@ -137,6 +137,7 @@ def parse_nankan_race_card(html: str) -> dict[str, Any]:
         "track_condition": conditions["track_condition"],
         "track_condition_label": conditions["track_condition_label"],
         "runners": runners,
+        "data_status": _race_card_data_status(table, runners),
     }
 
 
@@ -709,6 +710,35 @@ def _parse_runner_row(row: Tag) -> Runner | None:
         jockey=cells[10] if len(cells) > 10 else None,
         trainer=cells[13] if len(cells) > 13 else None,
     )
+
+
+def _race_card_data_status(table: Tag | None, runners: list[Runner]) -> dict[str, str | None]:
+    if not runners:
+        return {
+            "horse_weight": "unavailable",
+            "horse_weight_reason": "runner table could not be parsed",
+        }
+    if any(runner.horse_weight or runner.horse_weight_diff for runner in runners):
+        return {
+            "horse_weight": "available",
+            "horse_weight_reason": "at least one runner has horse_weight or horse_weight_diff",
+        }
+    if table is None:
+        return {
+            "horse_weight": "unavailable",
+            "horse_weight_reason": "runner table was not found",
+        }
+    headers = [_clean(cell.get_text(" ", strip=True)) for cell in table.select("tr:first-child th, tr:first-child td")]
+    has_weight_header = any("馬体重" in header or "増減" in header for header in headers)
+    if has_weight_header:
+        return {
+            "horse_weight": "unpublished",
+            "horse_weight_reason": "all runners have null horse_weight before official publication",
+        }
+    return {
+        "horse_weight": "unavailable",
+        "horse_weight_reason": "horse_weight column could not be identified",
+    }
 
 
 def _find_table_with_headers(soup: BeautifulSoup, expected: list[str]) -> Tag | None:

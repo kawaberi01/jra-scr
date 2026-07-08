@@ -17,18 +17,32 @@ class CacheEntry:
     expires_at: datetime
 
 
+@dataclass
+class CacheLookupResult:
+    value: Any | None
+    hit: bool
+    expired: bool = False
+    expires_at: datetime | None = None
+
+
 class TTLCache:
     def __init__(self) -> None:
         self._store: dict[str, CacheEntry] = {}
 
     def get(self, key: str) -> Any | None:
+        result = self.get_with_status(key)
+        return result.value
+
+    def get_with_status(self, key: str, allow_expired: bool = False) -> CacheLookupResult:
         entry = self._store.get(key)
         if entry is None:
-            return None
+            return CacheLookupResult(value=None, hit=False)
         if datetime.now(UTC) >= entry.expires_at:
-            self._store.pop(key, None)
-            return None
-        return entry.value
+            if not allow_expired:
+                self._store.pop(key, None)
+                return CacheLookupResult(value=None, hit=False, expired=True, expires_at=entry.expires_at)
+            return CacheLookupResult(value=entry.value, hit=True, expired=True, expires_at=entry.expires_at)
+        return CacheLookupResult(value=entry.value, hit=True, expired=False, expires_at=entry.expires_at)
 
     def set(self, key: str, value: Any, ttl_seconds: int) -> None:
         self._store[key] = CacheEntry(
@@ -44,19 +58,30 @@ class SQLiteTTLCache:
         self._init_db()
 
     def get(self, key: str) -> Any | None:
+        result = self.get_with_status(key)
+        return result.value
+
+    def get_with_status(self, key: str, allow_expired: bool = False) -> CacheLookupResult:
         with self._connect() as conn:
             row = conn.execute(
                 "select value_blob, expires_at from cache_entries where cache_key = ?",
                 (key,),
             ).fetchone()
             if row is None:
-                return None
+                return CacheLookupResult(value=None, hit=False)
             value_blob, expires_at_raw = row
             expires_at = datetime.fromisoformat(expires_at_raw)
             if datetime.now(UTC) >= expires_at:
-                conn.execute("delete from cache_entries where cache_key = ?", (key,))
-                return None
-            return pickle.loads(value_blob)
+                if not allow_expired:
+                    conn.execute("delete from cache_entries where cache_key = ?", (key,))
+                    return CacheLookupResult(value=None, hit=False, expired=True, expires_at=expires_at)
+                return CacheLookupResult(
+                    value=pickle.loads(value_blob),
+                    hit=True,
+                    expired=True,
+                    expires_at=expires_at,
+                )
+            return CacheLookupResult(value=pickle.loads(value_blob), hit=True, expired=False, expires_at=expires_at)
 
     def set(self, key: str, value: Any, ttl_seconds: int) -> None:
         expires_at = datetime.now(UTC) + timedelta(seconds=ttl_seconds)

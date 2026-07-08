@@ -34,9 +34,11 @@ from .models import (
     NankanCourseCode,
     NankanLeadingJockeyPage,
     NankanMeetingTrend,
+    NankanMeetingTrendContext,
     NankanRaceBestTime,
     NankanRaceClosingSpeed,
     NankanRaceStyleProfile,
+    RaceCard,
     RaceSearchItem,
     RaceSearchPage,
     ResultCollectionJobCreated,
@@ -47,11 +49,11 @@ from .models import (
     StoredRaceResultPage,
 )
 from .nankankeiba_pattern_provider import NankankeibaPatternHttpProvider
-from .nankankeiba_pattern_service import NankankeibaPatternService
+from .nankankeiba_pattern_service import NankankeibaPatternCacheTtls, NankankeibaPatternService
 from .nar_netkeiba_provider import NarNetkeibaHttpProvider
 from .nar_netkeiba_service import NarNetkeibaService
 from .nankan_provider import NankanHttpProvider
-from .nankan_service import NankanService
+from .nankan_service import NankanCacheTtls, NankanService
 from .netkeiba_provider import NetkeibaHttpProvider
 from .netkeiba_service import NetkeibaService
 from .normalization import normalize_race_input, parse_bet_types
@@ -88,6 +90,10 @@ app = FastAPI(
 )
 
 
+def _default_analysis_db_path() -> str:
+    return os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/analysis.sqlite")
+
+
 def build_service() -> JraService:
     cache_path = os.environ.get("JRA_SRB_CACHE_PATH")
     provider = HttpProvider(
@@ -121,23 +127,45 @@ def build_nar_netkeiba_service() -> NarNetkeibaService:
 
 def build_nankan_service() -> NankanService:
     cache_path = os.environ.get("JRA_SRB_CACHE_PATH")
+    ttl_config = NankanCacheTtls(
+        odds=_env_int("JRA_SRB_NANKAN_ODDS_TTL_SECONDS", default=60, minimum=1),
+        trend=_env_int("JRA_SRB_NANKAN_TREND_TTL_SECONDS", default=300, minimum=1),
+        card=_env_int("JRA_SRB_NANKAN_CARD_TTL_SECONDS", default=900, minimum=1),
+        leading_jockey=_env_int("JRA_SRB_NANKAN_LEADING_JOCKEY_TTL_SECONDS", default=21600, minimum=1),
+        static_material=_env_int("JRA_SRB_NANKAN_STATIC_MATERIAL_TTL_SECONDS", default=86400, minimum=1),
+        result=_env_int("JRA_SRB_NANKAN_RESULT_TTL_SECONDS", default=86400, minimum=1),
+        meeting=_env_int("JRA_SRB_NANKAN_MEETING_TTL_SECONDS", default=900, minimum=1),
+        calendar=_env_int("JRA_SRB_NANKAN_CALENDAR_TTL_SECONDS", default=3600, minimum=1),
+    )
     provider = NankanHttpProvider(
         max_concurrency=_env_int("JRA_SRB_NANKAN_MAX_CONCURRENCY", default=3, minimum=1),
         min_interval_seconds=_env_float("JRA_SRB_NANKAN_MIN_INTERVAL_SECONDS", default=1.0, minimum=0.0),
     )
     if cache_path:
-        return NankanService(provider=provider, cache=SQLiteTTLCache(cache_path))
-    return NankanService(provider=provider)
+        return NankanService(
+            provider=provider,
+            cache=SQLiteTTLCache(cache_path),
+            ttl_config=ttl_config,
+            analysis_store=lambda: AnalysisSQLiteStore(_default_analysis_db_path()),
+        )
+    return NankanService(
+        provider=provider,
+        ttl_config=ttl_config,
+        analysis_store=lambda: AnalysisSQLiteStore(_default_analysis_db_path()),
+    )
 
 
 def build_nankankeiba_pattern_service() -> NankankeibaPatternService:
     cache_path = os.environ.get("JRA_SRB_CACHE_PATH")
+    ttl_config = NankankeibaPatternCacheTtls(
+        pattern=_env_int("JRA_SRB_NANKAN_STATIC_MATERIAL_TTL_SECONDS", default=86400, minimum=1),
+    )
     provider = NankankeibaPatternHttpProvider(
         min_interval_seconds=_env_float("JRA_SRB_NANKANKEIBA_MIN_INTERVAL_SECONDS", default=1.0, minimum=0.0),
     )
     if cache_path:
-        return NankankeibaPatternService(provider=provider, cache=SQLiteTTLCache(cache_path))
-    return NankankeibaPatternService(provider=provider)
+        return NankankeibaPatternService(provider=provider, cache=SQLiteTTLCache(cache_path), ttl_config=ttl_config)
+    return NankankeibaPatternService(provider=provider, ttl_config=ttl_config)
 
 
 def _env_int(name: str, default: int, minimum: int) -> int:
@@ -215,10 +243,6 @@ def build_result_storage(storage_kind: ResultStorageKind, output: str) -> Result
 
 def get_result_storage() -> ResultStorage:
     return build_result_storage(_default_result_storage_kind(), _default_result_storage_path())
-
-
-def _default_analysis_db_path() -> str:
-    return os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/analysis.sqlite")
 
 
 def get_analysis_store() -> AnalysisSQLiteStore:
@@ -686,9 +710,26 @@ async def get_nankan_meeting_trend(
 
 
 @app.get(
+    "/nankan/meetings/{date_}/{course}/races/{race_no}/trend-context",
+    tags=["nankan"],
+    summary="南関東公式の当日開催傾向を対象レースの事前予想用に判定",
+    response_model=NankanMeetingTrendContext,
+)
+async def get_nankan_meeting_trend_context(
+    date_: date,
+    course: NankanCourseCode,
+    race_no: RaceNoPath,
+    refresh: bool = Query(default=False, description="true の場合はキャッシュを使わず再取得します。"),
+    svc: NankanService = Depends(get_nankan_service),
+):
+    return await svc.get_meeting_trend_context(date_, str(course), race_no, refresh=refresh)
+
+
+@app.get(
     "/nankan/races/{race_id}/card",
     tags=["nankan"],
     summary="南関東公式の出走表を取得",
+    response_model=RaceCard,
 )
 async def get_nankan_race_card(
     race_id: NankanRaceIdPath,
@@ -781,6 +822,7 @@ async def get_nankan_race_result(
     "/nankan/meetings/{date_}/{course}/races/{race_no}/card",
     tags=["nankan"],
     summary="南関東公式の出走表を日付・場・Rで取得",
+    response_model=RaceCard,
 )
 async def get_nankan_race_card_by_number(
     date_: date,
@@ -897,6 +939,7 @@ async def get_nankankeiba_pattern(
     meeting_day: int = Query(ge=1, description="開催日。例: 1"),
     periods: str | None = Query(default="lifetime", description="期間コード。現時点では lifetime または 01。"),
     categories: str | None = Query(default=None, description="カテゴリをカンマ区切りで指定します。"),
+    refresh: bool = Query(default=False, description="refresh cache"),
     svc: NankankeibaPatternService = Depends(get_nankankeiba_pattern_service),
 ):
     return await svc.get_pattern_bundle(
@@ -907,6 +950,7 @@ async def get_nankankeiba_pattern(
         race_no,
         periods=_parse_query_csv(periods) or ["lifetime"],
         categories=_parse_query_csv(categories),
+        refresh=refresh,
     )
 
 
