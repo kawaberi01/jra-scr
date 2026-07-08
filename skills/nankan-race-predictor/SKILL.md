@@ -27,6 +27,8 @@ description: Predict Nankan horse races from API data with explicit rationale an
    - 脚質傾向は bundle に含まれないので、必要時だけ個別取得する
    - 照合時は結果を個別取得する
    - ローカル API の取得は、原則として `uv run jra-srb call-local-api ...` を使う。`PowerShell` の `Invoke-RestMethod` を毎回その場で組み立てる運用は既定にしない
+   - `prediction-bundle` が `404` のときは、それ自体を異常扱いしなくてよい。bundle 未提供や未生成の前提で、必要な個別 API へフォールバックしてよい
+   - ただし `404` を理由に bundle 利用方針を捨てたとは書かない。`bundle は未取得のため個別取得へ切替` と事実だけを短く書く
 5. 使えたデータと欠けているデータを明示する。
 6. 選択モードで予想する。
 7. 軸候補・頭候補・相手候補の役割を分ける。
@@ -129,6 +131,18 @@ description: Predict Nankan horse races from API data with explicit rationale an
 - `prediction-bundle` の `trend_context` は bundle に含まれていても、`usable=true` のときだけ当日傾向として採用する。
 - 整形済み JSON はその CLI 出力をそのまま使い、PowerShell 側で一時的な整形ロジックを増やさない。
 - `uv run jra-srb call-local-api` で不足する場合だけ、例外的に別手段を使ってよい。その場合は、なぜ通常手順を外したかを短く意識して扱う。
+- PowerShell で補助的に整形や比較を行う必要がある場合は、日本語出力の前に UTF-8 を明示する。
+  - `[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)`
+  - `$OutputEncoding = [System.Text.UTF8Encoding]::new($false)`
+  - `$env:PYTHONIOENCODING = 'utf-8'`
+- 日本語ラベルが `??` や文字化けで崩れていても、それだけでデータ欠損と判定しない。まずエンコード崩れを疑う。
+- `pattern` JSON は大きいため、表示や比較では全量を貼らず、馬ごとの主要指標だけ抽出して比較する。
+- `pattern` の主要指標比較では、少なくとも次を優先して抜く。
+  - `pattern_uma.rates.kawasaki`
+  - `pattern_uma.rates.short / medium / long`
+  - `pattern_uma.track_condition_rates`
+  - `pattern_kis.rates.kawasaki`
+  - `pattern_kis_cho.rates.kawasaki`
 - 開催途中の当日傾向は、`GET /nankan/meetings/{date}/{course}/races/{race_no}/trend-context` を使う。`/trend` を事前予想で直接採用しない。
 - 当日傾向を使った場合は、どの傾向をどのくらい見たかを明記する。
 - マークシートに転記しやすいように、通常の買い目一覧とは別に
@@ -152,6 +166,7 @@ description: Predict Nankan horse races from API data with explicit rationale an
   - `data_status.horse_weight` がまだ返っていない場合は、全頭の `horse_weight` / `horse_weight_diff` を確認する。全頭 `null` なら暫定的に `未発表` 寄りとして扱い、`馬体重: 未発表`、`未発表データ: 馬体重・増減` と書く。
 - 馬場状態が取れるときは、勝ちパターン分析の `pattern_uma.track_condition_rates` と必ず照合する。
 - 馬場状態が取れるときは、`pattern_uma.track_condition_rates` の比重を通常の条件列より一段強く扱う。
+- `pattern` の列名や見出しが文字化けしていても、値の構造が取れていれば比較処理自体は継続してよい。表示だけ崩れている可能性が高い。
 - 2歳戦では、`best-time` と `closing-speed` はサンプルの浅さを前提に通常より弱めに扱う。
 - 馬場状態が取れないときは、その補正を入れていないことを書く。
 - 馬場率だけで頭候補を決めない。
@@ -248,6 +263,7 @@ description: Predict Nankan horse races from API data with explicit rationale an
 
 - 各 API は、原則として `uv run jra-srb call-local-api` で取得して、CLI が返す UTF-8 の整形 JSON をそのまま使う
 - `prediction-bundle` は `card`、`odds_summary`、`trend_context`、`best_time`、`closing_speed`、`pattern`、`leading_jockeys` を並列取得した束として扱う
+- `prediction-bundle` が `404` でも、個別 API フォールバックへ進んでよい。これは事前予想で許容される通常経路とする
 - 出馬表には馬体重、馬場状態、距離、発走時刻が入る
 - 脚質傾向は bundle に含まれず、取得コストが高めなので、時間や制約があるときは省略可
 - リーディングジョッキーを使った場合は、根拠欄で `騎手の川崎1400m適性が上位`、`当該馬場条件での騎手成績が安定`、`短距離戦で騎手補正を加点` のように補正理由を明記する
