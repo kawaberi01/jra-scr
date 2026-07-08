@@ -5,15 +5,16 @@ import httpx
 import pytest
 
 from jra_srb.analysis_store import AnalysisSQLiteStore
-from jra_srb.cli import (
-    build_parser,
-    call_local_api,
-    collect_analysis,
-    collect_netkeiba_results,
-    collect_results,
-    fetch_nankankeiba_pattern,
-    generate_netkeiba_mapping,
-)
+from jra_srb.cli import ( 
+    build_parser, 
+    call_local_api, 
+    collect_analysis, 
+    collect_netkeiba_results, 
+    collect_results, 
+    fetch_nankan_prediction_bundle,
+    fetch_nankankeiba_pattern, 
+    generate_netkeiba_mapping, 
+) 
 from jra_srb.daily_prediction_log_importer import import_daily_prediction_log, parse_daily_prediction_log
 from jra_srb.models import MeetingRace, MeetingSnapshot, NetkeibaRaceResult, RaceResult
 from jra_srb.models import NetkeibaResultEntry, PayoutEntry
@@ -228,7 +229,7 @@ def test_cli_parser_accepts_fetch_nankankeiba_pattern(tmp_path):
     assert args.race_no == 1
 
 
-def test_cli_parser_accepts_call_local_api(tmp_path):
+def test_cli_parser_accepts_call_local_api(tmp_path): 
     parser = build_parser()
 
     args = parser.parse_args(
@@ -242,12 +243,40 @@ def test_cli_parser_accepts_call_local_api(tmp_path):
         ]
     )
 
-    assert args.command == "call-local-api"
-    assert args.path == "/nankan/meetings/2026-07-08/kawasaki/races/8/odds"
-    assert args.query == ["bet_type=wide"]
+    assert args.command == "call-local-api" 
+    assert args.path == "/nankan/meetings/2026-07-08/kawasaki/races/8/odds" 
+    assert args.query == ["bet_type=wide"] 
 
 
-def test_cli_parser_accepts_import_daily_prediction_log(tmp_path):
+def test_cli_parser_accepts_fetch_nankan_prediction_bundle(tmp_path):
+    parser = build_parser()
+
+    args = parser.parse_args(
+        [
+            "fetch-nankan-prediction-bundle",
+            "--date",
+            "2026-07-08",
+            "--course",
+            "kawasaki",
+            "--race",
+            "11",
+            "--meeting",
+            "4",
+            "--day",
+            "2",
+            "--output",
+            str(tmp_path / "bundle.json"),
+        ]
+    )
+
+    assert args.command == "fetch-nankan-prediction-bundle"
+    assert args.target_date == date(2026, 7, 8)
+    assert args.race_no == 11
+    assert args.meeting_no == 4
+    assert args.meeting_day == 2
+
+
+def test_cli_parser_accepts_import_daily_prediction_log(tmp_path): 
     parser = build_parser()
 
     args = parser.parse_args(
@@ -301,7 +330,7 @@ def test_parse_and_import_daily_prediction_log(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_call_local_api_writes_pretty_json(tmp_path):
+async def test_call_local_api_writes_pretty_json(tmp_path): 
     output = tmp_path / "api.json"
     captured: dict[str, object] = {}
 
@@ -324,12 +353,49 @@ async def test_call_local_api_writes_pretty_json(tmp_path):
         text = await call_local_api(args, client=client)  # type: ignore[arg-type]
 
     assert captured["url"] == "http://127.0.0.1:8000/nankan/meetings/2026-07-08/kawasaki/races/8/odds?bet_type=wide"
-    assert output.read_text(encoding="utf-8") == text + "\n"
-    assert json.loads(text) == {"race": "8R", "odds": [1, 2, 3]}
+    assert output.read_text(encoding="utf-8") == text + "\n" 
+    assert json.loads(text) == {"race": "8R", "odds": [1, 2, 3]} 
 
 
 @pytest.mark.asyncio
-async def test_fetch_nankankeiba_pattern_writes_json(tmp_path):
+async def test_fetch_nankan_prediction_bundle_calls_local_api_once(tmp_path):
+    output = tmp_path / "bundle.json"
+    captured: dict[str, object] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        captured["url"] = str(request.url)
+        return httpx.Response(200, json={"race_id": "2026070821040211", "status": "ok"})
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        args = type(
+            "Args",
+            (),
+            {
+                "target_date": date(2026, 7, 8),
+                "course": "kawasaki",
+                "race_no": 11,
+                "meeting_no": 4,
+                "meeting_day": 2,
+                "bet_types": "win,wide,quinella",
+                "base_url": "http://127.0.0.1:8000",
+                "refresh": True,
+                "output": output,
+            },
+        )()
+        text = await fetch_nankan_prediction_bundle(args, client=client)  # type: ignore[arg-type]
+
+    assert (
+        captured["url"]
+        == "http://127.0.0.1:8000/nankan/meetings/2026-07-08/kawasaki/races/11/prediction-bundle"
+        "?meeting_no=4&meeting_day=2&bet_types=win%2Cwide%2Cquinella&refresh=true"
+    )
+    assert output.read_text(encoding="utf-8") == text + "\n"
+    assert json.loads(text) == {"race_id": "2026070821040211", "status": "ok"}
+
+
+@pytest.mark.asyncio 
+async def test_fetch_nankankeiba_pattern_writes_json(tmp_path): 
     parser = build_parser()
     output = tmp_path / "pattern.json"
     args = parser.parse_args(

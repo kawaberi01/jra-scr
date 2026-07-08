@@ -19,16 +19,17 @@ from .analysis_maintenance import (
     format_backfill_summary,
     format_join_verification,
 )
-from .analysis_store import AnalysisSQLiteStore
-from .batch import JsonlRaceResultStorage, PastResultCollector, ResultStorage, SQLiteRaceResultStorage
-from .daily_prediction_log_importer import import_daily_prediction_log
-from .netkeiba_analysis_collector import NetkeibaAnalysisCollector, NetkeibaResultCollectionOptions
-from .netkeiba_mapping import generate_netkeiba_mapping_csv
-from .netkeiba_service import NetkeibaService
-from .nar_netkeiba_service import NarNetkeibaService
-from .nankankeiba_pattern_service import NankankeibaPatternService
-from .normalization import normalize_course, normalize_nar_course
-from .service import JraService, SUPPORTED_JRA_BET_TYPES
+from .analysis_store import AnalysisSQLiteStore 
+from .batch import JsonlRaceResultStorage, PastResultCollector, ResultStorage, SQLiteRaceResultStorage 
+from .daily_prediction_log_importer import import_daily_prediction_log 
+from .netkeiba_analysis_collector import NetkeibaAnalysisCollector, NetkeibaResultCollectionOptions 
+from .netkeiba_mapping import generate_netkeiba_mapping_csv 
+from .netkeiba_service import NetkeibaService 
+from .nar_netkeiba_service import NarNetkeibaService 
+from .nankankeiba_pattern_service import NankankeibaPatternService 
+from .nankan_service import DEFAULT_NANKAN_ODDS_SUMMARY_BET_TYPES
+from .normalization import normalize_course, normalize_nar_course 
+from .service import JraService, SUPPORTED_JRA_BET_TYPES 
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -84,11 +85,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "fetch-nankankeiba-pattern":
         asyncio.run(fetch_nankankeiba_pattern(args))
         return 0
-    if args.command == "call-local-api":
-        asyncio.run(call_local_api(args))
+    if args.command == "call-local-api": 
+        asyncio.run(call_local_api(args)) 
+        return 0 
+    if args.command == "fetch-nankan-prediction-bundle":
+        asyncio.run(fetch_nankan_prediction_bundle(args))
         return 0
-    if args.command == "import-daily-prediction-log":
-        summary = import_daily_prediction_log(AnalysisSQLiteStore(args.db), args.path)
+    if args.command == "import-daily-prediction-log": 
+        summary = import_daily_prediction_log(AnalysisSQLiteStore(args.db), args.path) 
         print(
             "source_path={source_path} log_date={log_date} venue={venue} imported_entries={imported_entries} "
             "resolved_race_ids={resolved_race_ids}".format(
@@ -213,17 +217,35 @@ def build_parser() -> argparse.ArgumentParser:
         default=os.environ.get("JRA_SRB_LOCAL_API_BASE_URL", "http://127.0.0.1:8000"),
         help="Base URL for the local API.",
     )
-    call_local_api_parser.add_argument(
-        "--query",
-        action="append",
-        default=[],
-        help="Query parameter in key=value format. Repeatable.",
-    )
-    call_local_api_parser.add_argument("--output", type=Path)
+    call_local_api_parser.add_argument( 
+        "--query", 
+        action="append", 
+        default=[], 
+        help="Query parameter in key=value format. Repeatable.", 
+    ) 
+    call_local_api_parser.add_argument("--output", type=Path) 
 
-    import_daily_prediction_log_parser = subparsers.add_parser(
-        "import-daily-prediction-log",
-        help="Import a daily prediction markdown log into analysis SQLite.",
+    prediction_bundle_parser = subparsers.add_parser(
+        "fetch-nankan-prediction-bundle",
+        help="Fetch the bundled nankan prediction materials from the local API.",
+    )
+    prediction_bundle_parser.add_argument("--date", dest="target_date", type=date.fromisoformat, required=True)
+    prediction_bundle_parser.add_argument("--course", required=True)
+    prediction_bundle_parser.add_argument("--race", dest="race_no", type=int, required=True)
+    prediction_bundle_parser.add_argument("--meeting", dest="meeting_no", type=int, required=True)
+    prediction_bundle_parser.add_argument("--day", dest="meeting_day", type=int, required=True)
+    prediction_bundle_parser.add_argument("--bet-types", default=",".join(DEFAULT_NANKAN_ODDS_SUMMARY_BET_TYPES))
+    prediction_bundle_parser.add_argument(
+        "--base-url",
+        default=os.environ.get("JRA_SRB_LOCAL_API_BASE_URL", "http://127.0.0.1:8000"),
+        help="Base URL for the local API.",
+    )
+    prediction_bundle_parser.add_argument("--refresh", action="store_true")
+    prediction_bundle_parser.add_argument("--output", type=Path)
+
+    import_daily_prediction_log_parser = subparsers.add_parser( 
+        "import-daily-prediction-log", 
+        help="Import a daily prediction markdown log into analysis SQLite.", 
     )
     import_daily_prediction_log_parser.add_argument("path", type=Path)
     import_daily_prediction_log_parser.add_argument(
@@ -372,7 +394,7 @@ async def fetch_nankankeiba_pattern(args: argparse.Namespace, service: Nankankei
     return output
 
 
-async def call_local_api(args: argparse.Namespace, client: httpx.AsyncClient | None = None) -> str:
+async def call_local_api(args: argparse.Namespace, client: httpx.AsyncClient | None = None) -> str: 
     params = _parse_key_value_args(args.query)
     url = f"{args.base_url.rstrip('/')}/{args.path.lstrip('/')}"
     owns_client = client is None
@@ -389,11 +411,28 @@ async def call_local_api(args: argparse.Namespace, client: httpx.AsyncClient | N
             print(output)
         return output
     finally:
-        if owns_client:
-            await client.aclose()
+        if owns_client: 
+            await client.aclose() 
 
 
-def build_storage(kind: str, path: Path) -> ResultStorage:
+async def fetch_nankan_prediction_bundle(args: argparse.Namespace, client: httpx.AsyncClient | None = None) -> str:
+    query = [
+        f"meeting_no={args.meeting_no}",
+        f"meeting_day={args.meeting_day}",
+        f"bet_types={args.bet_types}",
+    ]
+    if args.refresh:
+        query.append("refresh=true")
+    call_args = argparse.Namespace(
+        base_url=args.base_url,
+        path=f"/nankan/meetings/{args.target_date.isoformat()}/{args.course}/races/{args.race_no}/prediction-bundle",
+        query=query,
+        output=args.output,
+    )
+    return await call_local_api(call_args, client=client)
+
+
+def build_storage(kind: str, path: Path) -> ResultStorage: 
     if kind == "sqlite":
         return SQLiteRaceResultStorage(path)
     return JsonlRaceResultStorage(path)

@@ -177,6 +177,14 @@ race summary 一覧を取得します。
 - `unpublished`: 出走表と runner は取得できていますが、全頭の馬体重・増減が未発表です。
 - `unavailable`: HTML構造変更などで馬体重欄を判定できません。
 
+### `GET /nankan/meetings/{date}/{course}/races/{race_no}/odds-summary`
+
+南関予想向けの軽量オッズを返します。
+既定では `win`, `wide`, `quinella` だけを返し、三連単などの全組み合わせは含めません。
+
+- query `bet_types` を指定すると `win`, `wide`, `quinella`, `trio` の範囲で返却券種を絞れます。
+- query 未指定時は `win,wide,quinella` です。
+
 ### `GET /nankan/meetings/{date}/{course}/races/{race_no}/best-time`
 
 開催日、開催場、レース番号から南関東公式の持ち時計を取得します。
@@ -190,6 +198,33 @@ race summary 一覧を取得します。
 ### `GET /nankan/meetings/{date}/{course}/races/{race_no}/closing-speed`
 
 開催日、開催場、レース番号から南関東公式の上がり時計を取得します。
+
+### `GET /nankan/meetings/{date}/{course}/races/{race_no}/prediction-bundle`
+
+南関予想に必要な材料を 1 回でまとめて返します。
+
+- 必須 query:
+  - `meeting_no`
+  - `meeting_day`
+- 任意 query:
+  - `bet_types`
+  - `refresh`
+
+主なレスポンス:
+
+```json
+{
+  "race_id": "2026070621040101",
+  "odds_bet_types": ["win", "wide", "quinella"],
+  "card": {},
+  "odds_summary": {},
+  "trend_context": {},
+  "best_time": {},
+  "closing_speed": {},
+  "pattern": {},
+  "leading_jockeys": {}
+}
+```
 
 終い性能比較用です。公式の `best/{race_id}22{distance}.do` を取得し、3F、順位、馬場、同場/同距離フラグを構造化して返します。`closing_section_distance` は 3F として `600` を返します。公式ページ上で source race_id / source date が表示されない場合、`closing_time_source_race_id` と `closing_time_source_date` は `null` です。
 

@@ -6,12 +6,13 @@ import sqlite3
 from fastapi.testclient import TestClient
 
 from jra_srb.analysis_store import AnalysisSQLiteStore
-from jra_srb.app import (
-    app,
-    get_analysis_store,
-    get_nar_netkeiba_service,
-    get_nankankeiba_pattern_service,
-    get_nankan_service,
+from jra_srb.app import ( 
+    app, 
+    get_analysis_store, 
+    get_nar_netkeiba_service, 
+    get_nankankeiba_pattern_service, 
+    get_nankan_prediction_service,
+    get_nankan_service, 
     get_netkeiba_service,
     get_result_collection_job_registry,
     get_result_storage,
@@ -20,10 +21,29 @@ from jra_srb.app import (
 from jra_srb.batch import JsonlRaceResultStorage, SQLiteRaceResultStorage
 from jra_srb.errors import BadRequestError, ResourceNotFoundError
 from jra_srb.jobs import ResultCollectionJobRegistry
-from jra_srb.models import MeetingRace, MeetingSnapshot, PayoutEntry, RaceResult, RaceSummary, ResultEntry
-from jra_srb.nankankeiba_pattern_provider import NankankeibaPatternFixtureProvider
-from jra_srb.nankankeiba_pattern_service import NankankeibaPatternService
-from jra_srb.nar_netkeiba_provider import NarNetkeibaFixtureProvider
+from jra_srb.models import (
+    MeetingRace,
+    MeetingSnapshot,
+    NankankeibaPatternBundle,
+    NankanLeadingJockeyPage,
+    NankanMeetingTrend,
+    NankanMeetingTrendContext,
+    NankanPredictionBundle,
+    NankanPredictionBundleMeta,
+    NankanRaceBestTime,
+    NankanRaceClosingSpeed,
+    OddsEntry,
+    PayoutEntry,
+    RaceCard,
+    RaceOdds,
+    RaceResult,
+    RaceSummary,
+    ResultEntry,
+)
+from jra_srb.nankankeiba_pattern_provider import NankankeibaPatternFixtureProvider 
+from jra_srb.nankankeiba_pattern_service import NankankeibaPatternService 
+from jra_srb.nankan_prediction_service import NankanPredictionService
+from jra_srb.nar_netkeiba_provider import NarNetkeibaFixtureProvider 
 from jra_srb.nar_netkeiba_service import NarNetkeibaService
 from jra_srb.nankan_provider import NankanFixtureProvider
 from jra_srb.nankan_service import NankanService
@@ -444,7 +464,7 @@ def test_get_nankankeiba_pattern_endpoint_returns_merged_categories():
         app.dependency_overrides.clear()
 
 
-def test_cli_and_api_return_same_nankankeiba_pattern_json_shape(tmp_path):
+def test_cli_and_api_return_same_nankankeiba_pattern_json_shape(tmp_path): 
     from jra_srb.cli import build_parser, fetch_nankankeiba_pattern
 
     service = NankankeibaPatternService(provider=NankankeibaPatternFixtureProvider("tests/fixtures"))
@@ -476,9 +496,142 @@ def test_cli_and_api_return_same_nankankeiba_pattern_json_shape(tmp_path):
     finally:
         app.dependency_overrides.clear()
 
-    cli_body["cache_hit"] = api_body["cache_hit"]
-    cli_body["meta"] = api_body["meta"]
-    assert cli_body == api_body
+    cli_body["cache_hit"] = api_body["cache_hit"] 
+    cli_body["meta"] = api_body["meta"] 
+    assert cli_body == api_body 
+
+
+def test_get_nankan_odds_summary_endpoint_returns_default_subset():
+    class StubNankanService:
+        async def get_race_odds_summary_by_number(self, target_date, course, race_no, bet_types=None, refresh=False):
+            assert race_no == 3
+            assert bet_types == ["win", "wide", "quinella"]
+            return RaceOdds(
+                race_id="2026070621040103",
+                odds={
+                    "win": [OddsEntry(combination=["1"], odds="2.1")],
+                    "wide": [OddsEntry(combination=["1", "2"], odds="3.4")],
+                    "quinella": [OddsEntry(combination=["1", "2"], odds="5.6")],
+                },
+                fetched_at=datetime.now(UTC),
+                source="stub",
+            )
+
+    app.dependency_overrides[get_nankan_service] = lambda: StubNankanService()
+    try:
+        body = TestClient(app).get("/nankan/meetings/2026-07-06/kawasaki/races/3/odds-summary").json()
+        assert body["race_id"] == "2026070621040103"
+        assert set(body["odds"].keys()) == {"win", "wide", "quinella"}
+        assert "trifecta" not in body["odds"]
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_get_nankan_odds_summary_endpoint_rejects_unsupported_summary_bet_type():
+    response = TestClient(app).get("/nankan/meetings/2026-07-06/kawasaki/races/1/odds-summary?bet_types=trifecta")
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "bad_request"
+
+
+def test_get_nankan_prediction_bundle_endpoint_returns_materials():
+    class StubPredictionService:
+        async def get_prediction_bundle(
+            self,
+            target_date: date,
+            course: str,
+            race_no: int,
+            meeting_no: int,
+            meeting_day: int,
+            bet_types: list[str] | None = None,
+            refresh: bool = False,
+        ) -> NankanPredictionBundle:
+            trend = NankanMeetingTrend(
+                date=target_date,
+                course=course,
+                meeting_id="2026210401",
+                open_date="20260706",
+                fetched_at=datetime.now(UTC),
+                source="fixture:trend",
+            )
+            return NankanPredictionBundle(
+                race_id="2026070621040101",
+                date=target_date,
+                course=course,
+                race_no=race_no,
+                meeting_no=meeting_no,
+                meeting_day=meeting_day,
+                odds_bet_types=bet_types or ["win", "wide", "quinella"],
+                card=RaceCard(race_id="2026070621040101", fetched_at=datetime.now(UTC), source="fixture:card"),
+                odds_summary=RaceOdds(
+                    race_id="2026070621040101",
+                    odds={"win": [], "wide": [], "quinella": []},
+                    fetched_at=datetime.now(UTC),
+                    source="fixture:odds",
+                ),
+                trend_context=NankanMeetingTrendContext(
+                    date=target_date,
+                    course=course,
+                    race_no=race_no,
+                    race_count_completed=0,
+                    required_max_completed=0,
+                    usable=True,
+                    fetched_at=datetime.now(UTC),
+                    source="fixture:trend",
+                    trend=trend,
+                ),
+                best_time=NankanRaceBestTime(
+                    race_id="2026070621040101",
+                    fetched_at=datetime.now(UTC),
+                    source="fixture:best-time",
+                ),
+                closing_speed=NankanRaceClosingSpeed(
+                    race_id="2026070621040101",
+                    fetched_at=datetime.now(UTC),
+                    source="fixture:closing-speed",
+                ),
+                pattern=NankankeibaPatternBundle(
+                    race_id="202607062104010101",
+                    date=target_date,
+                    course=course,
+                    meeting_no=meeting_no,
+                    meeting_day=meeting_day,
+                    race_no=race_no,
+                    fetched_at=datetime.now(UTC),
+                    source="fixture:pattern",
+                ),
+                leading_jockeys=NankanLeadingJockeyPage(
+                    course=course,
+                    period="recent_3months",
+                    sort="win_rate",
+                    generated_at=datetime.now(UTC),
+                ),
+                fetched_at=datetime.now(UTC),
+                meta=NankanPredictionBundleMeta(parallelized=True, used_existing_services=True),
+            )
+
+    app.dependency_overrides[get_nankan_prediction_service] = lambda: StubPredictionService()
+    try:
+        body = TestClient(app).get(
+            "/nankan/meetings/2026-07-06/kawasaki/races/1/prediction-bundle?meeting_no=4&meeting_day=1"
+        ).json()
+        assert body["race_id"] == "2026070621040101"
+        assert body["odds_bet_types"] == ["win", "wide", "quinella"]
+        assert body["card"]["race_id"] == "2026070621040101"
+        assert body["odds_summary"]["race_id"] == "2026070621040101"
+        assert body["trend_context"]["race_no"] == 1
+        assert body["best_time"]["race_id"] == "2026070621040101"
+        assert body["closing_speed"]["race_id"] == "2026070621040101"
+        assert body["pattern"]["meeting_no"] == 4
+        assert body["leading_jockeys"]["course"] == "kawasaki"
+        assert body["meta"]["parallelized"] is True
+        assert body["meta"]["used_existing_services"] is True
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_get_nankan_prediction_bundle_endpoint_requires_meeting_parameters():
+    response = TestClient(app).get("/nankan/meetings/2026-07-06/kawasaki/races/1/prediction-bundle")
+    assert response.status_code == 422
 
 
 def test_mcp_endpoint_is_mounted():

@@ -47,6 +47,8 @@ TModel = TypeVar("TModel", bound=BaseModel)
 
 SUPPORTED_NANKAN_BET_TYPES = set(NANKAN_BET_TYPE_TO_ODDS_CODE)
 UNORDERED_NANKAN_BET_TYPES = {"quinella", "wide", "trio"}
+SUPPORTED_NANKAN_ODDS_SUMMARY_BET_TYPES = ("win", "wide", "quinella", "trio")
+DEFAULT_NANKAN_ODDS_SUMMARY_BET_TYPES = ("win", "wide", "quinella")
 NANKAN_COURSE_TO_CODE = {
     "urawa": "18",
     "funabashi": "19",
@@ -564,10 +566,10 @@ class NankanService:
             return self._filter_odds(result, bet_type, combination)
         return result
 
-    async def get_race_odds_by_number(
-        self,
-        target_date: date,
-        course: str,
+    async def get_race_odds_by_number( 
+        self, 
+        target_date: date, 
+        course: str, 
         race_no: int,
         bet_type: str | None = None,
         bet_types: list[str] | None = None,
@@ -575,13 +577,25 @@ class NankanService:
         refresh: bool = False,
     ) -> RaceOdds:
         race_id = await self._race_id_by_number(target_date, course, race_no, refresh=refresh)
-        return await self.get_race_odds(
-            race_id,
-            bet_type=bet_type,
-            bet_types=bet_types,
-            combination=combination,
-            refresh=refresh,
-        )
+        return await self.get_race_odds( 
+            race_id, 
+            bet_type=bet_type, 
+            bet_types=bet_types, 
+            combination=combination, 
+            refresh=refresh, 
+        ) 
+
+    async def get_race_odds_summary_by_number(
+        self,
+        target_date: date,
+        course: str,
+        race_no: int,
+        bet_types: list[str] | None = None,
+        refresh: bool = False,
+    ) -> RaceOdds:
+        summary_bet_types = parse_nankan_odds_summary_bet_types(bet_types)
+        race_id = await self._race_id_by_number(target_date, course, race_no, refresh=refresh)
+        return await self.get_race_odds(race_id, bet_types=summary_bet_types, refresh=refresh)
 
     def _requested_bet_types(self, bet_type: str | None, bet_types: list[str] | None) -> list[str]:
         requested = [bet_type] if bet_type else bet_types
@@ -802,5 +816,13 @@ class NankanService:
         return conditions
 
     @staticmethod
-    def _trend_meeting_id(meeting_id: str) -> str:
+    def _trend_meeting_id(meeting_id: str) -> str: 
         return f"{meeting_id[:4]}{meeting_id[8:14]}"
+
+
+def parse_nankan_odds_summary_bet_types(bet_types: list[str] | None) -> list[str]:
+    requested = list(bet_types or DEFAULT_NANKAN_ODDS_SUMMARY_BET_TYPES)
+    for current in requested:
+        if current not in SUPPORTED_NANKAN_ODDS_SUMMARY_BET_TYPES:
+            raise BadRequestError(f"unsupported nankan odds-summary bet_type={current}")
+    return list(dict.fromkeys(requested))

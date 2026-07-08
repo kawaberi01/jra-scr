@@ -424,6 +424,11 @@ class RaceOdds(BaseModel):
     meta: CachePolicyMeta | None = None
 
 
+class NankanPredictionBundleMeta(BaseModel):
+    parallelized: bool = True
+    used_existing_services: bool = True
+
+
 class NankankeibaPatternRate(BaseModel):
     rate: float | None = None
     wins: int | None = None
@@ -480,6 +485,26 @@ class NankankeibaPatternBundle(BaseModel):
     source: str
     cache_hit: bool = False
     meta: CachePolicyMeta | None = None
+
+
+class NankanPredictionBundle(BaseModel):
+    race_id: str
+    date: date
+    course: str
+    race_no: int
+    meeting_no: int
+    meeting_day: int
+    odds_bet_types: list[str] = Field(default_factory=list)
+    card: RaceCard
+    odds_summary: RaceOdds
+    trend_context: NankanMeetingTrendContext
+    best_time: NankanRaceBestTime
+    closing_speed: NankanRaceClosingSpeed
+    pattern: NankankeibaPatternBundle
+    leading_jockeys: NankanLeadingJockeyPage
+    fetched_at: datetime
+    cache_hit: bool = False
+    meta: NankanPredictionBundleMeta | None = None
 
 
 class RaceResult(BaseModel):

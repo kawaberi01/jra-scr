@@ -19,27 +19,29 @@ from .batch import JsonlRaceResultStorage, ResultStorage, SQLiteRaceResultStorag
 from .cache import SQLiteTTLCache
 from .errors import BadRequestError, JraApiError
 from .jobs import ResultCollectionJobRegistry
-from .models import (
-    ApiError,
-    ApiErrorResponse,
-    BetRecord,
+from .models import ( 
+    ApiError, 
+    ApiErrorResponse, 
+    BetRecord, 
     BetRecordCreateRequest,
     BetRecordPage,
     BetRecordSettlement,
     BET_RECORD_RACE_ID_PATTERN,
     BetType,
-    CourseCode,
-    NarCalendarPage,
-    NankankeibaPatternBundle,
-    NankanCourseCode,
+    CourseCode, 
+    NarCalendarPage, 
+    NankankeibaPatternBundle, 
+    NankanPredictionBundle,
+    NankanCourseCode, 
     NankanLeadingJockeyPage,
     NankanMeetingTrend,
     NankanMeetingTrendContext,
-    NankanRaceBestTime,
-    NankanRaceClosingSpeed,
-    NankanRaceStyleProfile,
-    RaceCard,
-    RaceSearchItem,
+    NankanRaceBestTime, 
+    NankanRaceClosingSpeed, 
+    NankanRaceStyleProfile, 
+    RaceCard, 
+    RaceOdds,
+    RaceSearchItem, 
     RaceSearchPage,
     ResultCollectionJobCreated,
     ResultCollectionJobPage,
@@ -48,12 +50,13 @@ from .models import (
     ResultStorageKind,
     StoredRaceResultPage,
 )
-from .nankankeiba_pattern_provider import NankankeibaPatternHttpProvider
-from .nankankeiba_pattern_service import NankankeibaPatternCacheTtls, NankankeibaPatternService
-from .nar_netkeiba_provider import NarNetkeibaHttpProvider
-from .nar_netkeiba_service import NarNetkeibaService
-from .nankan_provider import NankanHttpProvider
-from .nankan_service import NankanCacheTtls, NankanService
+from .nankankeiba_pattern_provider import NankankeibaPatternHttpProvider 
+from .nankankeiba_pattern_service import NankankeibaPatternCacheTtls, NankankeibaPatternService 
+from .nankan_prediction_service import NankanPredictionService
+from .nar_netkeiba_provider import NarNetkeibaHttpProvider 
+from .nar_netkeiba_service import NarNetkeibaService 
+from .nankan_provider import NankanHttpProvider 
+from .nankan_service import NankanCacheTtls, NankanService, parse_nankan_odds_summary_bet_types
 from .netkeiba_provider import NetkeibaHttpProvider
 from .netkeiba_service import NetkeibaService
 from .normalization import normalize_race_input, parse_bet_types
@@ -155,7 +158,7 @@ def build_nankan_service() -> NankanService:
     )
 
 
-def build_nankankeiba_pattern_service() -> NankankeibaPatternService:
+def build_nankankeiba_pattern_service() -> NankankeibaPatternService: 
     cache_path = os.environ.get("JRA_SRB_CACHE_PATH")
     ttl_config = NankankeibaPatternCacheTtls(
         pattern=_env_int("JRA_SRB_NANKAN_STATIC_MATERIAL_TTL_SECONDS", default=86400, minimum=1),
@@ -163,9 +166,16 @@ def build_nankankeiba_pattern_service() -> NankankeibaPatternService:
     provider = NankankeibaPatternHttpProvider(
         min_interval_seconds=_env_float("JRA_SRB_NANKANKEIBA_MIN_INTERVAL_SECONDS", default=1.0, minimum=0.0),
     )
-    if cache_path:
-        return NankankeibaPatternService(provider=provider, cache=SQLiteTTLCache(cache_path), ttl_config=ttl_config)
-    return NankankeibaPatternService(provider=provider, ttl_config=ttl_config)
+    if cache_path: 
+        return NankankeibaPatternService(provider=provider, cache=SQLiteTTLCache(cache_path), ttl_config=ttl_config) 
+    return NankankeibaPatternService(provider=provider, ttl_config=ttl_config) 
+
+
+def build_nankan_prediction_service() -> NankanPredictionService:
+    return NankanPredictionService(
+        nankan_service=nankan_service,
+        pattern_service=nankankeiba_pattern_service,
+    )
 
 
 def _env_int(name: str, default: int, minimum: int) -> int:
@@ -191,9 +201,10 @@ def _env_float(name: str, default: float, minimum: float) -> float:
 service = build_service()
 netkeiba_service = build_netkeiba_service()
 nar_netkeiba_service = build_nar_netkeiba_service()
-nankan_service = build_nankan_service()
-nankankeiba_pattern_service = build_nankankeiba_pattern_service()
-result_collection_jobs = ResultCollectionJobRegistry()
+nankan_service = build_nankan_service() 
+nankankeiba_pattern_service = build_nankankeiba_pattern_service() 
+nankan_prediction_service = build_nankan_prediction_service()
+result_collection_jobs = ResultCollectionJobRegistry() 
 
 
 def get_service() -> JraService:
@@ -212,8 +223,12 @@ def get_nankan_service() -> NankanService:
     return nankan_service
 
 
-def get_nankankeiba_pattern_service() -> NankankeibaPatternService:
-    return nankankeiba_pattern_service
+def get_nankankeiba_pattern_service() -> NankankeibaPatternService: 
+    return nankankeiba_pattern_service 
+
+
+def get_nankan_prediction_service() -> NankanPredictionService:
+    return nankan_prediction_service
 
 
 def get_result_collection_job_registry() -> ResultCollectionJobRegistry:
@@ -882,8 +897,8 @@ async def get_nankan_race_style_profile_by_number(
     return await svc.get_race_style_profile_by_number(date_, str(course), race_no, refresh=refresh)
 
 
-@app.get(
-    "/nankan/meetings/{date_}/{course}/races/{race_no}/odds",
+@app.get( 
+    "/nankan/meetings/{date_}/{course}/races/{race_no}/odds", 
     tags=["nankan"],
     summary="南関東公式のオッズを日付・場・Rで取得",
 )
@@ -899,19 +914,43 @@ async def get_nankan_race_odds_by_number(
 ):
     parsed = [str(item) for item in parse_bet_types(bet_types)] if bet_types else None
     parsed_combination = [item.strip() for item in combination.split(",")] if combination else None
-    return await svc.get_race_odds_by_number(
-        date_,
-        str(course),
-        race_no,
+    return await svc.get_race_odds_by_number( 
+        date_, 
+        str(course), 
+        race_no, 
         bet_type=str(bet_type) if bet_type else None,
         bet_types=parsed,
         combination=parsed_combination,
+        refresh=refresh, 
+    ) 
+
+
+@app.get(
+    "/nankan/meetings/{date_}/{course}/races/{race_no}/odds-summary",
+    tags=["nankan"],
+    summary="å—é–¢äºˆæƒ³å‘ã‘ã®è»½é‡ã‚ªãƒƒã‚ºã‚’æ—¥ä»˜ãƒ»å ´ãƒ»Rã§å–å¾—",
+    response_model=RaceOdds,
+)
+async def get_nankan_race_odds_summary_by_number(
+    date_: date,
+    course: NankanCourseCode,
+    race_no: RaceNoPath,
+    bet_types: str | None = Query(default=None, description="è¤‡æ•°åˆ¸ç¨®ã‚’ã‚«ãƒ³ãƒžåŒºåˆ‡ã‚Šã§æŒ‡å®šã—ã¾ã™ã€‚ä¾‹: win,wide,quinella"),
+    refresh: bool = Query(default=False, description="true ã®å ´åˆã¯ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã‚’ä½¿ã‚ãšå†å–å¾—ã—ã¾ã™ã€‚"),
+    svc: NankanService = Depends(get_nankan_service),
+):
+    parsed = [str(item) for item in parse_bet_types(bet_types)] if bet_types else None
+    return await svc.get_race_odds_summary_by_number(
+        date_,
+        str(course),
+        race_no,
+        bet_types=parse_nankan_odds_summary_bet_types(parsed),
         refresh=refresh,
     )
 
 
-@app.get(
-    "/nankan/meetings/{date_}/{course}/races/{race_no}/result",
+@app.get( 
+    "/nankan/meetings/{date_}/{course}/races/{race_no}/result", 
     tags=["nankan"],
     summary="南関東公式の結果を日付・場・Rで取得",
 )
@@ -921,12 +960,40 @@ async def get_nankan_race_result_by_number(
     race_no: RaceNoPath,
     refresh: bool = Query(default=False, description="true の場合はキャッシュを使わず再取得します。"),
     svc: NankanService = Depends(get_nankan_service),
-):
-    return await svc.get_race_result_by_number(date_, str(course), race_no, refresh=refresh)
+): 
+    return await svc.get_race_result_by_number(date_, str(course), race_no, refresh=refresh) 
 
 
 @app.get(
-    "/nankankeiba/pattern/meetings/{date_}/{course}/races/{race_no}",
+    "/nankan/meetings/{date_}/{course}/races/{race_no}/prediction-bundle",
+    tags=["nankan"],
+    summary="å—é–¢äºˆæƒ³å‘ã‘ã®ææ–™ã‚’ 1 å›žã§ã¾ã¨ã‚ã¦å–å¾—",
+    response_model=NankanPredictionBundle,
+)
+async def get_nankan_prediction_bundle(
+    date_: date,
+    course: NankanCourseCode,
+    race_no: RaceNoPath,
+    meeting_no: int = Query(ge=1, description="é–‹å‚¬å›žã€‚ä¾‹: 4"),
+    meeting_day: int = Query(ge=1, description="é–‹å‚¬æ—¥ã€‚ä¾‹: 1"),
+    bet_types: str | None = Query(default=None, description="è¤‡æ•°åˆ¸ç¨®ã‚’ã‚«ãƒ³ãƒžåŒºåˆ‡ã‚Šã§æŒ‡å®šã—ã¾ã™ã€‚ä¾‹: win,wide,quinella"),
+    refresh: bool = Query(default=False, description="true ã®å ´åˆã¯ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã‚’ä½¿ã‚ãšå†å–å¾—ã—ã¾ã™ã€‚"),
+    svc: NankanPredictionService = Depends(get_nankan_prediction_service),
+):
+    parsed = [str(item) for item in parse_bet_types(bet_types)] if bet_types else None
+    return await svc.get_prediction_bundle(
+        date_,
+        str(course),
+        race_no,
+        meeting_no,
+        meeting_day,
+        bet_types=parse_nankan_odds_summary_bet_types(parsed),
+        refresh=refresh,
+    )
+
+
+@app.get( 
+    "/nankankeiba/pattern/meetings/{date_}/{course}/races/{race_no}", 
     tags=["nankankeiba"],
     summary="南関東 勝ちパターン分析を取得",
     response_model=NankankeibaPatternBundle,
