@@ -1,0 +1,4 @@
+interface:
+  display_name: "NankanRacePredictor"
+  short_description: "Predict Nankan races with Japanese mode labels."
+  default_prompt: "Use $nankan-race-predictor to predict a Nankan race with rationale and suggested bets."
