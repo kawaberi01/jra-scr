@@ -15,15 +15,17 @@ description: Predict Nankan horse races from API data with explicit rationale an
 2. 予想モードが指定されているか確認する。
 3. 未指定なら、日本語でどの予想パターンにするか確認する。既定候補は `総合買い目型` とする。
 4. 取得できる API データを集める。
-   - 出馬表
-   - オッズ
-   - 当日開催傾向
-   - 持ち時計
-   - 上がり時計
-   - 脚質傾向
-   - リーディングジョッキー
-   - 勝ちパターン分析
-   - 照合時は結果
+   - 事前予想では、まず `GET /nankan/meetings/{date}/{course}/races/{race_no}/prediction-bundle` を使う
+   - `prediction-bundle` では次をまとめて受ける
+     - 出馬表
+     - 軽量オッズ
+     - 当日開催傾向
+     - 持ち時計
+     - 上がり時計
+     - 勝ちパターン分析
+     - 条件別リーディングジョッキー
+   - 脚質傾向は bundle に含まれないので、必要時だけ個別取得する
+   - 照合時は結果を個別取得する
    - ローカル API の取得は、原則として `uv run jra-srb call-local-api ...` を使う。`PowerShell` の `Invoke-RestMethod` を毎回その場で組み立てる運用は既定にしない
 5. 使えたデータと欠けているデータを明示する。
 6. 選択モードで予想する。
@@ -119,6 +121,12 @@ description: Predict Nankan horse races from API data with explicit rationale an
 - オッズが取得できている場合は、予想順位の各馬にも単勝オッズを併記する。
 - オッズが取得できない場合は、その旨を `使用データ` または `注意点` に明記する。
 - ローカル API の呼び出しは、原則として `uv run jra-srb call-local-api <path> --query key=value` 形式で統一する。
+- 事前予想の通常手順では、個別 API を順に叩く前に `prediction-bundle` を優先する。
+- `prediction-bundle` 取得時は、必ず `meeting_no` と `meeting_day` を付ける。
+- 開催中で鮮度が重要なときは、`prediction-bundle` に `refresh=true` を付ける。
+- `prediction-bundle` の `odds_summary` は市場支持確認の主材料として使い、詳細オッズが必要なときだけ個別 odds API を追加取得する。
+- `prediction-bundle` の `leading_jockeys` は `card` の距離と馬場から自動解決された値として扱い、条件が明らかに不足しているときだけ個別 `GET /nankan/leading/jockeys` を使う。
+- `prediction-bundle` の `trend_context` は bundle に含まれていても、`usable=true` のときだけ当日傾向として採用する。
 - 整形済み JSON はその CLI 出力をそのまま使い、PowerShell 側で一時的な整形ロジックを増やさない。
 - `uv run jra-srb call-local-api` で不足する場合だけ、例外的に別手段を使ってよい。その場合は、なぜ通常手順を外したかを短く意識して扱う。
 - 開催途中の当日傾向は、`GET /nankan/meetings/{date}/{course}/races/{race_no}/trend-context` を使う。`/trend` を事前予想で直接採用しない。
@@ -231,21 +239,19 @@ description: Predict Nankan horse races from API data with explicit rationale an
 
 予想時は、原則として次の順で取得・確認すること。
 
-1. 出馬表
-2. オッズ
-3. 当日開催傾向
-4. 持ち時計
-5. 上がり時計
-6. 脚質傾向
-7. リーディングジョッキー
-8. 勝ちパターン分析
+1. `prediction-bundle`
+2. bundle に不足しているか、深掘りしたい個別材料
+3. 脚質傾向
+4. 結果照合時だけ結果 API
 
 補足:
 
 - 各 API は、原則として `uv run jra-srb call-local-api` で取得して、CLI が返す UTF-8 の整形 JSON をそのまま使う
+- `prediction-bundle` は `card`、`odds_summary`、`trend_context`、`best_time`、`closing_speed`、`pattern`、`leading_jockeys` を並列取得した束として扱う
 - 出馬表には馬体重、馬場状態、距離、発走時刻が入る
-- 脚質傾向は取得コストが高めなので、時間や制約があるときは省略可
+- 脚質傾向は bundle に含まれず、取得コストが高めなので、時間や制約があるときは省略可
 - リーディングジョッキーを使った場合は、根拠欄で `騎手の川崎1400m適性が上位`、`当該馬場条件での騎手成績が安定`、`短距離戦で騎手補正を加点` のように補正理由を明記する
+- `prediction-bundle.cache_hit` や `meta.parallelized` が見える場合は、鮮度や取得経路の参考として短く触れてよい
 - 省略した材料がある場合は、その旨を `使用データ` と `注意点` に書く
 
 ## 質問文
