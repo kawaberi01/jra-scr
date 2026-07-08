@@ -1,17 +1,20 @@
 from datetime import UTC, date, datetime
 import json
 
+import httpx
 import pytest
 
 from jra_srb.analysis_store import AnalysisSQLiteStore
 from jra_srb.cli import (
     build_parser,
+    call_local_api,
     collect_analysis,
     collect_netkeiba_results,
     collect_results,
     fetch_nankankeiba_pattern,
     generate_netkeiba_mapping,
 )
+from jra_srb.daily_prediction_log_importer import import_daily_prediction_log, parse_daily_prediction_log
 from jra_srb.models import MeetingRace, MeetingSnapshot, NetkeibaRaceResult, RaceResult
 from jra_srb.models import NetkeibaResultEntry, PayoutEntry
 from jra_srb.nankankeiba_pattern_provider import NankankeibaPatternFixtureProvider
@@ -223,6 +226,106 @@ def test_cli_parser_accepts_fetch_nankankeiba_pattern(tmp_path):
     assert args.meeting_no == 4
     assert args.meeting_day == 1
     assert args.race_no == 1
+
+
+def test_cli_parser_accepts_call_local_api(tmp_path):
+    parser = build_parser()
+
+    args = parser.parse_args(
+        [
+            "call-local-api",
+            "/nankan/meetings/2026-07-08/kawasaki/races/8/odds",
+            "--query",
+            "bet_type=wide",
+            "--output",
+            str(tmp_path / "api.json"),
+        ]
+    )
+
+    assert args.command == "call-local-api"
+    assert args.path == "/nankan/meetings/2026-07-08/kawasaki/races/8/odds"
+    assert args.query == ["bet_type=wide"]
+
+
+def test_cli_parser_accepts_import_daily_prediction_log(tmp_path):
+    parser = build_parser()
+
+    args = parser.parse_args(
+        [
+            "import-daily-prediction-log",
+            str(tmp_path / "daily.md"),
+            "--db",
+            str(tmp_path / "analysis.sqlite"),
+        ]
+    )
+
+    assert args.command == "import-daily-prediction-log"
+    assert args.path == tmp_path / "daily.md"
+
+
+def test_parse_and_import_daily_prediction_log(tmp_path):
+    markdown = """# 2026-07-08 川崎競馬 予想ログ
+
+## ログ
+
+### 2026-07-08 19:55:30
+- 種別: 事前予想
+- 対象: 川崎 11R サンプル
+- 予想モード: 総合買い目型
+- 使用データ:
+  - オッズ: yes
+"""
+    source = tmp_path / "daily.md"
+    source.write_text(markdown, encoding="utf-8")
+
+    parsed = parse_daily_prediction_log(markdown)
+
+    assert parsed.log_date == "2026-07-08"
+    assert parsed.venue == "川崎競馬"
+    assert parsed.entries[0].course == "kawasaki"
+    assert parsed.entries[0].race_no == 11
+
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    store.write_race(
+        date(2026, 7, 8),
+        "kawasaki",
+        MeetingRace(race_no=11, race_id="2026070821040311", race_name="Sample"),
+        source="meeting",
+        fetched_at=datetime.now(UTC),
+    )
+
+    summary = import_daily_prediction_log(store, source)
+
+    assert summary.imported_entries == 1
+    assert summary.resolved_race_ids == 1
+
+
+@pytest.mark.asyncio
+async def test_call_local_api_writes_pretty_json(tmp_path):
+    output = tmp_path / "api.json"
+    captured: dict[str, object] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        captured["url"] = str(request.url)
+        return httpx.Response(200, json={"race": "8R", "odds": [1, 2, 3]})
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        args = type(
+            "Args",
+            (),
+            {
+                "base_url": "http://127.0.0.1:8000",
+                "path": "/nankan/meetings/2026-07-08/kawasaki/races/8/odds",
+                "query": ["bet_type=wide"],
+                "output": output,
+            },
+        )()
+        text = await call_local_api(args, client=client)  # type: ignore[arg-type]
+
+    assert captured["url"] == "http://127.0.0.1:8000/nankan/meetings/2026-07-08/kawasaki/races/8/odds?bet_type=wide"
+    assert output.read_text(encoding="utf-8") == text + "\n"
+    assert json.loads(text) == {"race": "8R", "odds": [1, 2, 3]}
 
 
 @pytest.mark.asyncio

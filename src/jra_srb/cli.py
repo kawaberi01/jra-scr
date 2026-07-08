@@ -3,10 +3,13 @@ from __future__ import annotations
 import argparse
 import asyncio
 from datetime import date
+import json
 import os
 from pathlib import Path
 import sys
 from typing import Sequence
+
+import httpx
 
 from .analysis_collector import AnalysisCollectionOptions, AnalysisCollector
 from .analysis_maintenance import (
@@ -18,6 +21,7 @@ from .analysis_maintenance import (
 )
 from .analysis_store import AnalysisSQLiteStore
 from .batch import JsonlRaceResultStorage, PastResultCollector, ResultStorage, SQLiteRaceResultStorage
+from .daily_prediction_log_importer import import_daily_prediction_log
 from .netkeiba_analysis_collector import NetkeibaAnalysisCollector, NetkeibaResultCollectionOptions
 from .netkeiba_mapping import generate_netkeiba_mapping_csv
 from .netkeiba_service import NetkeibaService
@@ -79,6 +83,22 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0 if result.ok else 1
     if args.command == "fetch-nankankeiba-pattern":
         asyncio.run(fetch_nankankeiba_pattern(args))
+        return 0
+    if args.command == "call-local-api":
+        asyncio.run(call_local_api(args))
+        return 0
+    if args.command == "import-daily-prediction-log":
+        summary = import_daily_prediction_log(AnalysisSQLiteStore(args.db), args.path)
+        print(
+            "source_path={source_path} log_date={log_date} venue={venue} imported_entries={imported_entries} "
+            "resolved_race_ids={resolved_race_ids}".format(
+                source_path=summary.source_path,
+                log_date=summary.log_date or "-",
+                venue=summary.venue or "-",
+                imported_entries=summary.imported_entries,
+                resolved_race_ids=summary.resolved_race_ids,
+            )
+        )
         return 0
     parser.print_help()
     return 1
@@ -182,6 +202,35 @@ def build_parser() -> argparse.ArgumentParser:
     nankankeiba_pattern.add_argument("--periods", default="lifetime")
     nankankeiba_pattern.add_argument("--categories")
     nankankeiba_pattern.add_argument("--output", type=Path)
+
+    call_local_api_parser = subparsers.add_parser(
+        "call-local-api",
+        help="Call the local HTTP API and print pretty JSON.",
+    )
+    call_local_api_parser.add_argument("path", help="Request path. Example: /nankan/meetings/2026-07-08/kawasaki/races/8/card")
+    call_local_api_parser.add_argument(
+        "--base-url",
+        default=os.environ.get("JRA_SRB_LOCAL_API_BASE_URL", "http://127.0.0.1:8000"),
+        help="Base URL for the local API.",
+    )
+    call_local_api_parser.add_argument(
+        "--query",
+        action="append",
+        default=[],
+        help="Query parameter in key=value format. Repeatable.",
+    )
+    call_local_api_parser.add_argument("--output", type=Path)
+
+    import_daily_prediction_log_parser = subparsers.add_parser(
+        "import-daily-prediction-log",
+        help="Import a daily prediction markdown log into analysis SQLite.",
+    )
+    import_daily_prediction_log_parser.add_argument("path", type=Path)
+    import_daily_prediction_log_parser.add_argument(
+        "--db",
+        type=Path,
+        default=Path(os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/analysis.sqlite")),
+    )
     return parser
 
 
@@ -323,6 +372,27 @@ async def fetch_nankankeiba_pattern(args: argparse.Namespace, service: Nankankei
     return output
 
 
+async def call_local_api(args: argparse.Namespace, client: httpx.AsyncClient | None = None) -> str:
+    params = _parse_key_value_args(args.query)
+    url = f"{args.base_url.rstrip('/')}/{args.path.lstrip('/')}"
+    owns_client = client is None
+    if client is None:
+        client = httpx.AsyncClient(timeout=30.0)
+    try:
+        response = await client.get(url, params=params)
+        response.raise_for_status()
+        output = json.dumps(response.json(), ensure_ascii=False, indent=2)
+        if args.output:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(output + "\n", encoding="utf-8")
+        else:
+            print(output)
+        return output
+    finally:
+        if owns_client:
+            await client.aclose()
+
+
 def build_storage(kind: str, path: Path) -> ResultStorage:
     if kind == "sqlite":
         return SQLiteRaceResultStorage(path)
@@ -347,6 +417,19 @@ def _parse_optional_csv(value: str | None) -> list[str] | None:
     if value is None:
         return None
     return [item.strip() for item in value.split(",") if item.strip()]
+
+
+def _parse_key_value_args(values: Sequence[str]) -> dict[str, str]:
+    params: dict[str, str] = {}
+    for value in values:
+        if "=" not in value:
+            raise ValueError(f"query parameter must be key=value: {value}")
+        key, raw = value.split("=", 1)
+        key = key.strip()
+        if not key:
+            raise ValueError(f"query parameter key is empty: {value}")
+        params[key] = raw
+    return params
 
 
 def _configure_stdout() -> None:
