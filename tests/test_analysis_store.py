@@ -43,10 +43,49 @@ def test_analysis_store_creates_schema(tmp_path):
     assert "bet_records" in tables
     assert "bet_record_tickets" in tables
     assert "bet_record_results" in tables
+    assert "daily_prediction_log_imports" in tables
+    assert "daily_prediction_log_entries" in tables
     with sqlite3.connect(path) as conn:
         columns = {row[1] for row in conn.execute("pragma table_info(races)").fetchall()}
     assert "meeting_no" in columns
     assert "meeting_day" in columns
+
+
+def test_analysis_store_replaces_daily_prediction_log_entries_and_resolves_race_id(tmp_path):
+    path = tmp_path / "analysis.sqlite"
+    store = AnalysisSQLiteStore(path)
+    race = MeetingRace(race_no=11, race_id="2026070821040311", race_name="Sample", start_time="20:10")
+    store.write_race(date(2026, 7, 8), "kawasaki", race, source="meeting", fetched_at=datetime.now(UTC))
+
+    result = store.replace_daily_prediction_log_entries(
+        source_path="notes/2026-07-08_kawasaki_predictions.md",
+        log_date="2026-07-08",
+        venue="川崎",
+        entries=[
+            {
+                "entry_timestamp": datetime(2026, 7, 8, 19, 55, 30),
+                "entry_type": "事前予想",
+                "race_date": "2026-07-08",
+                "course": "kawasaki",
+                "race_no": 11,
+                "topic": "川崎 11R Sample",
+                "prediction_mode": "総合買い目型",
+                "payload": {"対象": "川崎 11R Sample"},
+                "raw_markdown": "### 2026-07-08 19:55:30\n- 種別: 事前予想",
+            }
+        ],
+    )
+
+    assert result["imported_entries"] == 1
+    assert result["resolved_race_ids"] == 1
+
+    with sqlite3.connect(path) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute("select race_id, course, race_no from daily_prediction_log_entries").fetchone()
+
+    assert row["race_id"] == "2026070821040311"
+    assert row["course"] == "kawasaki"
+    assert row["race_no"] == 11
 
 
 def test_analysis_store_writes_pre_race_and_result_data_without_leaking_result_to_snapshot(tmp_path):

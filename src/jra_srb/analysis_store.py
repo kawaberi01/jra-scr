@@ -352,6 +352,34 @@ class AnalysisSQLiteStore:
                 );
                 create index if not exists idx_bet_record_results_race
                 on bet_record_results (race_id);
+
+                create table if not exists daily_prediction_log_imports (
+                    import_id text primary key,
+                    source_path text not null,
+                    log_date text,
+                    venue text,
+                    imported_at text not null,
+                    unique (source_path, log_date)
+                );
+
+                create table if not exists daily_prediction_log_entries (
+                    entry_id text primary key,
+                    import_id text not null,
+                    race_id text,
+                    race_date text,
+                    course text,
+                    race_no integer,
+                    entry_timestamp text not null,
+                    entry_type text not null,
+                    topic text,
+                    prediction_mode text,
+                    raw_markdown text not null,
+                    payload_json text not null
+                );
+                create index if not exists idx_daily_prediction_log_entries_import
+                on daily_prediction_log_entries (import_id);
+                create index if not exists idx_daily_prediction_log_entries_race
+                on daily_prediction_log_entries (race_date, course, race_no);
                 """
             )
             _ensure_column(conn, "races", "meeting_no", "integer")
@@ -1292,6 +1320,80 @@ class AnalysisSQLiteStore:
         with self._connect() as conn:
             return int(conn.execute(f"select count(*) from {table}").fetchone()[0])
 
+    def replace_daily_prediction_log_entries(
+        self,
+        source_path: str,
+        log_date: str | None,
+        venue: str | None,
+        entries: list[dict[str, object]],
+    ) -> dict[str, int]:
+        import_id = str(uuid4())
+        imported_at = _now()
+        resolved_race_ids = 0
+        with self._connect() as conn:
+            existing = conn.execute(
+                """
+                select import_id
+                from daily_prediction_log_imports
+                where source_path = ? and ((log_date is null and ? is null) or log_date = ?)
+                """,
+                (source_path, log_date, log_date),
+            ).fetchone()
+            if existing is not None:
+                import_id = existing["import_id"]
+                conn.execute("delete from daily_prediction_log_entries where import_id = ?", (import_id,))
+                conn.execute(
+                    """
+                    update daily_prediction_log_imports
+                    set venue = ?, imported_at = ?
+                    where import_id = ?
+                    """,
+                    (venue, imported_at, import_id),
+                )
+            else:
+                conn.execute(
+                    """
+                    insert into daily_prediction_log_imports
+                    (import_id, source_path, log_date, venue, imported_at)
+                    values (?, ?, ?, ?, ?)
+                    """,
+                    (import_id, source_path, log_date, venue, imported_at),
+                )
+
+            for entry in entries:
+                race_id = self._resolve_race_id(
+                    conn,
+                    race_date=str(entry["race_date"]) if entry.get("race_date") else None,
+                    course=str(entry["course"]) if entry.get("course") else None,
+                    race_no=int(entry["race_no"]) if entry.get("race_no") is not None else None,
+                )
+                if race_id is not None:
+                    resolved_race_ids += 1
+                conn.execute(
+                    """
+                    insert into daily_prediction_log_entries
+                    (entry_id, import_id, race_id, race_date, course, race_no,
+                     entry_timestamp, entry_type, topic, prediction_mode,
+                     raw_markdown, payload_json)
+                    values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        str(uuid4()),
+                        import_id,
+                        race_id,
+                        entry.get("race_date"),
+                        entry.get("course"),
+                        entry.get("race_no"),
+                        _dt(entry["entry_timestamp"]),
+                        entry["entry_type"],
+                        entry.get("topic"),
+                        entry.get("prediction_mode"),
+                        entry["raw_markdown"],
+                        json.dumps(entry["payload"], ensure_ascii=False),
+                    ),
+                )
+        return {"imported_entries": len(entries), "resolved_race_ids": resolved_race_ids}
+
     def list_races_for_netkeiba_mapping(
         self,
         from_date: date,
@@ -1528,6 +1630,27 @@ class AnalysisSQLiteStore:
         conn = sqlite3.connect(self.path)
         conn.row_factory = sqlite3.Row
         return conn
+
+    def _resolve_race_id(
+        self,
+        conn: sqlite3.Connection,
+        race_date: str | None,
+        course: str | None,
+        race_no: int | None,
+    ) -> str | None:
+        if race_date is None or course is None or race_no is None:
+            return None
+        row = conn.execute(
+            """
+            select race_id
+            from races
+            where race_date = ? and course = ? and race_no = ?
+            order by fetched_at desc
+            limit 1
+            """,
+            (race_date, course, race_no),
+        ).fetchone()
+        return None if row is None else str(row["race_id"])
 
 
 def _odds_entries_by_type(odds: RaceOdds, bet_type: str | None) -> dict[str, list[OddsEntry]]:
