@@ -456,8 +456,10 @@ uv run jra-srb collect-analysis --from-date 2026-03-22 --to-date 2026-03-22 --co
 
 ## 関連ドキュメント
 
+- [jra-srb ドキュメント案内](docs/jra/README.md)
 - [JRA プロジェクト概要](docs/jra/01_プロジェクト概要.md)
 - [アーキテクチャ](docs/jra/02_アーキテクチャ.md)
 - [利用ガイド](docs/jra/04_利用ガイド.md)
 - [API 仕様](docs/jra/05_API仕様.md)
+- [CLI 仕様](docs/jra/06_CLI仕様.md)
 - [スクレイピングと運用注意](docs/jra/06_スクレイピングと運用注意.md)

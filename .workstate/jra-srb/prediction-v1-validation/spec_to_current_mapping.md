@@ -4,7 +4,7 @@ Date: 2026-07-04
 
 Source spec:
 
-- `docs/nakaana_self_learning_agent_spec.md`
+- `docs/14_自己学習エージェント仕様メモ.md`
 - `docs/jra/12_予想エージェント評価プロトコル.md`
 
 ## 1. Status Summary

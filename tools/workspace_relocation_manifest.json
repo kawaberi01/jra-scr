@@ -1,0 +1,232 @@
+{
+  "version": 1,
+  "generated_on": "2026-07-09",
+  "workspace_root": "D:/develop/jra-scr",
+  "entries": [
+    {
+      "source": "$err",
+      "destination": ".workstate/logs/shell/$err",
+      "reason": "shell stderr temporary output"
+    },
+    {
+      "source": "$out",
+      "destination": ".workstate/logs/shell/$out",
+      "reason": "shell stdout temporary output"
+    },
+    {
+      "source": "'+$err+'",
+      "destination": ".workstate/logs/shell/'+$err+'",
+      "reason": "shell stderr temporary output"
+    },
+    {
+      "source": "'+$out+'",
+      "destination": ".workstate/logs/shell/'+$out+'",
+      "reason": "shell stdout temporary output"
+    },
+    {
+      "source": "best7.json",
+      "destination": "data/manual_snapshots/2026-07-07_kawasaki_session/best7.json",
+      "reason": "manual race snapshot"
+    },
+    {
+      "source": "close7.json",
+      "destination": "data/manual_snapshots/2026-07-07_kawasaki_session/close7.json",
+      "reason": "manual race snapshot"
+    },
+    {
+      "source": "odds7_quinella.json",
+      "destination": "data/manual_snapshots/2026-07-07_kawasaki_session/odds7_quinella.json",
+      "reason": "manual race snapshot"
+    },
+    {
+      "source": "odds7_trio.json",
+      "destination": "data/manual_snapshots/2026-07-07_kawasaki_session/odds7_trio.json",
+      "reason": "manual race snapshot"
+    },
+    {
+      "source": "odds7_wide.json",
+      "destination": "data/manual_snapshots/2026-07-07_kawasaki_session/odds7_wide.json",
+      "reason": "manual race snapshot"
+    },
+    {
+      "source": "odds7_win.json",
+      "destination": "data/manual_snapshots/2026-07-07_kawasaki_session/odds7_win.json",
+      "reason": "manual race snapshot"
+    },
+    {
+      "source": "pattern7.json",
+      "destination": "data/manual_snapshots/2026-07-07_kawasaki_session/pattern7.json",
+      "reason": "manual race snapshot"
+    },
+    {
+      "source": "race6_result.json",
+      "destination": "data/manual_snapshots/2026-07-07_kawasaki_session/race6_result.json",
+      "reason": "manual race snapshot"
+    },
+    {
+      "source": "style7.json",
+      "destination": "data/manual_snapshots/2026-07-07_kawasaki_session/style7.json",
+      "reason": "manual race snapshot"
+    },
+    {
+      "source": "data/analysis-verify.sqlite",
+      "destination": "data/db/analysis-verify.sqlite",
+      "reason": "local verification database"
+    },
+    {
+      "source": "data/analysis.sqlite",
+      "destination": "data/db/analysis.sqlite",
+      "reason": "local primary analysis database"
+    },
+    {
+      "source": "data/test_bet_records_nankan.sqlite",
+      "destination": "data/db/test_bet_records_nankan.sqlite",
+      "reason": "local test database"
+    },
+    {
+      "source": "data/jradb_accessSS_live.txt",
+      "destination": "data/raw/jra/live_capture/jradb_accessSS_live.txt",
+      "reason": "captured JRA live source"
+    },
+    {
+      "source": "data/jradb_accessS_202507_live.html",
+      "destination": "data/raw/jra/live_capture/jradb_accessS_202507_live.html",
+      "reason": "captured JRA live source"
+    },
+    {
+      "source": "data/jradb_accessS_kai_select_live.html",
+      "destination": "data/raw/jra/live_capture/jradb_accessS_kai_select_live.html",
+      "reason": "captured JRA live source"
+    },
+    {
+      "source": "data/jradb_accessS_meeting_20250105_nakayama.html",
+      "destination": "data/raw/jra/live_capture/jradb_accessS_meeting_20250105_nakayama.html",
+      "reason": "captured JRA live source"
+    },
+    {
+      "source": "data/jradb_accessS_meeting_20250531_tokyo.html",
+      "destination": "data/raw/jra/live_capture/jradb_accessS_meeting_20250531_tokyo.html",
+      "reason": "captured JRA live source"
+    },
+    {
+      "source": "data/jradb_accessS_race_202501050611_live.html",
+      "destination": "data/raw/jra/live_capture/jradb_accessS_race_202501050611_live.html",
+      "reason": "captured JRA live source"
+    },
+    {
+      "source": "data/jradb_accessS_select_live.html",
+      "destination": "data/raw/jra/live_capture/jradb_accessS_select_live.html",
+      "reason": "captured JRA live source"
+    },
+    {
+      "source": "data/jradb_accessS_select_post_live.html",
+      "destination": "data/raw/jra/live_capture/jradb_accessS_select_post_live.html",
+      "reason": "captured JRA live source"
+    },
+    {
+      "source": "data/jra_result_202501050611.html",
+      "destination": "data/raw/jra/live_capture/jra_result_202501050611.html",
+      "reason": "captured JRA result page"
+    },
+    {
+      "source": "data/jra_result_202501050611_browserish.html",
+      "destination": "data/raw/jra/live_capture/jra_result_202501050611_browserish.html",
+      "reason": "captured JRA result page"
+    },
+    {
+      "source": "data/live-2026-06-28-races.json",
+      "destination": "data/exports/live/2026-06-28/live-2026-06-28-races.json",
+      "reason": "exported live API snapshot"
+    },
+    {
+      "source": "data/live-2026-06-28-results-by-race.json",
+      "destination": "data/exports/live/2026-06-28/live-2026-06-28-results-by-race.json",
+      "reason": "exported live API snapshot"
+    },
+    {
+      "source": "data/live-2026-06-28-results.jsonl",
+      "destination": "data/exports/live/2026-06-28/live-2026-06-28-results.jsonl",
+      "reason": "exported live API snapshot"
+    },
+    {
+      "source": "data/nankankeiba_pattern_20260706_kawasaki_1r_live.json",
+      "destination": "data/raw/nankan/2026-07-06_kawasaki_1r/nankankeiba_pattern_20260706_kawasaki_1r_live.json",
+      "reason": "captured Nankan live source"
+    },
+    {
+      "source": "data/netkeiba_meeting_calendar.2026_h1.csv",
+      "destination": "data/reference/netkeiba/2026_h1/netkeiba_meeting_calendar.2026_h1.csv",
+      "reason": "reference material"
+    },
+    {
+      "source": "data/netkeiba_meeting_calendar_2026_nittei.pdf",
+      "destination": "data/reference/netkeiba/2026_h1/netkeiba_meeting_calendar_2026_nittei.pdf",
+      "reason": "reference material"
+    },
+    {
+      "source": "data/netkeiba_race_mapping.2026_h1.csv",
+      "destination": "data/reference/netkeiba/2026_h1/netkeiba_race_mapping.2026_h1.csv",
+      "reason": "reference material"
+    },
+    {
+      "source": ".workstate/analyze_nankan_20260619_kawasaki_r1_r5.py",
+      "destination": ".workstate/scripts/analyze_nankan_20260619_kawasaki_r1_r5.py",
+      "reason": "one-off investigation script"
+    },
+    {
+      "source": ".workstate/api_8000_stderr.log",
+      "destination": ".workstate/logs/api/api_8000_stderr.log",
+      "reason": "temporary API stderr log"
+    },
+    {
+      "source": ".workstate/api_8000_stderr_restart.log",
+      "destination": ".workstate/logs/api/api_8000_stderr_restart.log",
+      "reason": "temporary API stderr log"
+    },
+    {
+      "source": ".workstate/api_8000_stdout.log",
+      "destination": ".workstate/logs/api/api_8000_stdout.log",
+      "reason": "temporary API stdout log"
+    },
+    {
+      "source": ".workstate/api_8000_stdout_restart.log",
+      "destination": ".workstate/logs/api/api_8000_stdout_restart.log",
+      "reason": "temporary API stdout log"
+    },
+    {
+      "source": ".workstate/bundle8_test.json",
+      "destination": ".workstate/manual_checks/bundle8_test.json",
+      "reason": "manual API verification payload"
+    },
+    {
+      "source": ".workstate/restart_api_8000.ps1",
+      "destination": ".workstate/scripts/restart_api_8000.ps1",
+      "reason": "support script"
+    },
+    {
+      "source": ".workstate/save_nankan_backtest_r1_r5.py",
+      "destination": ".workstate/scripts/save_nankan_backtest_r1_r5.py",
+      "reason": "one-off investigation script"
+    },
+    {
+      "source": ".workstate/test_proxy_python.txt",
+      "destination": ".workstate/manual_checks/test_proxy_python.txt",
+      "reason": "manual check note"
+    },
+    {
+      "source": ".workstate/tmp_check_kawasaki_analysis.py",
+      "destination": ".workstate/scripts/tmp_check_kawasaki_analysis.py",
+      "reason": "one-off investigation script"
+    },
+    {
+      "source": ".workstate/ttl_manual_check/analysis.sqlite",
+      "destination": ".workstate/manual_checks/ttl_manual_check/analysis.sqlite",
+      "reason": "manual ttl validation database"
+    },
+    {
+      "source": ".workstate/ttl_manual_check/cache.sqlite",
+      "destination": ".workstate/manual_checks/ttl_manual_check/cache.sqlite",
+      "reason": "manual ttl validation database"
+    }
+  ]
+}

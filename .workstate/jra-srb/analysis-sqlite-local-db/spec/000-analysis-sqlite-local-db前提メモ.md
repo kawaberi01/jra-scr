@@ -6,7 +6,7 @@
 - 対象機能: 分析用ローカル SQLite DB 収集機能
 - 改修目的: 自己改良エージェントが、過去レースの発走前情報、オッズ、結果、払戻、予想、評価結果を再現可能に扱えるようにする。
 - 関連資料:
-  - `docs/nakaana_self_learning_agent_spec.md`
+  - `docs/14_自己学習エージェント仕様メモ.md`
 - 関連コード:
   - `src/jra_srb/service.py`
   - `src/jra_srb/batch.py`
@@ -21,7 +21,7 @@
   - 自己改良エージェントに使えるデータを収集したい。
 - reference_status:
   - 外部 reference は未使用。
-  - `docs/nakaana_self_learning_agent_spec.md` を構想 reference として扱う。
+  - `docs/14_自己学習エージェント仕様メモ.md` を構想 reference として扱う。
   - 実コードを正として、取得可能なデータ範囲を決める。
 
 ## 3. 判断の前提

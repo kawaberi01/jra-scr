@@ -589,3 +589,16 @@
 - メモ:
   - 優先度A: まとめ取得API
   - 優先度B: 軽量オッズAPI
+
+### 2026-07-08 20:20:00
+- 種別: 運用
+- 対象: 日次ログのDB記録
+- 内容:
+  - `notes/2026-07-08_kawasaki_predictions.md` を `data/analysis.sqlite` へインポート
+  - 先に川崎開催一覧を `races` に補完し、その後ログ再インポートを実施
+  - 取込結果は 21 エントリ、`race_id` 解決は 17 件
+- 判断への影響:
+  - レース単位の予想・結果検証はDB分析対象に回せる状態になった
+  - 運用メモや方針変更など、非レース項目は `race_id` なしで保持
+- メモ:
+  - 取込コマンド: `uv run jra-srb import-daily-prediction-log notes/2026-07-08_kawasaki_predictions.md --db data/analysis.sqlite`

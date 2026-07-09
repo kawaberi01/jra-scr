@@ -419,7 +419,7 @@ source of truth は、更新された `plan` または `task-board` である。
 
 関連文書:
 
-- `docs/16_小規模実地検証_tiny_counter.md`
+- `docs/12_小規模実地検証_tiny Counter.md`
 
 ### 2. 既存設計書を使った別フォルダ再構築
 

@@ -11,7 +11,7 @@
   - `tests/test_analysis_collector.py`
   - `README.md`
   - `docs/jra/05_API仕様.md`
-  - `docs/nakaana_self_learning_agent_spec.md`
+  - `docs/14_自己学習エージェント仕様メモ.md`
 - 変更してはいけない範囲:
   - 既存 `SQLiteRaceResultStorage` の互換破壊
   - 既存 API endpoint のURL変更
