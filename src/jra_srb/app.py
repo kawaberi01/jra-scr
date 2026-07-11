@@ -1351,7 +1351,7 @@ async def create_jra_prediction(
 ):
     bundle = await svc.get_prediction_bundle(
         date_, str(course), race_no, meeting_no, meeting_day,
-        sources=["netkeiba", "keibalab"], odds_bet_types=["win"], refresh=refresh,
+        sources=["netkeiba", "keibalab"], odds_bet_types=["win", "wide"], refresh=refresh,
     )
     record = build_prediction_record(bundle, budget=budget)
     return {"record": record, "saved": store.upsert_prediction_record(record)}
