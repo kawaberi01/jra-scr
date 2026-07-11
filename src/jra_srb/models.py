@@ -426,6 +426,141 @@ class RaceOdds(BaseModel):
     meta: CachePolicyMeta | None = None
 
 
+class JraMaterialStatus(StrEnum):
+    available = "available"
+    partial = "partial"
+    unavailable = "unavailable"
+    upstream_error = "upstream_error"
+    disabled = "disabled"
+
+
+class JraSourceKeys(BaseModel):
+    jra_internal_race_id: str
+    netkeiba_race_id: str
+    keibalab_race_code: str
+    umanity_race_code: str
+
+
+class JraRecentRace(BaseModel):
+    source_date: date | None = None
+    source_course: str | None = None
+    source_race_no: int | None = None
+    surface: str | None = None
+    distance: int | None = None
+    track_condition: str | None = None
+    finish_rank: int | None = None
+    field_size: int | None = None
+    finish_time: str | None = None
+    final_3f: float | None = None
+    corner_positions: list[int] = Field(default_factory=list)
+    weight_carried: float | None = None
+    jockey: str | None = None
+    popularity: int | None = None
+    win_odds: float | None = None
+    source: str
+    source_url: str | None = None
+
+
+class JraPublicRunnerAnalysis(BaseModel):
+    horse_no: str
+    horse_name: str
+    omega_index: float | None = None
+    recent_races: list[JraRecentRace] = Field(default_factory=list)
+
+
+class JraPublicSourceAnalysis(BaseModel):
+    source: str
+    status: JraMaterialStatus
+    source_url: str | None = None
+    course_analysis: dict[str, list[str]] = Field(default_factory=dict)
+    runners: list[JraPublicRunnerAnalysis] = Field(default_factory=list)
+    locked_fields: list[str] = Field(default_factory=list)
+    reason: str | None = None
+    warnings: list[str] = Field(default_factory=list)
+    fetched_at: datetime
+    cache_hit: bool = False
+
+
+class JraPublicAnalysis(BaseModel):
+    race_id: str
+    date: date
+    course: str
+    race_no: int
+    meeting_no: int
+    meeting_day: int
+    status: JraMaterialStatus
+    sources: dict[str, JraPublicSourceAnalysis] = Field(default_factory=dict)
+    fetched_at: datetime
+    cache_hit: bool = False
+    source_keys: JraSourceKeys
+
+
+class JraLiteRunnerMaterial(BaseModel):
+    horse_no: str
+    horse_name: str
+    status: JraMaterialStatus
+    value: str | float | None = None
+    rank: int | None = None
+    sample_size: int = 0
+    source_race: JraRecentRace | None = None
+    details: dict[str, object] = Field(default_factory=dict)
+    reason: str | None = None
+
+
+class JraLiteMaterial(BaseModel):
+    race_id: str
+    kind: str
+    scope: str = "visible_recent_races"
+    max_recent_races: int = 5
+    status: JraMaterialStatus
+    runners: list[JraLiteRunnerMaterial] = Field(default_factory=list)
+    fetched_at: datetime
+    source: str = "public_race_pages"
+    cache_hit: bool = False
+
+
+class JraTrendContext(BaseModel):
+    date: date
+    course: str
+    race_no: int
+    race_count_completed: int
+    required_max_completed: int
+    usable: bool
+    status: JraMaterialStatus
+    summary: dict[str, object] = Field(default_factory=dict)
+    skipped_races: list[int] = Field(default_factory=list)
+    reason: str | None = None
+    fetched_at: datetime
+    source: str = "jra_official_same_day_results"
+
+
+class JraPredictionBundleMeta(BaseModel):
+    parallelized: bool = True
+    used_existing_services: bool = True
+    source_keys: JraSourceKeys
+    component_status: dict[str, str] = Field(default_factory=dict)
+
+
+class JraPredictionBundle(BaseModel):
+    race_id: str
+    date: date
+    course: str
+    race_no: int
+    meeting_no: int
+    meeting_day: int
+    odds_bet_types: list[str] = Field(default_factory=list)
+    card: RaceCard
+    odds_summary: RaceOdds
+    trend_context: JraTrendContext
+    public_analysis: JraPublicAnalysis
+    best_time_lite: JraLiteMaterial
+    closing_speed_lite: JraLiteMaterial
+    style_profile_lite: JraLiteMaterial
+    fetched_at: datetime
+    cache_hit: bool = False
+    meta: JraPredictionBundleMeta
+
+
 class NankanPredictionBundleMeta(BaseModel):
     parallelized: bool = True
     used_existing_services: bool = True

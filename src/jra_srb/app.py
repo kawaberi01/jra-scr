@@ -8,7 +8,7 @@ from pathlib import Path as FilePath
 from typing import Annotated
 from uuid import uuid4
 
-from fastapi import BackgroundTasks, Depends, FastAPI, Path, Query, Request, status
+from fastapi import BackgroundTasks, Body, Depends, FastAPI, Path, Query, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
@@ -29,6 +29,7 @@ from .models import (
     BET_RECORD_RACE_ID_PATTERN,
     BetType,
     CourseCode, 
+    JraPredictionBundle,
     NarCalendarPage, 
     NankankeibaPatternBundle, 
     NankanPredictionBundle,
@@ -54,6 +55,8 @@ from .models import (
 from .nankankeiba_pattern_provider import NankankeibaPatternHttpProvider 
 from .nankankeiba_pattern_service import NankankeibaPatternCacheTtls, NankankeibaPatternService 
 from .nankan_prediction_service import NankanPredictionService
+from .jra_prediction_service import JraPredictionService
+from .jra_prediction_engine import build_prediction_record
 from .prediction_trace import (
     build_prediction_trace_logger,
     reset_current_request_trace_id,
@@ -91,6 +94,7 @@ app = FastAPI(
         {"name": "health", "description": "ヘルスチェック用 endpoint"},
         {"name": "races", "description": "race_id ベースまたは fixture ベースの API"},
         {"name": "meetings", "description": "開催日・開催地・レース番号ベースの API"},
+        {"name": "jra-analysis", "description": "JRA予想向け当日材料 API"},
         {"name": "nankan", "description": "南関東4競馬場公式サイトの API"},
         {"name": "nankankeiba", "description": "南関東4競馬場サイト由来の分析 API"},
         {"name": "search", "description": "race_id を探すための検索 API"},
@@ -188,6 +192,10 @@ def build_nankan_prediction_service() -> NankanPredictionService:
     )
 
 
+def build_jra_prediction_service() -> JraPredictionService:
+    return JraPredictionService(jra_service=service)
+
+
 def _env_int(name: str, default: int, minimum: int) -> int:
     value = os.environ.get(name)
     if value is None or not value.strip():
@@ -214,6 +222,7 @@ nar_netkeiba_service = build_nar_netkeiba_service()
 nankan_service = build_nankan_service() 
 nankankeiba_pattern_service = build_nankankeiba_pattern_service() 
 nankan_prediction_service = build_nankan_prediction_service()
+jra_prediction_service = build_jra_prediction_service()
 result_collection_jobs = ResultCollectionJobRegistry() 
 
 
@@ -284,6 +293,10 @@ def get_nankankeiba_pattern_service() -> NankankeibaPatternService:
 
 def get_nankan_prediction_service() -> NankanPredictionService:
     return nankan_prediction_service
+
+
+def get_jra_prediction_service() -> JraPredictionService:
+    return jra_prediction_service
 
 
 def get_result_collection_job_registry() -> ResultCollectionJobRegistry:
@@ -1102,6 +1115,146 @@ async def get_nankankeiba_pattern(
         categories=_parse_query_csv(categories),
         refresh=refresh,
     )
+
+
+@app.get(
+    "/jra/meetings/{date_}/{course}/races/{race_no}/prediction-bundle",
+    tags=["jra-analysis"],
+    summary="JRA予想向け当日材料をまとめて取得",
+    response_model=JraPredictionBundle,
+)
+async def get_jra_prediction_bundle(
+    date_: date,
+    course: CourseCode,
+    race_no: RaceNoPath,
+    meeting_no: int = Query(ge=1, le=99, description="開催回"),
+    meeting_day: int = Query(ge=1, le=99, description="開催日"),
+    sources: str | None = Query(default=None, description="netkeiba,keibalab,umanity"),
+    bet_types: str | None = Query(default=None, description="win,wide,quinella"),
+    refresh: bool = Query(default=False),
+    svc: JraPredictionService = Depends(get_jra_prediction_service),
+):
+    return await svc.get_prediction_bundle(
+        date_, str(course), race_no, meeting_no, meeting_day,
+        sources=_parse_query_csv(sources),
+        odds_bet_types=_parse_query_csv(bet_types),
+        refresh=refresh,
+    )
+
+
+@app.get(
+    "/jra/meetings/{date_}/{course}/races/{race_no}/public-analysis",
+    tags=["jra-analysis"],
+    summary="匿名公開範囲の外部分析材料を取得",
+)
+async def get_jra_public_analysis(
+    date_: date,
+    course: CourseCode,
+    race_no: RaceNoPath,
+    meeting_no: int = Query(ge=1, le=99),
+    meeting_day: int = Query(ge=1, le=99),
+    sources: str | None = Query(default=None),
+    refresh: bool = Query(default=False),
+    svc: JraPredictionService = Depends(get_jra_prediction_service),
+):
+    return await svc.get_public_analysis(
+        date_, str(course), race_no, meeting_no, meeting_day,
+        sources=_parse_query_csv(sources), refresh=refresh,
+    )
+
+
+@app.get(
+    "/jra/meetings/{date_}/{course}/races/{race_no}/trend-context",
+    tags=["jra-analysis"],
+    summary="同日先行レースの確定結果傾向を取得",
+)
+async def get_jra_trend_context(
+    date_: date,
+    course: CourseCode,
+    race_no: RaceNoPath,
+    svc: JraPredictionService = Depends(get_jra_prediction_service),
+):
+    return await svc.get_trend_context(date_, str(course), race_no)
+
+
+async def _jra_lite(kind, date_, course, race_no, meeting_no, meeting_day, refresh, svc):
+    return await svc.get_lite_material(
+        kind, date_, str(course), race_no, meeting_no, meeting_day, refresh,
+    )
+
+
+@app.get("/jra/meetings/{date_}/{course}/races/{race_no}/best-time-lite", tags=["jra-analysis"])
+async def get_jra_best_time_lite(
+    date_: date, course: CourseCode, race_no: RaceNoPath,
+    meeting_no: int = Query(ge=1, le=99), meeting_day: int = Query(ge=1, le=99),
+    refresh: bool = Query(default=False), svc: JraPredictionService = Depends(get_jra_prediction_service),
+):
+    return await _jra_lite("best-time-lite", date_, course, race_no, meeting_no, meeting_day, refresh, svc)
+
+
+@app.get("/jra/meetings/{date_}/{course}/races/{race_no}/closing-speed-lite", tags=["jra-analysis"])
+async def get_jra_closing_speed_lite(
+    date_: date, course: CourseCode, race_no: RaceNoPath,
+    meeting_no: int = Query(ge=1, le=99), meeting_day: int = Query(ge=1, le=99),
+    refresh: bool = Query(default=False), svc: JraPredictionService = Depends(get_jra_prediction_service),
+):
+    return await _jra_lite("closing-speed-lite", date_, course, race_no, meeting_no, meeting_day, refresh, svc)
+
+
+@app.get("/jra/meetings/{date_}/{course}/races/{race_no}/style-profile-lite", tags=["jra-analysis"])
+async def get_jra_style_profile_lite(
+    date_: date, course: CourseCode, race_no: RaceNoPath,
+    meeting_no: int = Query(ge=1, le=99), meeting_day: int = Query(ge=1, le=99),
+    refresh: bool = Query(default=False), svc: JraPredictionService = Depends(get_jra_prediction_service),
+):
+    return await _jra_lite("style-profile-lite", date_, course, race_no, meeting_no, meeting_day, refresh, svc)
+
+
+@app.get("/jra/meetings/{date_}/{course}/races/{race_no}/odds-summary", tags=["jra-analysis"])
+async def get_jra_odds_summary(
+    date_: date, course: CourseCode, race_no: RaceNoPath,
+    bet_types: str | None = Query(default=None), refresh: bool = Query(default=False),
+    svc: JraPredictionService = Depends(get_jra_prediction_service),
+):
+    return await svc.get_odds_summary(date_, str(course), race_no, _parse_query_csv(bet_types), refresh)
+
+
+@app.post("/jra/meetings/{date_}/{course}/races/{race_no}/predictions", tags=["jra-analysis"])
+async def create_jra_prediction(
+    date_: date, course: CourseCode, race_no: RaceNoPath,
+    meeting_no: int = Query(ge=1, le=99), meeting_day: int = Query(ge=1, le=99),
+    budget: int = Query(default=1000, ge=100), refresh: bool = Query(default=True),
+    svc: JraPredictionService = Depends(get_jra_prediction_service),
+    store: AnalysisSQLiteStore = Depends(get_analysis_store),
+):
+    bundle = await svc.get_prediction_bundle(
+        date_, str(course), race_no, meeting_no, meeting_day,
+        sources=["netkeiba", "keibalab"], odds_bet_types=["win"], refresh=refresh,
+    )
+    record = build_prediction_record(bundle, budget=budget)
+    return {"record": record, "saved": store.upsert_prediction_record(record)}
+
+
+@app.post("/jra/predictions/{prediction_id}/evaluate", tags=["jra-analysis"])
+async def evaluate_jra_prediction(
+    prediction_id: str,
+    payload: dict = Body(default_factory=dict),
+    store: AnalysisSQLiteStore = Depends(get_analysis_store),
+):
+    return store.evaluate_prediction_record({"prediction_id": prediction_id, **payload})
+
+
+@app.post("/jra/meetings/{date_}/{course}/races/{race_no}/result/save", tags=["jra-analysis"])
+async def save_jra_result(
+    date_: date, course: CourseCode, race_no: RaceNoPath,
+    svc: JraService = Depends(get_service),
+    store: AnalysisSQLiteStore = Depends(get_analysis_store),
+):
+    result = await svc.get_race_result_by_number(date_, str(course), race_no)
+    if not result.results or not result.payouts:
+        raise BadRequestError("result or payout is not finalized")
+    store.write_result(result)
+    return {"race_id": result.race_id, "results": len(result.results), "payouts": len(result.payouts), "fetched_at": result.fetched_at}
 
 
 @app.get(

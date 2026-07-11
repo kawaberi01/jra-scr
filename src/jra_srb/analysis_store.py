@@ -490,7 +490,10 @@ class AnalysisSQLiteStore:
                 (
                     card.race_id,
                     target_date.isoformat(),
-                    card.course or course,
+                    # The caller's meeting course is authoritative.  Some JRA card
+                    # pages expose the distance label in card.course, which must not
+                    # replace the normalized venue persisted from the meeting page.
+                    course,
                     meeting_no,
                     meeting_day,
                     race_no,

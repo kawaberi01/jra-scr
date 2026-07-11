@@ -412,7 +412,8 @@ class JraService:
             kind="result",
         )
         page = await self.provider.post_jradb("/JRADB/accessS.html", resolved.cname)
-        self.cache.set(cache_key, page, ttl_seconds=3600)
+        ttl_seconds = 60 if target_date == date.today() else 3600
+        self.cache.set(cache_key, page, ttl_seconds=ttl_seconds)
         return page
 
     async def _load_result_selection_page(self, target_date: date):
