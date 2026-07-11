@@ -59,6 +59,7 @@ from .jra_prediction_service import JraPredictionService
 from .jra_prediction_engine import build_prediction_record
 from .jra_history_dataset import build_live_feature_records
 from .jra_history_model import load_model_artifact, score_live_records
+from .jra_betting_decision import build_win_ev_decision
 from .prediction_trace import (
     build_prediction_trace_logger,
     reset_current_request_trace_id,
@@ -1283,6 +1284,60 @@ async def get_jra_model_comparison(
         },
         "history_model": history,
         "comparison": comparison,
+    }
+
+
+@app.get(
+    "/jra/meetings/{date_}/{course}/races/{race_no}/betting-decision",
+    tags=["jra-analysis"],
+    summary="履歴勝率と単勝オッズから期待値を判定",
+)
+async def get_jra_betting_decision(
+    date_: date,
+    course: CourseCode,
+    race_no: RaceNoPath,
+    meeting_no: int = Query(ge=1, le=99),
+    meeting_day: int = Query(ge=1, le=99),
+    budget: int = Query(default=1000, ge=100),
+    refresh: bool = Query(default=False),
+    svc: JraPredictionService = Depends(get_jra_prediction_service),
+):
+    bundle = await svc.get_prediction_bundle(
+        date_, str(course), race_no, meeting_no, meeting_day,
+        sources=["netkeiba", "keibalab"], odds_bet_types=["win"], refresh=refresh,
+    )
+    try:
+        artifact = load_model_artifact(_default_history_model_path())
+        if artifact["trained_through"] >= date_.isoformat():
+            raise BadRequestError(
+                "history model training horizon is not before target date; retrain only with earlier data"
+            )
+        records = build_live_feature_records(
+            _default_analysis_db_path(), target_date=date_, course=str(course), card=bundle.card,
+        )
+        ranking = score_live_records(artifact, records)
+        decision = build_win_ev_decision(ranking, bundle.odds_summary, budget=budget)
+        model = {
+            "status": "available",
+            "model_version": artifact["model_version"],
+            "trained_through": artifact["trained_through"],
+            "artifact_hash": artifact["artifact_hash"],
+        }
+    except FileNotFoundError as exc:
+        ranking = []
+        decision = {
+            "status": "unavailable",
+            "reason": str(exc),
+            "tickets": [],
+            "candidates": [],
+        }
+        model = {"status": "unavailable", "reason": str(exc)}
+    return {
+        "race_id": bundle.race_id,
+        "as_of": bundle.fetched_at,
+        "history_model": model,
+        "ranking": ranking,
+        "betting_decision": decision,
     }
 
 
