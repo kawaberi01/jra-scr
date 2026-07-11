@@ -57,6 +57,8 @@ from .nankankeiba_pattern_service import NankankeibaPatternCacheTtls, Nankankeib
 from .nankan_prediction_service import NankanPredictionService
 from .jra_prediction_service import JraPredictionService
 from .jra_prediction_engine import build_prediction_record
+from .jra_history_dataset import build_live_feature_records
+from .jra_history_model import load_model_artifact, score_live_records
 from .prediction_trace import (
     build_prediction_trace_logger,
     reset_current_request_trace_id,
@@ -106,6 +108,10 @@ app = FastAPI(
 
 def _default_analysis_db_path() -> str:
     return os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/db/analysis.sqlite")
+
+
+def _default_history_model_path() -> FilePath:
+    return FilePath(os.environ.get("JRA_SRB_HISTORY_MODEL_PATH", "data/models/jra_history_v1/model.json"))
 
 
 def build_service() -> JraService:
@@ -1217,6 +1223,67 @@ async def get_jra_odds_summary(
     svc: JraPredictionService = Depends(get_jra_prediction_service),
 ):
     return await svc.get_odds_summary(date_, str(course), race_no, _parse_query_csv(bet_types), refresh)
+
+
+@app.get(
+    "/jra/meetings/{date_}/{course}/races/{race_no}/model-comparison",
+    tags=["jra-analysis"],
+    summary="公開材料モデルと履歴学習モデルを比較",
+)
+async def get_jra_model_comparison(
+    date_: date,
+    course: CourseCode,
+    race_no: RaceNoPath,
+    meeting_no: int = Query(ge=1, le=99),
+    meeting_day: int = Query(ge=1, le=99),
+    refresh: bool = Query(default=False),
+    svc: JraPredictionService = Depends(get_jra_prediction_service),
+):
+    bundle = await svc.get_prediction_bundle(
+        date_, str(course), race_no, meeting_no, meeting_day,
+        sources=["netkeiba", "keibalab"], odds_bet_types=["win"], refresh=refresh,
+    )
+    materials_record = build_prediction_record(bundle)
+    materials_ranking = materials_record["prediction_json"]["predicted_ranking"]
+    try:
+        artifact = load_model_artifact(_default_history_model_path())
+        if artifact["trained_through"] >= date_.isoformat():
+            raise BadRequestError(
+                "history model training horizon is not before target date; retrain only with earlier data"
+            )
+        history_records = build_live_feature_records(
+            _default_analysis_db_path(), target_date=date_, course=str(course), card=bundle.card,
+        )
+        history_ranking = score_live_records(artifact, history_records)
+        history = {
+            "status": "available",
+            "model_version": artifact["model_version"],
+            "trained_through": artifact["trained_through"],
+            "artifact_hash": artifact["artifact_hash"],
+            "ranking": history_ranking,
+        }
+        material_top3 = {item["horse_no"] for item in materials_ranking[:3]}
+        history_top3 = {item["horse_no"] for item in history_ranking[:3]}
+        comparison = {
+            "material_top3": sorted(material_top3),
+            "history_top3": sorted(history_top3),
+            "top3_agreement": sorted(material_top3 & history_top3),
+            "top_pick_agrees": bool(materials_ranking and history_ranking and materials_ranking[0]["horse_no"] == history_ranking[0]["horse_no"]),
+        }
+    except FileNotFoundError as exc:
+        history = {"status": "unavailable", "reason": str(exc)}
+        comparison = None
+    return {
+        "race_id": bundle.race_id,
+        "as_of": bundle.fetched_at,
+        "materials_model": {
+            "model_version": materials_record["theory_version"],
+            "ranking": materials_ranking,
+            "component_status": bundle.meta.component_status,
+        },
+        "history_model": history,
+        "comparison": comparison,
+    }
 
 
 @app.post("/jra/meetings/{date_}/{course}/races/{race_no}/predictions", tags=["jra-analysis"])

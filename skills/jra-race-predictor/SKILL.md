@@ -11,14 +11,22 @@ description: Predict JRA races from the local same-day API with explicit rationa
 
 1. 日付、場、レース番号、開催回、開催日を特定する。
 2. モード未指定なら `総合買い目型` を既定とする。
-3. 発走前は1回だけ次を取得する。
+3. 発走前は次を取得する。
    - `GET /jra/meetings/{date}/{course}/races/{race_no}/prediction-bundle?meeting_no=...&meeting_day=...&refresh=true`
-4. `card`、`odds_summary`、`trend_context`、`public_analysis`、3種の lite 指標を確認する。
+   - 履歴モデルの成果物が利用可能なら、`GET /jra/meetings/{date}/{course}/races/{race_no}/model-comparison?meeting_no=...&meeting_day=...&refresh=true`
+4. `card`、`odds_summary`、`trend_context`、`public_analysis`、3種の lite 指標と、比較APIの両モデル順位を確認する。
 5. `component_status` と取得日時を明記する。Umanity会員限定欄などは `unavailable` のまま扱う。
 6. 頭候補、軸候補、相手候補を分け、順位と各馬の根拠を出す。
 7. オッズがある券種だけで買い目を作る。未取得オッズを推測しない。
 8. 予想を保存する場合は `prediction_id`、予想時点束、順位、買い目を analysis SQLite に保存する。
 9. 確定後だけJRA結果・払戻を取得・保存し、保存済み予想を評価する。未確定なら評価しない。
+
+## 二モデルの扱い
+
+- 公開材料モデルは当日オッズ・公式情報・公開分析を使う。履歴モデルは対象日前日までの確定結果だけを使う。
+- `top3_agreement` は強調材料にするが、二つの確率を合算した順位はまだ出さない。統合係数は別途シャドー評価で決める。
+- 上位が食い違う場合は、馬番・両者の順位・履歴モデルの特徴量寄与を示し、当日情報またはオッズに理由があるか確認する。
+- `history_model.status=unavailable` のときは公開材料モデルのみで予想し、履歴モデルの値を補完しない。
 
 ## 評価の優先順
 

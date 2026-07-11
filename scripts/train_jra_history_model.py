@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+from datetime import date
 
 from jra_srb.jra_history_dataset import build_history_dataset, write_dataset_jsonl_gz
 from jra_srb.jra_history_model import train_history_models, write_model_artifacts
@@ -15,11 +16,15 @@ def main() -> None:
     parser.add_argument("--dataset", default="data/training/jra_history_v1/runner_features.jsonl.gz")
     parser.add_argument("--model-dir", default="data/models/jra_history_v1")
     parser.add_argument("--validation-fraction", type=float, default=0.2)
+    parser.add_argument(
+        "--through-date", type=date.fromisoformat,
+        help="Include source races through this ISO date. Use the day before a live prediction target.",
+    )
     args = parser.parse_args()
 
     db_path = Path(args.db)
     before = _fingerprint(db_path)
-    records, metadata = build_history_dataset(db_path)
+    records, metadata = build_history_dataset(db_path, through_date=args.through_date)
     write_dataset_jsonl_gz(records, args.dataset)
     artifact, report = train_history_models(records, validation_fraction=args.validation_fraction)
     write_model_artifacts(artifact, report, args.model_dir)

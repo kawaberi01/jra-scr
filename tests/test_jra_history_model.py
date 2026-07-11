@@ -1,7 +1,7 @@
 import pytest
 
 from jra_srb.jra_history_dataset import FEATURE_NAMES
-from jra_srb.jra_history_model import predict_with_artifact, train_history_models
+from jra_srb.jra_history_model import predict_with_artifact, score_live_records, train_history_models
 
 
 def test_predict_with_json_artifact_needs_no_sklearn_runtime():
@@ -38,3 +38,25 @@ def test_training_uses_chronological_date_holdout():
     assert report["split"]["validation_dates"] == 3
     assert artifact["odds_used"] is False
     assert artifact["training_races"] == 12
+
+
+def test_live_scoring_normalizes_win_probability_and_includes_explanations():
+    count = len(FEATURE_NAMES)
+    artifact = {
+        "feature_names": FEATURE_NAMES,
+        "scaler": {"mean": [0.0] * count, "scale": [1.0] * count},
+        "models": {
+            "win": {"intercept": 0.0, "coefficients": [1.0] + [0.0] * (count - 1)},
+            "top3": {"intercept": 0.0, "coefficients": [1.0] + [0.0] * (count - 1)},
+        },
+    }
+    low = [0.0] * count
+    high = [0.0] * count
+    high[0] = 1.0
+    scored = score_live_records(artifact, [
+        {"horse_no": "2", "features": low},
+        {"horse_no": "1", "features": high},
+    ])
+    assert scored[0]["horse_no"] == "1"
+    assert round(sum(item["win_probability_race_normalized"] for item in scored), 8) == 1.0
+    assert scored[0]["explanation"]["positive_contributions"][0]["feature"] == "distance_scaled"

@@ -47,7 +47,9 @@ class HistoryStat:
         self.last_date = race_date
 
 
-def build_history_dataset(db_path: str | Path) -> tuple[list[dict], dict]:
+def build_history_dataset(
+    db_path: str | Path, *, through_date: date | None = None,
+) -> tuple[list[dict], dict]:
     """Read the source DB in read-only mode and build leakage-safe runner rows."""
     path = Path(db_path).resolve()
     conn = sqlite3.connect(f"file:{path.as_posix()}?mode=ro", uri=True)
@@ -65,12 +67,19 @@ def build_history_dataset(db_path: str | Path) -> tuple[list[dict], dict]:
               and substr(r.race_id, 9, 2) between '01' and '10'
               and r.source like 'https://www.jra.go.jp/%'
               and exists (select 1 from payouts p where p.race_id = r.race_id)
+              and (? is null or r.race_date <= ?)
             order by r.race_date, r.race_id, cast(ru.horse_no as integer)
-            """
+            """,
+            (
+                through_date.isoformat() if through_date else None,
+                through_date.isoformat() if through_date else None,
+            ),
         ).fetchall()
     finally:
         conn.close()
-    return build_history_dataset_from_rows(rows)
+    records, metadata = build_history_dataset_from_rows(rows)
+    metadata["source_through_date"] = through_date.isoformat() if through_date else None
+    return records, metadata
 
 
 def build_history_dataset_from_rows(rows: Iterable[sqlite3.Row | dict]) -> tuple[list[dict], dict]:
@@ -159,6 +168,130 @@ def write_dataset_jsonl_gz(records: Iterable[dict], output_path: str | Path) -> 
             handle.write(json.dumps(record, ensure_ascii=False, separators=(",", ":")) + "\n")
 
 
+def build_live_feature_records(
+    db_path: str | Path,
+    *,
+    target_date: date,
+    course: str,
+    card,
+) -> list[dict]:
+    """Create pre-race features using only races before ``target_date``.
+
+    Same-day results are deliberately excluded. This is conservative but prevents
+    an unavailable live result from becoming an accidental future feature.
+    """
+    if course not in COURSE_CODES.values():
+        raise ValueError(f"unsupported JRA course={course}")
+    path = Path(db_path).resolve()
+    conn = sqlite3.connect(f"file:{path.as_posix()}?mode=ro", uri=True)
+    conn.row_factory = sqlite3.Row
+    try:
+        rows = conn.execute(
+            """
+            select r.race_id, r.race_date, r.race_name, r.surface, r.distance,
+                   ru.horse_no, ru.frame_no, ru.horse_name, ru.sex_age,
+                   ru.weight_carried, ru.jockey, ru.trainer, re.rank
+            from races r
+            join runners ru on ru.race_id = r.race_id
+            join result_entries re on re.race_id = r.race_id and re.horse_no = ru.horse_no
+            where length(r.race_id) = 12
+              and substr(r.race_id, 9, 2) between '01' and '10'
+              and r.source like 'https://www.jra.go.jp/%'
+              and r.race_date < ?
+              and exists (select 1 from payouts p where p.race_id = r.race_id)
+            order by r.race_date, r.race_id, cast(ru.horse_no as integer)
+            """,
+            (target_date.isoformat(),),
+        ).fetchall()
+    finally:
+        conn.close()
+
+    states = _build_history_states(rows)
+    field_size = len(card.runners)
+    surface = _surface(card.surface)
+    distance = _number(card.distance) or 0
+    distance_band = _distance_band(distance, card.race_name)
+    records = []
+    for runner in card.runners:
+        horse_name = _text(runner.horse_name, "unknown")
+        jockey = _text(runner.jockey, "unknown")
+        trainer = _text(runner.trainer, "unknown")
+        horse = states["horse"][horse_name]
+        records.append({
+            "race_id": card.race_id,
+            "race_date": target_date.isoformat(),
+            "course": course,
+            "surface": surface,
+            "distance": distance,
+            "horse_no": str(runner.horse_no or ""),
+            "horse_name": horse_name,
+            "jockey": jockey,
+            "trainer": trainer,
+            "features": _feature_vector(
+                row={
+                    "horse_no": runner.horse_no,
+                    "frame_no": runner.frame_no,
+                    "sex_age": runner.sex_age,
+                    "weight_carried": runner.weight_carried,
+                },
+                race_date=target_date,
+                race_name=_text(card.race_name, ""),
+                course=course,
+                surface=surface,
+                distance=distance,
+                field_size=field_size,
+                horse=horse,
+                horse_course=states["horse_course"][(horse_name, course)],
+                horse_surface=states["horse_surface"][(horse_name, surface)],
+                horse_distance=states["horse_distance"][(horse_name, distance_band)],
+                jockey=states["jockey"][jockey],
+                trainer=states["trainer"][trainer],
+            ),
+            "history_as_of": f"{target_date.isoformat()}T00:00:00",
+            "history_starts": horse.starts,
+        })
+    return records
+
+
+def _build_history_states(rows: Iterable[sqlite3.Row | dict]) -> dict:
+    grouped: dict[str, list[dict]] = defaultdict(list)
+    for raw in rows:
+        row = dict(raw)
+        if _valid_row(row):
+            grouped[str(row["race_id"])].append(row)
+    states = {
+        "horse": defaultdict(HistoryStat),
+        "horse_course": defaultdict(HistoryStat),
+        "horse_surface": defaultdict(HistoryStat),
+        "horse_distance": defaultdict(HistoryStat),
+        "jockey": defaultdict(HistoryStat),
+        "trainer": defaultdict(HistoryStat),
+    }
+    for race_id, race_rows in sorted(grouped.items(), key=lambda item: (item[1][0]["race_date"], item[0])):
+        field_size = len(race_rows)
+        first = race_rows[0]
+        race_date = date.fromisoformat(str(first["race_date"]))
+        course = COURSE_CODES[race_id[8:10]]
+        surface = _surface(first.get("surface"))
+        distance_band = _distance_band(_number(first.get("distance")) or 0, first.get("race_name"))
+        pending = []
+        for row in race_rows:
+            horse_name = _text(row.get("horse_name"), "unknown")
+            jockey = _text(row.get("jockey"), "unknown")
+            trainer = _text(row.get("trainer"), "unknown")
+            pending.append((
+                int(row["rank"]), states["horse"][horse_name],
+                states["horse_course"][(horse_name, course)],
+                states["horse_surface"][(horse_name, surface)],
+                states["horse_distance"][(horse_name, distance_band)],
+                states["jockey"][jockey], states["trainer"][trainer],
+            ))
+        for rank, *history_stats in pending:
+            for stat in history_stats:
+                stat.update(rank, field_size, race_date)
+    return states
+
+
 def _feature_vector(*, row, race_date, race_name, course, surface, distance, field_size,
                     horse, horse_course, horse_surface, horse_distance, jockey, trainer) -> list[float]:
     sex, age = _sex_age(row.get("sex_age"))
@@ -206,7 +339,7 @@ def _finish_strength(stat: HistoryStat) -> float:
 
 def _surface(value) -> str:
     text = str(value or "")
-    return "turf" if "芝" in text else "dirt" if "ダ" in text else "other"
+    return "turf" if "芝" in text or text == "turf" else "dirt" if "ダ" in text or text == "dirt" else "other"
 
 
 def _distance_band(distance: int, race_name) -> str:

@@ -123,6 +123,62 @@ def predict_with_artifact(artifact: dict, features: list[float]) -> dict[str, fl
     return result
 
 
+def load_model_artifact(path: str | Path) -> dict:
+    artifact_path = Path(path)
+    if not artifact_path.is_file():
+        raise FileNotFoundError(f"history model artifact not found: {artifact_path}")
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+    if artifact.get("feature_names") != FEATURE_NAMES:
+        raise ValueError("history model feature schema does not match this application")
+    return artifact
+
+
+def score_live_records(artifact: dict, records: list[dict]) -> list[dict]:
+    scored = []
+    raw_win_total = 0.0
+    for record in records:
+        probabilities = predict_with_artifact(artifact, record["features"])
+        raw_win_total += probabilities["win_probability"]
+        scored.append({
+            **record,
+            **probabilities,
+            "explanation": explain_with_artifact(artifact, record["features"], target="top3"),
+        })
+    for item in scored:
+        item["win_probability_race_normalized"] = (
+            item["win_probability"] / raw_win_total if raw_win_total else 0.0
+        )
+    return sorted(
+        scored,
+        key=lambda item: (-item["top3_probability"], -item["win_probability_race_normalized"], item["horse_no"]),
+    )
+
+
+def explain_with_artifact(artifact: dict, features: list[float], *, target: str, limit: int = 3) -> dict:
+    if target not in artifact["models"]:
+        raise ValueError(f"unknown model target={target}")
+    model = artifact["models"][target]
+    terms = []
+    for name, value, mean, scale, coefficient in zip(
+        artifact["feature_names"], features, artifact["scaler"]["mean"],
+        artifact["scaler"]["scale"], model["coefficients"],
+    ):
+        standardized = (value - mean) / (scale or 1.0)
+        terms.append({
+            "feature": name,
+            "value": round(value, 6),
+            "contribution": round(standardized * coefficient, 6),
+        })
+    positives = sorted((term for term in terms if term["contribution"] > 0), key=lambda item: item["contribution"], reverse=True)[:limit]
+    negatives = sorted((term for term in terms if term["contribution"] < 0), key=lambda item: item["contribution"])[:limit]
+    return {
+        "target": target,
+        "intercept": round(model["intercept"], 6),
+        "positive_contributions": positives,
+        "negative_contributions": negatives,
+    }
+
+
 def write_model_artifacts(artifact: dict, report: dict, output_dir: str | Path) -> None:
     path = Path(output_dir)
     path.mkdir(parents=True, exist_ok=True)
