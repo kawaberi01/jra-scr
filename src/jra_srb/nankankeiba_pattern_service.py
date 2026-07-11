@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from typing import Awaitable, Callable, TypeVar
@@ -161,20 +162,22 @@ class NankankeibaPatternService:
         cache_key = f"nankankeiba:pattern:bundle:{race_id}:{','.join(category_keys)}"
 
         async def fetch() -> NankankeibaPatternBundle:
-            pages = [
-                await self.get_pattern_category(
-                    target_date,
-                    course_key,
-                    meeting_no,
-                    meeting_day,
-                    race_no,
-                    category,
-                    period_code,
-                    refresh=refresh,
-                )
-                for category in category_keys
-            ]
-            runners = _merge_category_pages(pages)
+            pages = await asyncio.gather(
+                *[
+                    self.get_pattern_category(
+                        target_date,
+                        course_key,
+                        meeting_no,
+                        meeting_day,
+                        race_no,
+                        category,
+                        period_code,
+                        refresh=refresh,
+                    )
+                    for category in category_keys
+                ]
+            )
+            runners = _merge_category_pages(list(pages))
             return NankankeibaPatternBundle(
                 race_id=race_id,
                 date=target_date,

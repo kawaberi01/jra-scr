@@ -32,6 +32,7 @@ from .models import (
     NarCalendarPage, 
     NankankeibaPatternBundle, 
     NankanPredictionBundle,
+    NankanPredictionSummary,
     NankanCourseCode, 
     NankanLeadingJockeyPage,
     NankanMeetingTrend,
@@ -53,6 +54,11 @@ from .models import (
 from .nankankeiba_pattern_provider import NankankeibaPatternHttpProvider 
 from .nankankeiba_pattern_service import NankankeibaPatternCacheTtls, NankankeibaPatternService 
 from .nankan_prediction_service import NankanPredictionService
+from .prediction_trace import (
+    build_prediction_trace_logger,
+    reset_current_request_trace_id,
+    set_current_request_trace_id,
+)
 from .nar_netkeiba_provider import NarNetkeibaHttpProvider 
 from .nar_netkeiba_service import NarNetkeibaService 
 from .nankan_provider import NankanHttpProvider 
@@ -70,6 +76,7 @@ NankanRaceIdPath = Annotated[str, Path(pattern=r"^\d{16}$", description="16桁�
 RaceNoPath = Annotated[int, Path(ge=1, le=12, description="1から12までのレース番号")]
 DEFAULT_PAGE_LIMIT = 100
 MAX_PAGE_LIMIT = 500
+prediction_trace_logger = build_prediction_trace_logger(os.environ.get("JRA_SRB_PREDICTION_TRACE_PATH"))
 
 app = FastAPI(
     title="JRA レース情報 API",
@@ -94,7 +101,7 @@ app = FastAPI(
 
 
 def _default_analysis_db_path() -> str:
-    return os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/analysis.sqlite")
+    return os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/db/analysis.sqlite")
 
 
 def build_service() -> JraService:
@@ -143,6 +150,7 @@ def build_nankan_service() -> NankanService:
     provider = NankanHttpProvider(
         max_concurrency=_env_int("JRA_SRB_NANKAN_MAX_CONCURRENCY", default=3, minimum=1),
         min_interval_seconds=_env_float("JRA_SRB_NANKAN_MIN_INTERVAL_SECONDS", default=1.0, minimum=0.0),
+        trace_logger=prediction_trace_logger,
     )
     if cache_path:
         return NankanService(
@@ -165,6 +173,7 @@ def build_nankankeiba_pattern_service() -> NankankeibaPatternService:
     )
     provider = NankankeibaPatternHttpProvider(
         min_interval_seconds=_env_float("JRA_SRB_NANKANKEIBA_MIN_INTERVAL_SECONDS", default=1.0, minimum=0.0),
+        trace_logger=prediction_trace_logger,
     )
     if cache_path: 
         return NankankeibaPatternService(provider=provider, cache=SQLiteTTLCache(cache_path), ttl_config=ttl_config) 
@@ -175,6 +184,7 @@ def build_nankan_prediction_service() -> NankanPredictionService:
     return NankanPredictionService(
         nankan_service=nankan_service,
         pattern_service=nankankeiba_pattern_service,
+        trace_logger=prediction_trace_logger,
     )
 
 
@@ -205,6 +215,51 @@ nankan_service = build_nankan_service()
 nankankeiba_pattern_service = build_nankankeiba_pattern_service() 
 nankan_prediction_service = build_nankan_prediction_service()
 result_collection_jobs = ResultCollectionJobRegistry() 
+
+
+@app.middleware("http")
+async def write_prediction_trace_http_log(request: Request, call_next):
+    if not prediction_trace_logger.enabled:
+        return await call_next(request)
+    request_trace_id = uuid4().hex
+    token = set_current_request_trace_id(request_trace_id)
+    started_at = time.perf_counter()
+    prediction_trace_logger.write(
+        "http_request",
+        phase="start",
+        request_trace_id=request_trace_id,
+        method=request.method,
+        path=request.url.path,
+        query=request.url.query,
+    )
+    try:
+        response = await call_next(request)
+    except Exception as exc:
+        prediction_trace_logger.write(
+            "http_request",
+            phase="error",
+            request_trace_id=request_trace_id,
+            method=request.method,
+            path=request.url.path,
+            query=request.url.query,
+            elapsed_ms=round((time.perf_counter() - started_at) * 1000, 3),
+            error_type=exc.__class__.__name__,
+            error=str(exc),
+        )
+        reset_current_request_trace_id(token)
+        raise
+    prediction_trace_logger.write(
+        "http_request",
+        phase="done",
+        request_trace_id=request_trace_id,
+        method=request.method,
+        path=request.url.path,
+        query=request.url.query,
+        status_code=response.status_code,
+        elapsed_ms=round((time.perf_counter() - started_at) * 1000, 3),
+    )
+    reset_current_request_trace_id(token)
+    return response
 
 
 def get_service() -> JraService:
@@ -982,6 +1037,34 @@ async def get_nankan_prediction_bundle(
 ):
     parsed = [str(item) for item in parse_bet_types(bet_types)] if bet_types else None
     return await svc.get_prediction_bundle(
+        date_,
+        str(course),
+        race_no,
+        meeting_no,
+        meeting_day,
+        bet_types=parse_nankan_odds_summary_bet_types(parsed),
+        refresh=refresh,
+    )
+
+
+@app.get(
+    "/nankan/meetings/{date_}/{course}/races/{race_no}/prediction-summary",
+    tags=["nankan"],
+    summary="南関予想向けの主要指標だけをまとめて取得",
+    response_model=NankanPredictionSummary,
+)
+async def get_nankan_prediction_summary(
+    date_: date,
+    course: NankanCourseCode,
+    race_no: RaceNoPath,
+    meeting_no: int = Query(ge=1, description="開催回。例: 4"),
+    meeting_day: int = Query(ge=1, description="開催日。例: 1"),
+    bet_types: str | None = Query(default=None, description="複数券種をカンマ区切りで指定します。例: win,wide,quinella"),
+    refresh: bool = Query(default=False, description="true の場合はキャッシュを使わず再取得します。"),
+    svc: NankanPredictionService = Depends(get_nankan_prediction_service),
+):
+    parsed = [str(item) for item in parse_bet_types(bet_types)] if bet_types else None
+    return await svc.get_prediction_summary(
         date_,
         str(course),
         race_no,

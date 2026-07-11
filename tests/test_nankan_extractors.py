@@ -140,6 +140,132 @@ def test_parse_nankan_meeting_trend_extracts_structured_summary():
     assert summary.payout.trifecta_max_payout_race_no == 7
 
 
+def test_parse_nankan_meeting_trend_uses_visible_active_tab():
+    parsed = parse_nankan_meeting_trend(
+        """
+        <html><body>
+          <div>2026年7月9日 16:42現在</div>
+          <div class="seiseki1 nk23_c-tab2__content js-tab2 is-active" data-tab-content="tab1" style="display: none">
+            <p class="nk23_c-title01 is-style2">12レース終了時</p>
+            <ul>
+              <li class="nk23_c-list08__item">
+                <div class="nk23_c-list08__col1">枠番傾向</div>
+                <p class="nk23_c-list08__col is-colorGroup pc">
+                  <span class="nk23_c-list08__colornum">
+                    <span class="nk23_c-list08__colorItem">6</span>
+                    <span class="numbottom">8回</span>
+                  </span>
+                </p>
+              </li>
+            </ul>
+          </div>
+          <div class="seiseki1 nk23_c-tab2__content js-tab2 is-active" data-tab-content="tab4">
+            <p class="nk23_c-title01 is-style2">4レース終了時</p>
+            <ul>
+              <li class="nk23_c-list08__item">
+                <div class="nk23_c-list08__col1">枠番傾向</div>
+                <p class="nk23_c-list08__col is-colorGroup pc">
+                  <span class="nk23_c-list08__colornum">
+                    <span class="nk23_c-list08__colorItem">3</span>
+                    <span class="numbottom">3回</span>
+                  </span>
+                </p>
+              </li>
+            </ul>
+          </div>
+        </body></html>
+        """
+    )
+
+    assert parsed["race_count_completed"] == 4
+    assert parsed["summary"].frame[0].frame_no == "3"
+    assert parsed["summary"].frame[0].top3_count == 3
+
+
+def _test_parse_nankan_meeting_trend_prefers_active_main_day_tab_legacy():
+    parsed = parse_nankan_meeting_trend(
+        """
+        <html><body>
+          <span class="nk23_c-tab2__navi__text js-tab1-btn is-active" data-tab="tab4">7/9</span>
+          <div class="seiseki1 nk23_c-tab2__content js-tab2 is-active" data-tab-content="tab1" style="display: none">
+            <p class="nk23_c-title01 is-style2">12ãƒ¬ãƒ¼ã‚¹çµ‚äº†æ™‚</p>
+            <ul>
+              <li class="nk23_c-list08__item">
+                <div class="nk23_c-list08__col1">æž ç•ªå‚¾å‘</div>
+                <p class="nk23_c-list08__col is-colorGroup pc">
+                  <span class="nk23_c-list08__colornum">
+                    <span class="nk23_c-list08__colorItem">6</span>
+                    <span class="numbottom">8å›ž</span>
+                  </span>
+                </p>
+              </li>
+            </ul>
+          </div>
+          <div class="seiseki4 nk23_c-tab2__content js-tab2 is-active" data-tab-content="tab4" style="display: none">
+            <p class="nk23_c-title01 is-style2">5ãƒ¬ãƒ¼ã‚¹çµ‚äº†æ™‚</p>
+            <ul>
+              <li class="nk23_c-list08__item">
+                <div class="nk23_c-list08__col1">æž ç•ªå‚¾å‘</div>
+                <p class="nk23_c-list08__col is-colorGroup pc">
+                  <span class="nk23_c-list08__colornum">
+                    <span class="nk23_c-list08__colorItem">3</span>
+                    <span class="numbottom">3å›ž</span>
+                  </span>
+                </p>
+              </li>
+            </ul>
+          </div>
+        </body></html>
+        """
+    )
+
+    assert parsed["race_count_completed"] == 5
+    assert parsed["summary"].frame[0].frame_no == "3"
+    assert parsed["summary"].frame[0].top3_count == 3
+
+
+def _test_parse_nankan_meeting_trend_prefers_active_main_day_tab():
+    parsed = parse_nankan_meeting_trend(
+        """
+        <html><body>
+          <span class="nk23_c-tab2__navi__text js-tab1-btn is-active" data-tab="tab4">7/9</span>
+          <div class="seiseki1 nk23_c-tab2__content js-tab2 is-active" data-tab-content="tab1" style="display: none">
+            <p class="nk23_c-title01 is-style2">12ãƒ¬ãƒ¼ã‚¹çµ‚äº†æ™‚</p>
+            <ul>
+              <li class="nk23_c-list08__item">
+                <div class="nk23_c-list08__col1">æž ç•ªå‚¾å‘</div>
+                <p class="nk23_c-list08__col is-colorGroup pc">
+                  <span class="nk23_c-list08__colornum">
+                    <span class="nk23_c-list08__colorItem">6</span>
+                    <span class="numbottom">8å›ž</span>
+                  </span>
+                </p>
+              </li>
+            </ul>
+          </div>
+          <div class="seiseki4 nk23_c-tab2__content js-tab2 is-active" data-tab-content="tab4" style="display: none">
+            <p class="nk23_c-title01 is-style2">5ãƒ¬ãƒ¼ã‚¹çµ‚äº†æ™‚</p>
+            <ul>
+              <li class="nk23_c-list08__item">
+                <div class="nk23_c-list08__col1">æž ç•ªå‚¾å‘</div>
+                <p class="nk23_c-list08__col is-colorGroup pc">
+                  <span class="nk23_c-list08__colornum">
+                    <span class="nk23_c-list08__colorItem">3</span>
+                    <span class="numbottom">3å›ž</span>
+                  </span>
+                </p>
+              </li>
+            </ul>
+          </div>
+        </body></html>
+        """
+    )
+
+    assert parsed["race_count_completed"] == 5
+    assert parsed["summary"].frame[0].frame_no == "3"
+    assert parsed["summary"].frame[0].top3_count == 3
+
+
 def test_parse_nankan_best_time_extracts_rows():
     parsed = parse_nankan_best_time(_read("nankan_best_2026070621040101000000.html"), "kawasaki", 1400)
     runner = parsed["runners"][0]

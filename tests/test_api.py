@@ -30,6 +30,13 @@ from jra_srb.models import (
     NankanMeetingTrendContext,
     NankanPredictionBundle,
     NankanPredictionBundleMeta,
+    NankanPredictionSummary,
+    NankanPredictionSummaryLeadingJockeyItem,
+    NankanPredictionSummaryLeadingJockeys,
+    NankanPredictionSummaryMeta,
+    NankanPredictionSummaryPattern,
+    NankanPredictionSummaryRunner,
+    NankanPredictionSummaryTrend,
     NankanRaceBestTime,
     NankanRaceClosingSpeed,
     OddsEntry,
@@ -631,6 +638,82 @@ def test_get_nankan_prediction_bundle_endpoint_returns_materials():
 
 def test_get_nankan_prediction_bundle_endpoint_requires_meeting_parameters():
     response = TestClient(app).get("/nankan/meetings/2026-07-06/kawasaki/races/1/prediction-bundle")
+    assert response.status_code == 422
+
+
+def test_get_nankan_prediction_summary_endpoint_returns_compact_materials():
+    class StubPredictionService:
+        async def get_prediction_summary(
+            self,
+            target_date: date,
+            course: str,
+            race_no: int,
+            meeting_no: int,
+            meeting_day: int,
+            bet_types: list[str] | None = None,
+            refresh: bool = False,
+        ) -> NankanPredictionSummary:
+            return NankanPredictionSummary(
+                race_id="2026070621040101",
+                date=target_date,
+                course=course,
+                race_no=race_no,
+                meeting_no=meeting_no,
+                meeting_day=meeting_day,
+                distance="900",
+                track_condition="good",
+                trend=NankanPredictionSummaryTrend(
+                    race_count_completed=0,
+                    required_max_completed=0,
+                    usable=True,
+                ),
+                leading_jockeys=NankanPredictionSummaryLeadingJockeys(
+                    course=course,
+                    distance=900,
+                    track_condition="good",
+                    period="recent_3months",
+                    sort="win_rate",
+                    items=[
+                        NankanPredictionSummaryLeadingJockeyItem(
+                            rank=1,
+                            jockey_name="笹川翼",
+                            win_rate=21.5,
+                        )
+                    ],
+                ),
+                runners=[
+                    NankanPredictionSummaryRunner(
+                        frame_no="1",
+                        horse_no="1",
+                        horse_name="テストホース",
+                        win_odds="2.4",
+                        popularity="1",
+                        pattern=NankanPredictionSummaryPattern(),
+                    )
+                ],
+                meta=NankanPredictionSummaryMeta(
+                    odds_bet_types=bet_types or ["win", "wide", "quinella"],
+                    cache_hit=False,
+                ),
+            )
+
+    app.dependency_overrides[get_nankan_prediction_service] = lambda: StubPredictionService()
+    try:
+        body = TestClient(app).get(
+            "/nankan/meetings/2026-07-06/kawasaki/races/1/prediction-summary?meeting_no=4&meeting_day=1"
+        ).json()
+        assert body["race_id"] == "2026070621040101"
+        assert body["distance"] == "900"
+        assert body["trend"]["usable"] is True
+        assert body["leading_jockeys"]["items"][0]["jockey_name"] == "笹川翼"
+        assert body["runners"][0]["horse_name"] == "テストホース"
+        assert body["meta"]["odds_bet_types"] == ["win", "wide", "quinella"]
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_get_nankan_prediction_summary_endpoint_requires_meeting_parameters():
+    response = TestClient(app).get("/nankan/meetings/2026-07-06/kawasaki/races/1/prediction-summary")
     assert response.status_code == 422
 
 

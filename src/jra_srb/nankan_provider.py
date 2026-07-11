@@ -8,6 +8,7 @@ import time
 import httpx
 
 from .errors import ResourceNotFoundError, UpstreamServiceError
+from .prediction_trace import PredictionTraceLogger, get_current_request_trace_id
 
 
 NANKAN_HEADERS = {
@@ -81,6 +82,7 @@ class NankanHttpProvider(BaseNankanProvider):
         backoff_seconds: float = 0.5,
         min_interval_seconds: float = 1.0,
         max_concurrency: int = 3,
+        trace_logger: PredictionTraceLogger | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
@@ -90,6 +92,7 @@ class NankanHttpProvider(BaseNankanProvider):
         self._semaphore = asyncio.Semaphore(max_concurrency)
         self._throttle_lock = asyncio.Lock()
         self._last_request_started_at = 0.0
+        self.trace_logger = trace_logger or PredictionTraceLogger()
 
     async def fetch_calendar(self, year: int, month: int) -> NankanPageContent:
         return await self._get(f"/calendar/{year:04d}{month:02d}.do")
@@ -144,7 +147,17 @@ class NankanHttpProvider(BaseNankanProvider):
 
     async def _request_with_retry(self, url: str) -> httpx.Response:
         last_error: NankanProviderError | None = None
+        request_trace_id = get_current_request_trace_id()
         for attempt in range(self.retries + 1):
+            started_at = time.perf_counter()
+            self.trace_logger.write(
+                "upstream_request",
+                phase="start",
+                request_trace_id=request_trace_id,
+                provider="nankan",
+                url=url,
+                attempt=attempt + 1,
+            )
             try:
                 async with self._semaphore:
                     await self._wait_for_min_interval()
@@ -152,18 +165,74 @@ class NankanHttpProvider(BaseNankanProvider):
                         response = await client.get(url, headers=NANKAN_HEADERS)
             except httpx.TimeoutException as exc:
                 last_error = NankanProviderError(f"failed to fetch {url}: timeout")
+                self.trace_logger.write(
+                    "upstream_request",
+                    phase="error",
+                    request_trace_id=request_trace_id,
+                    provider="nankan",
+                    url=url,
+                    attempt=attempt + 1,
+                    elapsed_ms=round((time.perf_counter() - started_at) * 1000, 3),
+                    error_type=exc.__class__.__name__,
+                    error="timeout",
+                )
                 if attempt == self.retries:
                     raise last_error from exc
             except httpx.RequestError as exc:
                 last_error = NankanProviderError(f"failed to fetch {url}: {exc.__class__.__name__}")
+                self.trace_logger.write(
+                    "upstream_request",
+                    phase="error",
+                    request_trace_id=request_trace_id,
+                    provider="nankan",
+                    url=url,
+                    attempt=attempt + 1,
+                    elapsed_ms=round((time.perf_counter() - started_at) * 1000, 3),
+                    error_type=exc.__class__.__name__,
+                    error=exc.__class__.__name__,
+                )
                 if attempt == self.retries:
                     raise last_error from exc
             else:
                 if response.status_code < 400:
+                    self.trace_logger.write(
+                        "upstream_request",
+                        phase="done",
+                        request_trace_id=request_trace_id,
+                        provider="nankan",
+                        url=str(response.url),
+                        attempt=attempt + 1,
+                        elapsed_ms=round((time.perf_counter() - started_at) * 1000, 3),
+                        status_code=response.status_code,
+                    )
                     return response
                 if response.status_code == 404:
+                    self.trace_logger.write(
+                        "upstream_request",
+                        phase="error",
+                        request_trace_id=request_trace_id,
+                        provider="nankan",
+                        url=str(response.url),
+                        attempt=attempt + 1,
+                        elapsed_ms=round((time.perf_counter() - started_at) * 1000, 3),
+                        status_code=response.status_code,
+                        error_type="ResourceNotFoundError",
+                        error="nankan page not found",
+                    )
                     raise ResourceNotFoundError(f"nankan page not found: {url}")
                 last_error = NankanProviderError(f"failed to fetch {url}: HTTP {response.status_code}")
+                self.trace_logger.write(
+                    "upstream_request",
+                    phase="error",
+                    request_trace_id=request_trace_id,
+                    provider="nankan",
+                    url=str(response.url),
+                    attempt=attempt + 1,
+                    elapsed_ms=round((time.perf_counter() - started_at) * 1000, 3),
+                    status_code=response.status_code,
+                    error_type="NankanProviderError",
+                    error=f"HTTP {response.status_code}",
+                )
                 if response.status_code < 500 or attempt == self.retries:
                     raise last_error
             await asyncio.sleep(self.backoff_seconds * (2**attempt))

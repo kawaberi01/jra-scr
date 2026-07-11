@@ -893,3 +893,162 @@ def test_generate_netkeiba_mapping_uses_calendar_context_before_from_date(tmp_pa
     assert summary.total_count == 1
     assert "202505040211" in lines[1]
     assert "mapping_status,mapping_note" in lines[0]
+
+
+class FakePredictionNankanService:
+    async def _race_id_by_number(self, target_date: date, course: str, race_no: int, refresh: bool):
+        return "2026070921040401"
+
+    async def get_race_card(self, race_id: str, refresh: bool = False):
+        from jra_srb.models import CachePolicyMeta, RaceCard, Runner
+
+        return RaceCard(
+            race_id=race_id,
+            race_name="Trace Race",
+            course="kawasaki",
+            distance="1400",
+            track_condition="good",
+            runners=[Runner(horse_no="1", horse_name="Trace Horse")],
+            fetched_at=datetime.now(UTC),
+            source="fake",
+            cache_hit=True,
+            meta=CachePolicyMeta(data_source="db", db_hit=True, ttl_expired=False, saved=False, stale=False),
+        )
+
+    async def get_meeting_trend_context(self, target_date: date, course: str, race_no: int, refresh: bool = False):
+        from jra_srb.models import NankanMeetingTrendContext
+
+        return NankanMeetingTrendContext(
+            date=target_date,
+            course=course,
+            race_no=race_no,
+            race_count_completed=0,
+            required_max_completed=0,
+            usable=True,
+            fetched_at=datetime.now(UTC),
+            source="fake",
+        )
+
+    async def get_race_odds(self, race_id: str, bet_types=None, refresh: bool = False, card=None):
+        from jra_srb.models import CachePolicyMeta, OddsEntry, RaceOdds
+
+        return RaceOdds(
+            race_id=race_id,
+            odds={"win": [OddsEntry(bet_type="win", combination=["1"], odds="2.1")]},
+            fetched_at=datetime.now(UTC),
+            source="fake",
+            cache_hit=False,
+            meta=CachePolicyMeta(data_source="external", db_hit=False, ttl_expired=False, saved=True, stale=False),
+        )
+
+    async def get_race_best_time(self, race_id: str, refresh: bool = False, card=None):
+        from jra_srb.models import NankanBestTimeRunner, NankanRaceBestTime
+
+        return NankanRaceBestTime(
+            race_id=race_id,
+            runners=[NankanBestTimeRunner(horse_no="1", horse_name="Trace Horse")],
+            fetched_at=datetime.now(UTC),
+            source="fake",
+        )
+
+    async def get_race_closing_speed(self, race_id: str, refresh: bool = False, card=None):
+        from jra_srb.models import NankanClosingSpeedRunner, NankanRaceClosingSpeed
+
+        return NankanRaceClosingSpeed(
+            race_id=race_id,
+            runners=[NankanClosingSpeedRunner(horse_no="1", horse_name="Trace Horse")],
+            fetched_at=datetime.now(UTC),
+            source="fake",
+        )
+
+    async def get_leading_jockeys(self, **kwargs):
+        from jra_srb.models import NankanLeadingJockeyPage
+
+        return NankanLeadingJockeyPage(
+            period="recent_3months",
+            sort="win_rate",
+            generated_at=datetime.now(UTC),
+            items=[],
+        )
+
+    @staticmethod
+    def _distance_int(value: str | None) -> int | None:
+        return int(value) if value else None
+
+    @staticmethod
+    def _normalize_leading_distance(value: int | None) -> int | None:
+        return value
+
+    @staticmethod
+    def _normalize_leading_track_condition(value: str | None) -> str | None:
+        return value
+
+
+class FakePredictionPatternService:
+    async def get_pattern_bundle(
+        self,
+        target_date: date,
+        course: str,
+        meeting_no: int,
+        meeting_day: int,
+        race_no: int,
+        refresh: bool = False,
+    ):
+        from jra_srb.models import NankankeibaPatternBundle
+
+        return NankankeibaPatternBundle(
+            race_id="2026070921040401",
+            date=target_date,
+            course=course,
+            meeting_no=meeting_no,
+            meeting_day=meeting_day,
+            race_no=race_no,
+            categories=["pattern_kis"],
+            fetched_at=datetime.now(UTC),
+            source="fake",
+        )
+
+
+@pytest.mark.asyncio
+async def test_nankan_prediction_bundle_trace_writes_utf8_jsonl(tmp_path):
+    from jra_srb.nankan_prediction_service import NankanPredictionService
+    from jra_srb.prediction_trace import PredictionTraceLogger
+
+    trace_path = tmp_path / "prediction-trace.jsonl"
+    service = NankanPredictionService(
+        nankan_service=FakePredictionNankanService(),  # type: ignore[arg-type]
+        pattern_service=FakePredictionPatternService(),  # type: ignore[arg-type]
+        trace_logger=PredictionTraceLogger(trace_path),
+    )
+
+    await service.get_prediction_bundle(
+        date(2026, 7, 9),
+        "kawasaki",
+        1,
+        4,
+        4,
+        bet_types=["win", "wide"],
+        refresh=True,
+    )
+
+    lines = [json.loads(line) for line in trace_path.read_text(encoding="utf-8").splitlines()]
+    assert any(line["event_type"] == "prediction_bundle" and line["phase"] == "start" for line in lines)
+    assert any(line["event_type"] == "prediction_bundle" and line["phase"] == "done" for line in lines)
+    assert any(line["event_type"] == "card" and line["phase"] == "done" for line in lines)
+    odds_done = next(line for line in lines if line["event_type"] == "odds_summary" and line["phase"] == "done")
+    assert odds_done["summary"]["meta"]["data_source"] == "external"
+    assert odds_done["summary"]["odds_counts"]["win"] == 1
+
+
+def test_prediction_trace_logger_appends_to_base_file_even_with_request_trace_id(tmp_path):
+    from jra_srb.prediction_trace import PredictionTraceLogger
+
+    base_path = tmp_path / "prediction-trace.jsonl"
+    logger = PredictionTraceLogger(base_path)
+
+    logger.write("http_request", request_trace_id="req-a", phase="start")
+    logger.write("http_request", request_trace_id="req-b", phase="start")
+
+    assert base_path.exists()
+    lines = [json.loads(line) for line in base_path.read_text(encoding="utf-8").splitlines()]
+    assert [line["request_trace_id"] for line in lines] == ["req-a", "req-b"]

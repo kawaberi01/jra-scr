@@ -1,3 +1,4 @@
+import asyncio
 from datetime import UTC, date, datetime
 
 import pytest
@@ -6,7 +7,10 @@ from jra_srb.analysis_store import AnalysisSQLiteStore
 from jra_srb.cache import SQLiteTTLCache
 from jra_srb.errors import BadRequestError, ResourceNotFoundError
 from jra_srb.models import RaceCard, Runner
-from jra_srb.nankan_provider import NankanFixtureProvider, NankanPageContent
+from jra_srb.nankankeiba_pattern_provider import NankankeibaPatternFixtureProvider
+from jra_srb.nankankeiba_pattern_service import NankankeibaPatternService
+from jra_srb.nankan_prediction_service import NankanPredictionService
+from jra_srb.nankan_provider import NANKAN_BET_TYPE_TO_ODDS_CODE, NankanFixtureProvider, NankanPageContent
 from jra_srb.nankan_service import NankanCacheTtls, NankanService
 
 
@@ -137,6 +141,7 @@ async def test_nankan_service_get_meeting_trend_context_rejects_future_snapshot_
     assert context.summary.frame == []
     assert context.trend is not None
     assert context.trend.summary.frame[0].frame_no == "6"
+    assert context.cache_hit is False
 
 
 @pytest.mark.asyncio
@@ -160,6 +165,7 @@ async def test_nankan_service_get_meeting_trend_context_allows_empty_prerace_sna
     assert context.required_max_completed == 0
     assert context.usable is True
     assert context.reason is None
+    assert context.cache_hit is False
 
 
 @pytest.mark.asyncio
@@ -380,6 +386,43 @@ class CountingCardProvider(NankanFixtureProvider):
         return await super().fetch_race_card(race_id)
 
 
+class CountingBundleProvider(NankanFixtureProvider):
+    def __init__(self, fixtures_dir: str) -> None:
+        super().__init__(fixtures_dir)
+        self.card_calls = 0
+        self.odds_calls: list[str] = []
+        self.best_calls: list[str] = []
+
+    async def fetch_race_card(self, race_id: str) -> NankanPageContent:
+        self.card_calls += 1
+        return await super().fetch_race_card(race_id)
+
+    async def fetch_odds(self, race_id: str, bet_type: str) -> NankanPageContent:
+        self.odds_calls.append(bet_type)
+        odds_code = NANKAN_BET_TYPE_TO_ODDS_CODE[bet_type]
+        return self._load(f"nankan_odds_2026070419040501{odds_code}.html")
+
+    async def fetch_best(self, race_id: str, suffix: str) -> NankanPageContent:
+        self.best_calls.append(suffix)
+        return await super().fetch_best(race_id, suffix)
+
+
+class ConcurrentPatternProvider(NankankeibaPatternFixtureProvider):
+    def __init__(self, fixture_dir: str) -> None:
+        super().__init__(fixture_dir)
+        self.active_calls = 0
+        self.max_active_calls = 0
+
+    async def fetch_pattern(self, race_id: str, category: str):
+        self.active_calls += 1
+        self.max_active_calls = max(self.max_active_calls, self.active_calls)
+        try:
+            await asyncio.sleep(0.01)
+            return await super().fetch_pattern(race_id, category)
+        finally:
+            self.active_calls -= 1
+
+
 class MissingCardProvider(NankanFixtureProvider):
     async def fetch_race_card(self, race_id: str) -> NankanPageContent:
         raise ResourceNotFoundError(f"nankan card not available yet: race_id={race_id}")
@@ -530,6 +573,68 @@ async def test_nankan_service_propagates_result_not_available_404():
 
     with pytest.raises(ResourceNotFoundError, match="result not available yet"):
         await service.get_race_result("2026070419040501", refresh=True)
+
+
+@pytest.mark.asyncio
+async def test_nankan_prediction_bundle_reuses_card_and_shared_odds_page():
+    provider = CountingBundleProvider("tests/fixtures")
+    prediction_service = NankanPredictionService(
+        nankan_service=NankanService(provider=provider),
+        pattern_service=NankankeibaPatternService(provider=NankankeibaPatternFixtureProvider("tests/fixtures")),
+    )
+
+    bundle = await prediction_service.get_prediction_bundle(
+        date(2026, 7, 6),
+        "kawasaki",
+        1,
+        4,
+        1,
+    )
+
+    assert bundle.card.race_id == "2026070621040101"
+    assert provider.card_calls == 1
+    assert provider.odds_calls == ["win", "wide"]
+    assert sorted(provider.best_calls) == ["000000", "221400"]
+
+
+@pytest.mark.asyncio
+async def test_nankan_prediction_summary_projects_runner_metrics():
+    provider = CountingBundleProvider("tests/fixtures")
+    prediction_service = NankanPredictionService(
+        nankan_service=NankanService(provider=provider),
+        pattern_service=NankankeibaPatternService(provider=NankankeibaPatternFixtureProvider("tests/fixtures")),
+    )
+
+    summary = await prediction_service.get_prediction_summary(
+        date(2026, 7, 6),
+        "kawasaki",
+        1,
+        4,
+        1,
+    )
+
+    assert summary.race_id == "2026070621040101"
+    assert summary.trend.race_count_completed >= 0
+    assert summary.leading_jockeys.period == "recent_3months"
+    assert len(summary.runners) >= 1
+    assert summary.runners[0].win_odds is not None
+    assert summary.runners[0].best_time is not None
+    assert summary.runners[0].closing_speed is not None
+    assert summary.runners[0].pattern is not None
+    assert summary.runners[0].pattern.course_rate is not None
+    assert summary.runners[0].pattern.jockey_trainer_course_rate is not None
+
+
+@pytest.mark.asyncio
+async def test_nankankeiba_pattern_bundle_fetches_categories_concurrently():
+    provider = ConcurrentPatternProvider("tests/fixtures")
+    service = NankankeibaPatternService(provider=provider)
+
+    bundle = await service.get_pattern_bundle(date(2026, 7, 6), "kawasaki", 4, 1, 1)
+
+    assert bundle.categories == ["pattern_kis", "pattern_uma", "pattern_cho", "pattern_kis_cho"]
+    assert len(bundle.runners) == 7
+    assert provider.max_active_calls > 1
 
 
 def _unpublished_weight_card_html() -> str:

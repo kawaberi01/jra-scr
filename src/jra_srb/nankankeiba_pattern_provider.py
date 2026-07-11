@@ -9,6 +9,7 @@ import httpx
 
 from .errors import UpstreamServiceError
 from .nankankeiba_pattern_extractors import build_pattern_url_path
+from .prediction_trace import PredictionTraceLogger, get_current_request_trace_id
 
 
 NANKANKEIBA_PATTERN_HEADERS = {
@@ -47,6 +48,7 @@ class NankankeibaPatternHttpProvider(BaseNankankeibaPatternProvider):
         retries: int = 2,
         backoff_seconds: float = 0.5,
         min_interval_seconds: float = 1.0,
+        trace_logger: PredictionTraceLogger | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
@@ -55,6 +57,7 @@ class NankankeibaPatternHttpProvider(BaseNankankeibaPatternProvider):
         self.min_interval_seconds = min_interval_seconds
         self._throttle_lock = asyncio.Lock()
         self._last_request_started_at = 0.0
+        self.trace_logger = trace_logger or PredictionTraceLogger()
 
     async def fetch_pattern(self, race_id: str, category: str) -> NankankeibaPatternPageContent:
         path = build_pattern_url_path(category, race_id)
@@ -64,23 +67,77 @@ class NankankeibaPatternHttpProvider(BaseNankankeibaPatternProvider):
 
     async def _request_with_retry(self, url: str) -> httpx.Response:
         last_error: NankankeibaPatternProviderError | None = None
+        request_trace_id = get_current_request_trace_id()
         for attempt in range(self.retries + 1):
+            started_at = time.perf_counter()
+            self.trace_logger.write(
+                "upstream_request",
+                phase="start",
+                request_trace_id=request_trace_id,
+                provider="nankankeiba_pattern",
+                url=url,
+                attempt=attempt + 1,
+            )
             try:
                 await self._wait_for_min_interval()
                 async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
                     response = await client.get(url, headers=NANKANKEIBA_PATTERN_HEADERS)
             except httpx.TimeoutException as exc:
                 last_error = NankankeibaPatternProviderError(f"failed to fetch {url}: timeout")
+                self.trace_logger.write(
+                    "upstream_request",
+                    phase="error",
+                    request_trace_id=request_trace_id,
+                    provider="nankankeiba_pattern",
+                    url=url,
+                    attempt=attempt + 1,
+                    elapsed_ms=round((time.perf_counter() - started_at) * 1000, 3),
+                    error_type=exc.__class__.__name__,
+                    error="timeout",
+                )
                 if attempt == self.retries:
                     raise last_error from exc
             except httpx.RequestError as exc:
                 last_error = NankankeibaPatternProviderError(f"failed to fetch {url}: {exc.__class__.__name__}")
+                self.trace_logger.write(
+                    "upstream_request",
+                    phase="error",
+                    request_trace_id=request_trace_id,
+                    provider="nankankeiba_pattern",
+                    url=url,
+                    attempt=attempt + 1,
+                    elapsed_ms=round((time.perf_counter() - started_at) * 1000, 3),
+                    error_type=exc.__class__.__name__,
+                    error=exc.__class__.__name__,
+                )
                 if attempt == self.retries:
                     raise last_error from exc
             else:
                 if response.status_code < 400:
+                    self.trace_logger.write(
+                        "upstream_request",
+                        phase="done",
+                        request_trace_id=request_trace_id,
+                        provider="nankankeiba_pattern",
+                        url=str(response.url),
+                        attempt=attempt + 1,
+                        elapsed_ms=round((time.perf_counter() - started_at) * 1000, 3),
+                        status_code=response.status_code,
+                    )
                     return response
                 last_error = NankankeibaPatternProviderError(f"failed to fetch {url}: HTTP {response.status_code}")
+                self.trace_logger.write(
+                    "upstream_request",
+                    phase="error",
+                    request_trace_id=request_trace_id,
+                    provider="nankankeiba_pattern",
+                    url=str(response.url),
+                    attempt=attempt + 1,
+                    elapsed_ms=round((time.perf_counter() - started_at) * 1000, 3),
+                    status_code=response.status_code,
+                    error_type="NankankeibaPatternProviderError",
+                    error=f"HTTP {response.status_code}",
+                )
                 if response.status_code < 500 or attempt == self.retries:
                     raise last_error
             await asyncio.sleep(self.backoff_seconds * (2**attempt))

@@ -176,7 +176,7 @@ def parse_nankan_race_result(html: str) -> dict[str, Any]:
 
 def parse_nankan_meeting_trend(html: str) -> dict[str, Any]:
     soup = BeautifulSoup(html, "html.parser")
-    root = soup.select_one(".seiseki1") or soup
+    root = _trend_active_root(soup)
     race_count_completed = _trend_race_count_completed(root)
     if race_count_completed == 0 and "表示するレース傾向がありません" in _clean(root.get_text(" ", strip=True)):
         return {
@@ -348,6 +348,39 @@ def _trend_race_count_completed(root: Tag | BeautifulSoup) -> int:
     text = _clean(root.get_text(" ", strip=True))
     match = re.search(r"(\d+)レース終了時", text)
     return int(match.group(1)) if match else 0
+
+
+def _trend_active_root(soup: BeautifulSoup) -> Tag | BeautifulSoup:
+    tab_candidates = soup.select(".js-tab2[data-tab-content]")
+    if tab_candidates:
+        active_main_tab = soup.select_one(".js-tab1-btn.is-active[data-tab]")
+        if active_main_tab is not None:
+            target_tab = active_main_tab.get("data-tab")
+            if isinstance(target_tab, str) and target_tab:
+                selected = soup.select_one(f'.js-tab2[data-tab-content="{target_tab}"]')
+                if selected is not None:
+                    return selected.select_one(".seiseki1") or selected
+        visible_active = [
+            candidate
+            for candidate in tab_candidates
+            if _trend_tab_is_active(candidate) and not _trend_tab_is_hidden(candidate)
+        ]
+        if visible_active:
+            return visible_active[0].select_one(".seiseki1") or visible_active[0]
+        visible_tabs = [candidate for candidate in tab_candidates if not _trend_tab_is_hidden(candidate)]
+        if visible_tabs:
+            return visible_tabs[0].select_one(".seiseki1") or visible_tabs[0]
+    return soup.select_one(".seiseki1") or soup
+
+
+def _trend_tab_is_active(node: Tag) -> bool:
+    classes = node.get("class", [])
+    return "is-active" in classes
+
+
+def _trend_tab_is_hidden(node: Tag) -> bool:
+    style = (node.get("style") or "").lower().replace(" ", "")
+    return "display:none" in style
 
 
 def _trend_item_by_heading(root: Tag | BeautifulSoup, heading: str) -> Tag | None:

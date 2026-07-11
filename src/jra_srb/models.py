@@ -289,6 +289,8 @@ class NankanMeetingTrendContext(BaseModel):
     fetched_at: datetime
     source: str
     trend: NankanMeetingTrend | None = None
+    cache_hit: bool = False
+    meta: CachePolicyMeta | None = None
 
 
 class NankanBestTimeRunner(BaseModel):
@@ -505,6 +507,97 @@ class NankanPredictionBundle(BaseModel):
     fetched_at: datetime
     cache_hit: bool = False
     meta: NankanPredictionBundleMeta | None = None
+
+
+class NankanPredictionSummaryTrend(BaseModel):
+    race_count_completed: int
+    required_max_completed: int
+    usable: bool
+    reason: str | None = None
+    frame_top3: list[NankanTrendFrameEntry] = Field(default_factory=list)
+    jockey_top3: list[NankanTrendPersonEntry] = Field(default_factory=list)
+    trainer_top3: list[NankanTrendPersonEntry] = Field(default_factory=list)
+
+
+class NankanPredictionSummaryLeadingJockeyItem(BaseModel):
+    rank: int | None = None
+    jockey_name: str
+    win_rate: float | None = None
+    quinella_rate: float | None = None
+    trio_rate: float | None = None
+
+
+class NankanPredictionSummaryLeadingJockeys(BaseModel):
+    course: str | None = None
+    distance: int | None = None
+    track_condition: str | None = None
+    period: str
+    sort: str
+    items: list[NankanPredictionSummaryLeadingJockeyItem] = Field(default_factory=list)
+
+
+class NankanPredictionSummaryBestTime(BaseModel):
+    best_time: str | None = None
+    best_time_rank: int | None = None
+    same_course_flag: bool | None = None
+    same_distance_flag: bool | None = None
+    track_condition: str | None = None
+
+
+class NankanPredictionSummaryClosingSpeed(BaseModel):
+    best_closing_time: str | None = None
+    best_closing_rank: int | None = None
+    same_course_flag: bool | None = None
+    same_distance_flag: bool | None = None
+    track_condition: str | None = None
+
+
+class NankanPredictionSummaryPattern(BaseModel):
+    course_rate: NankankeibaPatternRate | None = None
+    distance_rate: NankankeibaPatternRate | None = None
+    track_condition_rate: NankankeibaPatternRate | None = None
+    jockey_riding_rate: NankankeibaPatternRate | None = None
+    jockey_trainer_course_rate: NankankeibaPatternRate | None = None
+
+
+class NankanPredictionSummaryRunner(BaseModel):
+    frame_no: str | None = None
+    horse_no: str | None = None
+    horse_name: str
+    sex_age: str | None = None
+    weight_carried: str | None = None
+    jockey: str | None = None
+    trainer: str | None = None
+    horse_weight: str | None = None
+    horse_weight_diff: str | None = None
+    win_odds: str | None = None
+    popularity: str | None = None
+    best_time: NankanPredictionSummaryBestTime | None = None
+    closing_speed: NankanPredictionSummaryClosingSpeed | None = None
+    pattern: NankanPredictionSummaryPattern | None = None
+
+
+class NankanPredictionSummaryMeta(BaseModel):
+    generated_from: str = "prediction_bundle"
+    odds_bet_types: list[str] = Field(default_factory=list)
+    cache_hit: bool = False
+
+
+class NankanPredictionSummary(BaseModel):
+    race_id: str
+    date: date
+    course: str
+    race_no: int
+    meeting_no: int
+    meeting_day: int
+    distance: str | None = None
+    track_condition: str | None = None
+    track_condition_label: str | None = None
+    data_status: RaceCardDataStatus | None = None
+    trend: NankanPredictionSummaryTrend
+    leading_jockeys: NankanPredictionSummaryLeadingJockeys
+    runners: list[NankanPredictionSummaryRunner] = Field(default_factory=list)
+    meta: NankanPredictionSummaryMeta = Field(default_factory=NankanPredictionSummaryMeta)
 
 
 class RaceResult(BaseModel):

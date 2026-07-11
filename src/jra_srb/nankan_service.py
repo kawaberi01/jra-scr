@@ -291,6 +291,8 @@ class NankanService:
             fetched_at=trend.fetched_at,
             source=trend.source,
             trend=trend,
+            cache_hit=trend.cache_hit,
+            meta=trend.meta,
         )
 
     async def get_race_card(self, race_id: str, refresh: bool = False) -> RaceCard:
@@ -312,20 +314,29 @@ class NankanService:
         race_id = await self._race_id_by_number(target_date, course, race_no, refresh=refresh)
         return await self.get_race_card(race_id, refresh=refresh)
 
-    async def get_race_best_time(self, race_id: str, refresh: bool = False) -> NankanRaceBestTime:
+    async def get_race_best_time(
+        self,
+        race_id: str,
+        refresh: bool = False,
+        card: RaceCard | None = None,
+    ) -> NankanRaceBestTime:
         cache_key = f"nankan:best-time:{race_id}"
 
         async def fetch() -> NankanRaceBestTime:
-            card = await self.get_race_card(race_id, refresh=refresh)
-            target_distance = self._distance_int(card.distance)
+            race_card = card or await self.get_race_card(race_id, refresh=refresh)
+            target_distance = self._distance_int(race_card.distance)
             page = await self.provider.fetch_best(race_id, "000000")
-            parsed = parse_nankan_best_time(page.content, target_course=card.course, target_distance=target_distance)
+            parsed = parse_nankan_best_time(
+                page.content,
+                target_course=race_card.course,
+                target_distance=target_distance,
+            )
             return NankanRaceBestTime(
                 race_id=race_id,
-                race_name=card.race_name,
-                course=card.course,
+                race_name=race_card.race_name,
+                course=race_card.course,
                 distance=target_distance,
-                surface=card.surface,
+                surface=race_card.surface,
                 runners=parsed["runners"],
                 fetched_at=datetime.now(UTC),
                 source=page.source,
@@ -339,21 +350,30 @@ class NankanService:
         race_id = await self._race_id_by_number(target_date, course, race_no, refresh=refresh)
         return await self.get_race_best_time(race_id, refresh=refresh)
 
-    async def get_race_closing_speed(self, race_id: str, refresh: bool = False) -> NankanRaceClosingSpeed:
+    async def get_race_closing_speed(
+        self,
+        race_id: str,
+        refresh: bool = False,
+        card: RaceCard | None = None,
+    ) -> NankanRaceClosingSpeed:
         cache_key = f"nankan:closing-speed:{race_id}"
 
         async def fetch() -> NankanRaceClosingSpeed:
-            card = await self.get_race_card(race_id, refresh=refresh)
-            target_distance = self._distance_int(card.distance)
+            race_card = card or await self.get_race_card(race_id, refresh=refresh)
+            target_distance = self._distance_int(race_card.distance)
             suffix = f"22{target_distance:04d}" if target_distance is not None else "220000"
             page = await self.provider.fetch_best(race_id, suffix)
-            parsed = parse_nankan_closing_speed(page.content, target_course=card.course, target_distance=target_distance)
+            parsed = parse_nankan_closing_speed(
+                page.content,
+                target_course=race_card.course,
+                target_distance=target_distance,
+            )
             return NankanRaceClosingSpeed(
                 race_id=race_id,
-                race_name=card.race_name,
-                course=card.course,
+                race_name=race_card.race_name,
+                course=race_card.course,
                 distance=target_distance,
-                surface=card.surface,
+                surface=race_card.surface,
                 runners=parsed["runners"],
                 fetched_at=datetime.now(UTC),
                 source=page.source,
@@ -496,6 +516,7 @@ class NankanService:
         bet_types: list[str] | None = None,
         combination: list[str] | None = None,
         refresh: bool = False,
+        card: RaceCard | None = None,
     ) -> RaceOdds:
         logger.info(
             "get_nankan_race_odds",
@@ -510,20 +531,30 @@ class NankanService:
         any_stale = False
         refresh_errors: list[str] = []
         data_source = "db"
+        shared_odds_pages: dict[str, tuple[str, str]] = {}
         for current in requested:
             cache_key = f"nankan:odds:{race_id}:{current}"
             lookup = self._cache_lookup(cache_key)
             any_db_hit = any_db_hit or lookup.hit
             any_ttl_expired = any_ttl_expired or lookup.expired
             if lookup.hit and not lookup.expired and not refresh:
-                odds_map[current] = await self._complete_win_odds(race_id, lookup.value, refresh=refresh) if current == "win" else lookup.value
+                odds_map[current] = (
+                    await self._complete_win_odds(race_id, lookup.value, refresh=refresh, card=card)
+                    if current == "win"
+                    else lookup.value
+                )
                 continue
             fetched_success = False
             try:
-                page = await self.provider.fetch_odds(race_id, current)
-                parsed = parse_nankan_odds(page.content, current)
+                page_key = NANKAN_BET_TYPE_TO_ODDS_CODE[current]
+                shared_page = shared_odds_pages.get(page_key)
+                if shared_page is None:
+                    page = await self.provider.fetch_odds(race_id, current)
+                    shared_page = (page.source, page.content)
+                    shared_odds_pages[page_key] = shared_page
+                source, content = shared_page
+                parsed = parse_nankan_odds(content, current)
                 entries = parsed.get(current, [])
-                source = page.source
                 data_source = "external"
                 any_saved = True
                 fetched_success = True
@@ -534,7 +565,7 @@ class NankanService:
                 any_stale = True
                 refresh_errors.append(str(exc))
             if current == "win":
-                entries = await self._complete_win_odds(race_id, entries, refresh=refresh)
+                entries = await self._complete_win_odds(race_id, entries, refresh=refresh, card=card)
             if fetched_success:
                 self.cache.set(cache_key, entries, ttl_seconds=self.ttl_config.odds)
                 self._write_odds_snapshot(
@@ -613,15 +644,21 @@ class NankanService:
             raise LookupError(f"nankan race not found: {target_date.isoformat()} {course} {race_no}R")
         return race.race_id
 
-    async def _complete_win_odds(self, race_id: str, entries: list[OddsEntry], refresh: bool) -> list[OddsEntry]:
-        card = await self.get_race_card(race_id, refresh=refresh)
+    async def _complete_win_odds(
+        self,
+        race_id: str,
+        entries: list[OddsEntry],
+        refresh: bool,
+        card: RaceCard | None = None,
+    ) -> list[OddsEntry]:
+        race_card = card or await self.get_race_card(race_id, refresh=refresh)
         by_horse_no = {
             entry.combination[0]: entry
             for entry in entries
             if entry.combination and entry.combination[0].isdigit()
         }
         completed: list[OddsEntry] = []
-        for runner in card.runners:
+        for runner in race_card.runners:
             if not runner.horse_no:
                 continue
             completed.append(
