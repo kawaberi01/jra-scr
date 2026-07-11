@@ -124,7 +124,7 @@ def build_parser() -> argparse.ArgumentParser:
     analysis.add_argument("--from-date", type=date.fromisoformat, required=True)
     analysis.add_argument("--to-date", type=date.fromisoformat, required=True)
     analysis.add_argument("--courses", required=True, help="Comma-separated course names or codes. Example: nakayama,hanshin")
-    analysis.add_argument("--db", type=Path, default=Path(os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/analysis.sqlite")))
+    analysis.add_argument("--db", type=Path, default=Path(os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/db/analysis.sqlite")))
     analysis.add_argument("--include-card", action="store_true")
     analysis.add_argument("--include-odds", action="store_true")
     analysis.add_argument("--include-results", action="store_true")
@@ -144,7 +144,7 @@ def build_parser() -> argparse.ArgumentParser:
     netkeiba_results.add_argument(
         "--db",
         type=Path,
-        default=Path(os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/analysis.sqlite")),
+        default=Path(os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/db/analysis.sqlite")),
     )
     netkeiba_results.add_argument("--mapping-csv", type=Path)
     netkeiba_results.add_argument("--use-db-mapping", action="store_true")
@@ -164,7 +164,7 @@ def build_parser() -> argparse.ArgumentParser:
     netkeiba_mapping.add_argument(
         "--db",
         type=Path,
-        default=Path(os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/analysis.sqlite")),
+        default=Path(os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/db/analysis.sqlite")),
     )
     netkeiba_mapping.add_argument("--output", type=Path)
     netkeiba_mapping.add_argument("--meeting-calendar-csv", type=Path)
@@ -175,7 +175,7 @@ def build_parser() -> argparse.ArgumentParser:
         "backfill-analysis-runners",
         help="Backfill missing runners in analysis SQLite from existing races.",
     )
-    backfill.add_argument("--db", type=Path, default=Path(os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/analysis.sqlite")))
+    backfill.add_argument("--db", type=Path, default=Path(os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/db/analysis.sqlite")))
     backfill.add_argument("--from-date", type=date.fromisoformat, required=True)
     backfill.add_argument("--to-date", type=date.fromisoformat, required=True)
     backfill.add_argument("--courses", required=True, help="'all' or comma-separated course names or codes.")
@@ -189,7 +189,7 @@ def build_parser() -> argparse.ArgumentParser:
         "verify-analysis-joins",
         help="Verify analysis SQLite card/result join health.",
     )
-    verify.add_argument("--db", type=Path, default=Path(os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/analysis.sqlite")))
+    verify.add_argument("--db", type=Path, default=Path(os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/db/analysis.sqlite")))
     verify.add_argument("--from-date", type=date.fromisoformat, required=True)
     verify.add_argument("--to-date", type=date.fromisoformat, required=True)
     verify.add_argument("--sample-size", type=int, default=10)
@@ -251,7 +251,7 @@ def build_parser() -> argparse.ArgumentParser:
     import_daily_prediction_log_parser.add_argument(
         "--db",
         type=Path,
-        default=Path(os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/analysis.sqlite")),
+        default=Path(os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/db/analysis.sqlite")),
     )
     return parser
 

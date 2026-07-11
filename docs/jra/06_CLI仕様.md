@@ -20,7 +20,7 @@ uv run python -m jra_srb.cli --help
 
 - 文字列の日付は `YYYY-MM-DD`
 - `--courses` は `nakayama,hanshin` のようなカンマ区切り
-- `--db` の既定値は `data/analysis.sqlite`
+- `--db` の既定値は `data/db/analysis.sqlite`
 - ローカル API 呼び出し系の `--base-url` 既定値は `http://127.0.0.1:8000`
 
 ## コマンド一覧
@@ -67,7 +67,7 @@ uv run jra-srb collect-results --from-date 2026-03-22 --to-date 2026-03-22 --cou
 例:
 
 ```powershell
-uv run jra-srb collect-analysis --from-date 2026-03-22 --to-date 2026-03-22 --courses nakayama --db data/analysis.sqlite --include-card --include-odds --include-results
+uv run jra-srb collect-analysis --from-date 2026-03-22 --to-date 2026-03-22 --courses nakayama --db data/db/analysis.sqlite --include-card --include-odds --include-results
 ```
 
 ### `collect-netkeiba-results`

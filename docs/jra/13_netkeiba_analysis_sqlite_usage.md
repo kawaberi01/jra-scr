@@ -120,7 +120,7 @@ jra_race_id,netkeiba_race_id,race_date,course,race_no,mapping_status,mapping_not
 jra-srb generate-netkeiba-mapping `
   --from-date 2025-10-01 `
   --to-date 2025-12-31 `
-  --db data/analysis.sqlite `
+  --db data/db/analysis.sqlite `
   --output data/netkeiba_race_mapping.validation_2025q4.csv
 ```
 
@@ -132,7 +132,7 @@ jra-srb generate-netkeiba-mapping `
 jra-srb generate-netkeiba-mapping `
   --from-date 2025-10-01 `
   --to-date 2025-12-31 `
-  --db data/analysis.sqlite `
+  --db data/db/analysis.sqlite `
   --output data/netkeiba_race_mapping.validation_2025q4.csv `
   --meeting-calendar-csv data/netkeiba_meeting_calendar.2025q4.csv
 ```
@@ -156,7 +156,7 @@ CSV ではなく `analysis.sqlite` の `netkeiba_race_mappings` に保存でき�
 jra-srb generate-netkeiba-mapping `
   --from-date 2026-06-01 `
   --to-date 2026-06-30 `
-  --db data/analysis.sqlite `
+  --db data/db/analysis.sqlite `
   --meeting-calendar-csv data/netkeiba_meeting_calendar.2026_06.csv `
   --save-to-db
 ```
@@ -167,7 +167,7 @@ CSV と DB 保存は同時に指定できます。
 jra-srb generate-netkeiba-mapping `
   --from-date 2026-06-01 `
   --to-date 2026-06-30 `
-  --db data/analysis.sqlite `
+  --db data/db/analysis.sqlite `
   --output data/netkeiba_race_mapping.2026_06.csv `
   --meeting-calendar-csv data/netkeiba_meeting_calendar.2026_06.csv `
   --save-to-db
@@ -181,7 +181,7 @@ jra-srb generate-netkeiba-mapping `
 jra-srb collect-netkeiba-results `
   --from-date 2025-10-01 `
   --to-date 2025-10-31 `
-  --db data/analysis.sqlite `
+  --db data/db/analysis.sqlite `
   --mapping-csv data/netkeiba_race_mapping.csv `
   --max-live-requests 30 `
   --min-interval-seconds 10
@@ -201,7 +201,7 @@ DB 保存済み mapping を使う場合:
 jra-srb collect-netkeiba-results `
   --from-date 2026-06-01 `
   --to-date 2026-06-30 `
-  --db data/analysis.sqlite `
+  --db data/db/analysis.sqlite `
   --use-db-mapping `
   --max-live-requests 30 `
   --min-interval-seconds 10
@@ -217,7 +217,7 @@ netkeiba にアクセスせず、対象件数と取得予定件数だけ確認�
 jra-srb collect-netkeiba-results `
   --from-date 2025-10-01 `
   --to-date 2025-12-31 `
-  --db data/analysis.sqlite `
+  --db data/db/analysis.sqlite `
   --use-db-mapping `
   --max-live-requests 30 `
   --dry-run
@@ -237,7 +237,7 @@ run_id=- dry_run=True targets=720 saved=100 unsaved=610 planned=30 unmappable=10
 jra-srb collect-netkeiba-results `
   --from-date 2025-10-01 `
   --to-date 2025-12-31 `
-  --db data/analysis.sqlite `
+  --db data/db/analysis.sqlite `
   --mapping-csv data/netkeiba_race_mapping.validation_2025q4.csv `
   --limit 20 `
   --max-live-requests 5 `
@@ -254,7 +254,7 @@ jra-srb collect-netkeiba-results `
 jra-srb collect-netkeiba-results `
   --from-date 2025-10-01 `
   --to-date 2025-10-31 `
-  --db data/analysis.sqlite `
+  --db data/db/analysis.sqlite `
   --mapping-csv data/netkeiba_race_mapping.csv `
   --max-live-requests 10 `
   --min-interval-seconds 10 `
@@ -278,7 +278,7 @@ from jra_srb.netkeiba_service import NetkeibaService
 
 async def save_referenced_odds():
     service = NetkeibaService()
-    store = AnalysisSQLiteStore(Path("data/analysis.sqlite"))
+    store = AnalysisSQLiteStore(Path("data/db/analysis.sqlite"))
 
     odds = await service.get_race_odds(
         "202603020201",

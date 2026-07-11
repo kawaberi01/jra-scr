@@ -398,7 +398,7 @@ uv run jra-srb collect-results --from-date 2026-03-22 --to-date 2026-03-22 --cou
 分析用 SQLite DB に、発走前情報、オッズ、結果、払戻を正規化して保存する場合:
 
 ```bash
-uv run jra-srb collect-analysis --from-date 2026-03-22 --to-date 2026-03-22 --courses nakayama --db data/analysis.sqlite --include-card --include-odds --include-results --bet-types wide,trio,trifecta
+uv run jra-srb collect-analysis --from-date 2026-03-22 --to-date 2026-03-22 --courses nakayama --db data/db/analysis.sqlite --include-card --include-odds --include-results --bet-types wide,trio,trifecta
 ```
 
 `collect-analysis` は自己改良エージェント向けの一次保存です。Prediction Agent に渡すための発走前 snapshot は、結果・払戻を含まない形で `AnalysisSQLiteStore.get_pre_race_snapshot()` から取得できます。CSV / Parquet はこの SQLite からの export として後続で扱う想定です。
@@ -409,7 +409,7 @@ uv run jra-srb collect-analysis --from-date 2026-03-22 --to-date 2026-03-22 --co
 | --- | --- |
 | `JRA_SRB_RESULTS_STORAGE` | 保存済み結果 API の backend。`jsonl` または `sqlite`。既定値は `jsonl` |
 | `JRA_SRB_RESULTS_PATH` | 保存済み結果 API が読む JSONL パス。既定値は `data/results.jsonl` |
-| `JRA_SRB_ANALYSIS_DB_PATH` | 分析用 SQLite DB の既定パス。既定値は `data/analysis.sqlite` |
+| `JRA_SRB_ANALYSIS_DB_PATH` | 分析用 SQLite DB の既定パス。既定値は `data/db/analysis.sqlite` |
 | `JRA_SRB_CACHE_PATH` | 指定時に SQLite 永続 cache を使う |
 | `JRA_SRB_UPSTREAM_MAX_CONCURRENCY` | JRA upstream への最大同時 request 数。既定値は `5` |
 | `JRA_SRB_UPSTREAM_MIN_INTERVAL_SECONDS` | JRA upstream への request 開始間隔の最小秒数。既定値は `0` |
