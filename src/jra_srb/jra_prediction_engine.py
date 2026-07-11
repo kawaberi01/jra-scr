@@ -44,19 +44,7 @@ def build_prediction_record(bundle: JraPredictionBundle, budget: int = 1000) -> 
         })
     ranking = sorted(scored, key=lambda item: (-item["score"], _horse_no(item["horse_no"])))
     top = ranking[:3]
-    tickets = []
-    if len(top) >= 3:
-        amount = max(100, budget // 2 // 100 * 100)
-        for index, other in enumerate(top[1:3], start=1):
-            tickets.append({
-                "ticket_id": f"{bundle.race_id}-wide-{index}",
-                "bucket": "main" if index == 1 else "cover",
-                "bet_type": "wide",
-                "selection": f"{top[0]['horse_no']}-{other['horse_no']}",
-                "selection_json": [top[0]["horse_no"], other["horse_no"]],
-                "amount": amount if index == 1 else budget - amount,
-                "reason": "公開指数・単勝支持・近走時計の総合上位",
-            })
+    tickets = _build_wide_tickets(top, _wide_odds(bundle), budget, bundle.race_id)
     created_at = datetime.now(UTC).isoformat()
     return {
         "prediction_id": f"jra-{bundle.race_id}-{created_at.replace(':', '').replace('+', '-')}",
@@ -79,6 +67,7 @@ def build_prediction_record(bundle: JraPredictionBundle, budget: int = 1000) -> 
             "axis_horse_numbers": [top[0]["horse_no"]] if top else [],
             "data_status": bundle.meta.component_status,
             "generated_before_result": True,
+            "ticket_policy": "wide_market_available" if tickets else "no_ticket_wide_odds_unavailable",
         },
         "prediction_tickets": tickets,
     }
@@ -93,6 +82,53 @@ def _win_odds(bundle: JraPredictionBundle) -> dict[str, float]:
         for entry in entries
         if entry.combination and (value := _float(entry.odds)) is not None
     }
+
+
+def _wide_odds(bundle: JraPredictionBundle) -> dict[tuple[str, str], float]:
+    entries = bundle.odds_summary.odds.get("wide", []) or (
+        bundle.odds_summary.entries if bundle.odds_summary.bet_type == "wide" else []
+    )
+    return {
+        tuple(sorted(entry.combination, key=_horse_no)): value
+        for entry in entries
+        if len(entry.combination) == 2 and (value := _float(entry.odds)) is not None
+    }
+
+
+def _build_wide_tickets(
+    top: list[dict],
+    wide_odds: dict[tuple[str, str], float],
+    budget: int,
+    race_id: str,
+) -> list[dict]:
+    if len(top) < 2 or not wide_odds:
+        return []
+    axis = top[0]
+    candidates = [
+        (other, wide_odds.get(tuple(sorted((axis["horse_no"], other["horse_no"]), key=_horse_no))))
+        for other in top[1:3]
+    ]
+    candidates = [(other, odds) for other, odds in candidates if odds is not None]
+    spendable_units = budget // 100
+    candidates = candidates[:spendable_units]
+    if not candidates:
+        return []
+    unit_base, unit_remainder = divmod(spendable_units, len(candidates))
+    tickets = []
+    for index, (other, odds) in enumerate(candidates, start=1):
+        amount = (unit_base + (1 if index <= unit_remainder else 0)) * 100
+        tickets.append(
+            {
+                "ticket_id": f"{race_id}-wide-{index}",
+                "bucket": "main" if index == 1 else "cover",
+                "bet_type": "wide",
+                "selection": f"{axis['horse_no']}-{other['horse_no']}",
+                "selection_json": [axis["horse_no"], other["horse_no"]],
+                "amount": amount,
+                "reason": f"公開指数・単勝支持・近走時計の総合上位、ワイド {odds:g}倍",
+            }
+        )
+    return tickets
 
 
 def _float(value: str | None) -> float | None:
