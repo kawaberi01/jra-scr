@@ -1,175 +1,84 @@
 # 005-nankan-prediction-performance現行仕様整理
 
-## プロジェクト構成
+## 1. 対象構成
+- FastAPI 入口: [app.py](D:/develop/jra-scr/src/jra_srb/app.py)
+- prediction bundle orchestration: [nankan_prediction_service.py](D:/develop/jra-scr/src/jra_srb/nankan_prediction_service.py)
+- Nankan 集約 service: [nankan_service.py](D:/develop/jra-scr/src/jra_srb/nankan_service.py)
+- Nankan upstream provider: [nankan_provider.py](D:/develop/jra-scr/src/jra_srb/nankan_provider.py)
+- pattern service/provider:
+  - [nankankeiba_pattern_service.py](D:/develop/jra-scr/src/jra_srb/nankankeiba_pattern_service.py)
+  - [nankankeiba_pattern_provider.py](D:/develop/jra-scr/src/jra_srb/nankankeiba_pattern_provider.py)
 
-対象プロジェクトは `jra-srb`。
+## 2. 現行の prediction-bundle 経路
+`NankanPredictionService.get_prediction_bundle()` は次の順で動く。
 
-現行構成:
+1. `NankanService._race_id_by_number()` で `meeting -> race_id` 解決
+2. `get_race_card(race_id)` を先行取得
+3. 次を `asyncio.gather()` で並列開始
+   - `get_meeting_trend_context()`
+   - `pattern_service.get_pattern_bundle()`
+   - `get_race_odds(..., bet_types=summary_bet_types)`
+   - `get_race_best_time()`
+   - `get_race_closing_speed()`
+   - `get_leading_jockeys()`
 
-- FastAPI 入口: `src/jra_srb/app.py`
-- CLI 入口: `src/jra_srb/cli.py`
-- モデル: `src/jra_srb/models.py`
-- 南関 service/provider/extractor: `src/jra_srb/nankan_service.py`, `src/jra_srb/nankan_provider.py`, `src/jra_srb/nankan_extractors.py`
-- nankankeiba pattern service/provider/extractor: `src/jra_srb/nankankeiba_pattern_service.py`, `src/jra_srb/nankankeiba_pattern_provider.py`, `src/jra_srb/nankankeiba_pattern_extractors.py`
-- API tests: `tests/test_api.py`, `tests/test_nankan_api.py`
-- CLI tests: `tests/test_cli.py`
+並列開始はしているが、各下位処理が内部で別の再取得を行うため、request 全体では重複が多い。
 
-## 既存の責務分離
+## 3. 観測ログで確認できた現行挙動
 
-既存実装は次の責務分離を採用している。
+### 3.1 prediction-bundle の実行回数
+- 同一 2R に対して `prediction-bundle` が 2 回実行されている
+- API 側単体では 1 回あたり約 18 秒
 
-- `app.py`:
-  - FastAPI endpoint
-  - dependency injection
-  - query/path 受け取り
-- `nankan_service.py`:
-  - meeting 解決
-  - cache 利用
-  - provider 呼び出し
-  - extractor 呼び出し
-  - Pydantic model 組み立て
-- `nankankeiba_pattern_service.py`:
-  - pattern の category / bundle 組み立て
-  - cache 利用
-- `cli.py`:
-  - argparse subcommand 定義
-  - service または local API の薄い呼び出し
+### 3.2 1 回の bundle 内の主要 step
+- `card`: 約 2.0 秒
+- `trend_context`: 約 6.3 秒
+- `pattern`: 約 4.5〜7.5 秒
+- `leading_jockeys`: 約 4.8〜5.5 秒
+- `best_time`: 約 9.9〜10.9 秒
+- `closing_speed`: 約 11.0〜12.8 秒
+- `odds_summary`: 約 13.9〜14.0 秒
 
-今回の高速化も、この既存分離に沿って追加するのが前提になる。
+### 3.3 upstream の重複
+- `calendar/202607.do` を複数回取得
+- `program/20260709210404.do` を複数回取得
+- `uma_shosai/2026070921040402.do` を複数回取得
+- `odds/202607092104040204.do` を同一 request 内で複数回取得
+- pattern は `pattern_kis -> pattern_uma -> pattern_cho -> pattern_kis_cho` を順次取得
 
-## 現行 API / CLI の事実
+## 4. 実コード上の原因
 
-### 1. 個別取得 API 前提
+### 4.1 card の再利用がない
+[nankan_service.py](D:/develop/jra-scr/src/jra_srb/nankan_service.py) の
+- `get_race_best_time()`
+- `get_race_closing_speed()`
+- `_complete_win_odds()`
 
-`app.py` には南関向けに次の個別取得 endpoint がある。
+はいずれも内部で `get_race_card()` を呼ぶ。bundle が先に card を持っていても渡していない。
 
-- `GET /nankan/meetings/{date_}/{course}/races/{race_no}/trend-context`
-- `GET /nankan/meetings/{date_}/{course}/races/{race_no}/card`
-- `GET /nankan/meetings/{date_}/{course}/races/{race_no}/best-time`
-- `GET /nankan/meetings/{date_}/{course}/races/{race_no}/closing-speed`
-- `GET /nankan/meetings/{date_}/{course}/races/{race_no}/style-profile`
-- `GET /nankan/meetings/{date_}/{course}/races/{race_no}/odds`
-- `GET /nankan/meetings/{date_}/{course}/races/{race_no}/result`
+### 4.2 best-time / closing-speed が meeting 補助に依存
+`get_race_card()` は race card ページ取得後、天候や馬場が欠ける場合に `_meeting_conditions_for_race()` を通じて `program` を再取得する。
+これにより best-time / closing-speed で card を再取得したぶんだけ `program` も再取得される。
 
-また、pattern は別 prefix で公開済み。
+### 4.3 odds がページ共有をしていない
+`get_race_odds()` は requested bet type を順次処理する。
 
-- `GET /nankankeiba/pattern/meetings/{date_}/{course}/races/{race_no}`
+- `win` -> `/odds/...01.do`
+- `wide` -> `/odds/...04.do`
+- `quinella` -> `/odds/...04.do`
 
-このため、予想材料は現在も複数 endpoint を順番に叩く前提で構成されている。
+`wide` と `quinella` が同一 odds ページソースでも、現行は別 fetch になる。
 
-### 2. CLI は汎用呼び出し中心
+### 4.4 pattern bundle は逐次取得
+[nankankeiba_pattern_service.py](D:/develop/jra-scr/src/jra_srb/nankankeiba_pattern_service.py) の `get_pattern_bundle()` は category ごとに await しており、4 ページを直列取得する。
 
-`cli.py` には次がある。
+### 4.5 trend-context は重いのに予想前に空振りしやすい
+`get_meeting_trend_context()` は trend ページを取り、`race_no - 1` と比較して `usable` を決める。
+今回の観測では `usable=false` かつ `reason="latest trend is post-race snapshot"` だった。
+つまり 6 秒超かけて、予想に直接使えない結果を返している。
 
-- `call-local-api`
-  - 任意 path + query をそのまま local API に GET する
-- `fetch-nankankeiba-pattern`
-  - pattern service を直接呼ぶ専用 CLI
-
-一方で、複数 path をまとめる CLI や、予想一式を 1 回で返す CLI はまだない。
-
-### 3. `trend-context` は既存ロジックを持つ
-
-`NankanService.get_meeting_trend_context()` は meeting trend を取得し、`required_max_completed = race_no - 1` を使って usable 判定を返す。
-
-- post-race snapshot と判断した場合は `usable=false`
-- その場合は空の summary を返す
-
-したがって bundle でも `trend-context` の既存意味を変えず、そのまま内包するのが自然。
-
-### 4. `best-time` / `closing-speed` は内部で card 依存
-
-`NankanService.get_race_best_time()` と `get_race_closing_speed()` はどちらも内部で `get_race_card()` を呼び、距離やコース情報を補助入力として使っている。
-
-つまり bundle 側で card を先に取得しても、既存 service をそのまま呼ぶと重複 card 参照が起こり得る。
-
-### 5. `odds` は券種ごと逐次取得
-
-`NankanService.get_race_odds()` は:
-
-- 指定券種を `_requested_bet_types()` で決定する
-- 未指定時は `SUPPORTED_NANKAN_BET_TYPES` 全券種を対象にする
-- 券種ごとに `provider.fetch_odds(race_id, current)` を順次実行する
-- `win` だけは `_complete_win_odds()` で card を見て欠番補完する
-
-このため:
-
-- 全券種既定取得は最も重い
-- `win` / `wide` / `quinella` など必要券種だけに絞れば、それだけで upstream 呼び出し数と JSON 量を減らせる
-
-### 6. race_no ベース API は meeting 解決を伴う
-
-`get_race_*_by_number()` 系は内部で `get_meeting()` から race_id を解決する。
-
-よって bundle 実装時に race_no ベース API を何度も呼ぶより、
-
-- 1 回だけ meeting から race_id を引く
-- 以降は race_id ベース service を使う
-
-方が無駄が少ない。
-
-### 7. pattern は既に bundle 単位 service を持つ
-
-`NankankeibaPatternService.get_pattern_bundle()` は、
-
-- `date`
-- `course`
-- `meeting_no`
-- `meeting_day`
-- `race_no`
-- `periods`
-- `categories`
-
-を受け取り、4 category をまとめた `NankankeibaPatternBundle` を返す。
-
-したがって今回の prediction bundle は pattern 自体を再実装せず、既存 service を呼ぶだけでよい。
-
-### 8. leading jockey は race 直接 endpoint ではない
-
-`GET /nankan/leading/jockeys` は query ベースで、
-
-- `course`
-- `distance`
-- `track_condition`
-- `period`
-- `sort`
-
-を取る。
-
-予想 bundle に含める場合は、card から取れるコース・距離・馬場状態を使ってパラメータを導出する必要がある。
-
-## 現行テスト方針
-
-- API は `TestClient(app)` と dependency override で検証する
-- CLI は parser 単体と `httpx.MockTransport` で検証する
-- pattern は fixture provider で外部通信なしに検証する
-
-今回も同じ方針に合わせるのが自然。
-
-## 要件との差分
-
-現行コードにないもの:
-
-- `GET /nankan/meetings/{date_}/{course}/races/{race_no}/odds-summary`
-- `GET /nankan/meetings/{date_}/{course}/races/{race_no}/prediction-bundle`
-- `fetch-nankan-prediction-bundle` CLI
-- 複数予想材料をサーバー側で並列に束ねるオーケストレーション
-- 予想用軽量 odds の既定券種セット
-
-既存コードで流用できるもの:
-
-- `RaceOdds`
-- `RaceCard`
-- `NankanMeetingTrendContext`
-- `NankanRaceBestTime`
-- `NankanRaceClosingSpeed`
-- `NankanLeadingJockeyPage`
-- `NankankeibaPatternBundle`
-- `call_local_api()`
-
-## 今回の仕様化で採る前提
-
-- まず `odds-summary` を追加し、全券種既定取得を避ける
-- 次に `prediction-bundle` を追加し、1 回の local API 呼び出しで予想材料を返す
-- bundle は既存 response model を内包する新 model とし、既存 endpoint の契約は変えない
-- CLI は generic batch ではなく、まず bundle 専用の薄い入口を追加する
+## 5. 現行仕様の整理結果
+- 現行の遅延主因は `uv run` ではなく API 内部の再取得
+- 並列化は入口でのみ効いており、下位の重複 I/O が支配的
+- 最優先で改善すべき箇所は API service 層
+- スキル側だけでは根本解決にならない

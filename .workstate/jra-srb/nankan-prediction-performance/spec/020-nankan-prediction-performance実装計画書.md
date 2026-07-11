@@ -1,74 +1,50 @@
 # 020-nankan-prediction-performance実装計画書
 
-## 1. 対象と目的
-- 対象機能:
-  - `odds-summary` API
-  - `prediction-bundle` API
-  - `fetch-nankan-prediction-bundle` CLI
-- 改修目的:
-  - 南関予想の 1 ターンあたり待ち時間を短縮する
-- 今回の対象範囲:
-  - 既存 Nankan / pattern service を再利用した軽量 summary API と bundle API の追加
-  - bundle を 1 回だけ叩く CLI の追加
-  - 必要最小限の response model / test 追加
-- 今回やらないこと:
-  - 既存予想テンプレートの全面更新
-  - 汎用 batch CLI
-  - 既存 endpoint の契約変更
+## 1. 実装方針
+大きい新機能追加ではなく、既存 API 契約を維持した内部最適化として進める。
 
-## 2. 実装フェーズ
-### Phase 1: 事前確認
-- 既存 `RaceOdds` と pattern bundle 再利用可否を最終確認する
-- summary 対象券種の既定値を `win,wide,quinella` に固定する
+優先順位は次の通り。
 
-### Phase 2: 既存変更単位の特定
-- `models.py` に追加が必要な model を洗い出す
-- `nankan_service.py` に閉じる処理と新規 orchestration service に出す処理を分離する
+1. card 再利用
+2. odds source page 共有
+3. pattern 並列化
+4. trend-context 軽量化フック
 
-### Phase 3: 対象プロジェクトの既存パターンに沿った実装
-- `nankan_prediction_service.py` を追加する
-- 必要なら `nankan_service.py` に summary 対応 helper を追加する
+## 2. タスク
 
-### Phase 4: 入口 / 表示 / 応答 / 設定
-- `app.py` に summary endpoint / bundle endpoint を追加する
-- `cli.py` に bundle CLI を追加する
-- docs を最小追記する
+| ID | 作業 | 対象 | 完了条件 |
+| --- | --- | --- | --- |
+| P01 | bundle 内部で共有する request-local 材料を定義 | `nankan_prediction_service.py` | `card` と派生値の共有方針が決まる |
+| P02 | `best_time` / `closing_speed` / win odds 補完が card を受け取れるようにする | `nankan_service.py` | 同一 request で `get_race_card()` 再呼び出しを避けられる |
+| P03 | odds source page 共有ロジックを追加 | `nankan_service.py` | `wide` と `quinella` が同一 page fetch から構成される |
+| P04 | pattern bundle を category 並列取得へ変更 | `nankankeiba_pattern_service.py` | 4 category の逐次 await がなくなる |
+| P05 | trend-context を optional 化できるフックを service に置く | `nankan_prediction_service.py` ほか | 将来の skip 制御点ができる |
+| P06 | 既存 trace で比較できることを確認 | trace + tests | 修正前後比較が可能 |
+| P07 | service / API テスト追加 | `tests` | 重複削減ロジックと既存契約を検証できる |
 
-### Phase 5: テスト
-- API tests
-- CLI tests
-- 必要なら service 単体テスト
+## 3. 実装順
+1. P02 を先に行い、card 再利用の土台を作る
+2. P03 で `odds_summary` の最重量部分を削る
+3. P04 で pattern を短縮する
+4. P05 は最小の制御点だけ入れる
+5. P07 で回帰防止を付ける
 
-### Phase 6: レビュー / 完了確認
-- 既存 endpoint 互換性の目視確認
-- note の優先度 A/B に沿っているか確認
+## 4. 検証観点
+- `prediction-bundle` 実行時:
+  - `upstream_request` の `uma_shosai` 本数
+  - `program` 本数
+  - `odds/...04.do` 本数
+  - `pattern_*` 4 本の並び
+- 回帰:
+  - API レスポンス形状が変わらない
+  - 既存 test fixture で結果が保たれる
 
-## 3. タスク一覧
-| ID | フェーズ | 作業内容 | 入力 | 出力 | 依存 | DoD |
-| --- | --- | --- | --- | --- | --- | --- |
-| T01 | Phase 1 | summary 既定券種と bundle 含有要素を固定する | handoff note, 現行コード | 実装対象固定 | なし | `win,wide,quinella` と bundle 要素一覧が確定している |
-| T02 | Phase 2 | 新規 response model / service の配置を決める | `models.py`, `app.py` | 配置方針 | T01 | `models.py` と `nankan_prediction_service.py` の責務が決まる |
-| T03 | Phase 3 | summary 取得処理を実装する | `nankan_service.py` | summary 処理 | T02 | race_no ベース summary 取得ができる |
-| T04 | Phase 3 | bundle orchestration service を実装する | `nankan_service.py`, `nankankeiba_pattern_service.py` | bundle service | T02 | race_id 解決 1 回 + 並列取得で bundle を返せる |
-| T05 | Phase 4 | API endpoint を追加する | `app.py`, `models.py` | 新 endpoint | T03, T04 | OpenAPI に 2 endpoint が出る |
-| T06 | Phase 4 | bundle CLI を追加する | `cli.py` | 新 subcommand | T05 | local API 1 回呼び出しで bundle を取得できる |
-| T07 | Phase 5 | API / CLI テストを追加する | `tests/test_api.py`, `tests/test_cli.py` | 自動テスト | T05, T06 | 正常系 / 異常系が通る |
-| T08 | Phase 6 | docs と最終確認を行う | 実装一式 | 完了状態 | T07 | note の A/B 方針と実装が一致している |
+## 5. リスク
+- card を外から渡す形にすると service API の変更範囲がやや広がる
+- odds page 共有は parse の責務整理が甘いと分岐が増える
+- pattern 並列化は provider のスロットル設定と干渉しうる
 
-## 4. 完了判定
-- 実装完了条件:
-  - `odds-summary` endpoint が追加されている
-  - `prediction-bundle` endpoint が追加されている
-  - `fetch-nankan-prediction-bundle` CLI が追加されている
-- テスト完了条件:
-  - 対応する API / CLI テストが追加されて通る
-  - 既存 `call-local-api` / pattern 関連の主要テストが落ちない
-- レビュー完了条件:
-  - 既存契約を壊していない
-  - summary と bundle の責務が過不足なく分かれている
-
-## 5. 別タスク候補
-- `call-local-api-batch` 追加
-- bundle を前提とした予想テンプレート更新
-- `style-profile` 同梱検討
-- bundle 内の取得時間メトリクス詳細化
+## 6. 停止条件
+- 既存 endpoint 契約変更が必要になった場合
+- cache の意味を崩さないと実装できない場合
+- 重複削減のために大規模な責務再編が必要になった場合

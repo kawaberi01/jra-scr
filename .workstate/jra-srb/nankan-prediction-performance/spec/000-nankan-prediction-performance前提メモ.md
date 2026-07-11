@@ -2,46 +2,56 @@
 
 ## 1. 対象
 - 対象 root: `D:\develop\jra-scr`
-- 対象機能: 南関予想向け取得高速化
-- 改修目的: 予想1ターンあたりの体感待ち時間を下げるため、`odds-summary` API、`prediction-bundle` API、bundle 専用 CLI を追加する
-- 関連画面 / API / バッチ:
-  - `GET /nankan/meetings/{date_}/{course}/races/{race_no}/odds`
-  - `GET /nankan/meetings/{date_}/{course}/races/{race_no}/trend-context`
-  - `GET /nankan/meetings/{date_}/{course}/races/{race_no}/card`
-  - `GET /nankan/meetings/{date_}/{course}/races/{race_no}/best-time`
-  - `GET /nankan/meetings/{date_}/{course}/races/{race_no}/closing-speed`
-  - `GET /nankankeiba/pattern/meetings/{date_}/{course}/races/{race_no}`
-  - `GET /nankan/leading/jockeys`
-  - `jra-srb call-local-api`
-  - `jra-srb fetch-nankankeiba-pattern`
+- 対象プロジェクト: `jra-srb`
+- 対象機能: 南関予想用 `prediction-bundle` の API 側遅延改善
+- 目的:
+  - 予想 1 回あたりの API 側待ち時間を下げる
+  - 同一 request 内の重複取得を減らす
+  - スキル側変更の前に API 側の根本ボトルネックを除去する
 
-## 2. 入力情報
-- ユーザー要件:
-  - `notes/2026-07-08_prediction_performance_handoff.md` を優先づけて仕様化する
-- reference_status:
-  - handoff note と実コードを突合済み
-  - reference 由来の改善案は採用するが、既存構成・責務は実コードを正とする
-- 読み込んだ reference:
-  - `notes/2026-07-08_prediction_performance_handoff.md`
-- 参照した既存資料:
-  - `docs/jra/05_API仕様.md`
-  - `docs/jra/25_nankan_trend_asof_race_fix_plan.md`
-- 参照した主要コード:
-  - `src/jra_srb/app.py`
-  - `src/jra_srb/cli.py`
-  - `src/jra_srb/models.py`
-  - `src/jra_srb/nankan_service.py`
-  - `src/jra_srb/nankankeiba_pattern_service.py`
-  - `tests/test_cli.py`
+## 2. 今回の判断材料
+- 観測ログ:
+  - [prediction_trace_20260709_kawasaki_1r.jsonl](D:/develop/jra-scr/.workstate/logs/prediction_trace_20260709_kawasaki_1r.jsonl)
+- 補助メモ:
+  - [2026-07-08_prediction_performance_handoff.md](D:/develop/jra-scr/notes/2026-07-08_prediction_performance_handoff.md)
+- 主な参照コード:
+  - [app.py](D:/develop/jra-scr/src/jra_srb/app.py)
+  - [nankan_prediction_service.py](D:/develop/jra-scr/src/jra_srb/nankan_prediction_service.py)
+  - [nankan_service.py](D:/develop/jra-scr/src/jra_srb/nankan_service.py)
+  - [nankan_provider.py](D:/develop/jra-scr/src/jra_srb/nankan_provider.py)
+  - [nankankeiba_pattern_service.py](D:/develop/jra-scr/src/jra_srb/nankankeiba_pattern_service.py)
+  - [nankankeiba_pattern_provider.py](D:/develop/jra-scr/src/jra_srb/nankankeiba_pattern_provider.py)
 
-## 3. 作成する成果物
-- `005-nankan-prediction-performance現行仕様整理.md`
-- `010-nankan-prediction-performance実装仕様書.md`
-- `020-nankan-prediction-performance実装計画書.md`
-- `030-nankan-prediction-performance実装指示書.md`
+## 3. 観測で確定した事実
+- 対象 request:
+  - `GET /nankan/meetings/2026-07-09/kawasaki/races/2/prediction-bundle?meeting_no=4&meeting_day=4&refresh=true`
+- 同一レースで `prediction-bundle` が 2 回実行されていた
+  - 1 回目: 約 17.6 秒
+  - 2 回目: 約 18.6 秒
+- 1 回の bundle 内でも重い step がある
+  - `odds_summary`: 約 14.0 秒
+  - `closing_speed`: 約 11.0 秒〜12.8 秒
+  - `best_time`: 約 9.9 秒〜10.9 秒
+  - `pattern`: 約 4.5 秒〜7.5 秒
+  - `trend_context`: 約 6.3 秒
+- `refresh=true` により cache を使い切らず、外部再取得寄りの挙動になる
+- 予想後に個別 odds API が 4 本追加で呼ばれ、それぞれ 8〜11 秒かかっている
 
-## 4. 注意点
-- 既存 `call-local-api` は残す
-- 既存 `/nankan/...` と `/nankankeiba/pattern/...` の契約は壊さず、追加 API と追加 CLI で入れる
-- 待ち時間削減を最優先とし、横断リファクタや理想設計への置き換えは対象外にする
-- pattern 取得は既存 `NankankeibaPatternService` 契約に合わせ、`meeting_no` / `meeting_day` を bundle 側でも明示入力に残す前提で扱う
+## 4. API 側の主要問題
+1. `prediction-bundle` 内で同一 request の補助データを使い回していない
+2. `best_time` / `closing_speed` が内部で再度 `get_race_card()` を呼ぶ
+3. `get_race_card()` が meeting 条件補完のために `program` を追加取得する
+4. `get_race_odds()` が bet_type ごとに逐次 fetch し、同一 odds ページを再取得する
+5. pattern bundle が category ごとに逐次 fetch する
+6. `trend_context` が重い一方で、予想時点では `usable=false` となるケースがある
+
+## 5. 今回の仕様化で扱う範囲
+- API 側の service / provider / endpoint の改善仕様までを定義する
+- スキル / テンプレート / 会話側プロンプトの変更仕様は含めない
+- 既存 API 契約は可能な限り維持し、内部実装の重複削減を優先する
+
+## 6. 注意点
+- `prediction-bundle` endpoint 自体は残す
+- 既存 `/nankan/.../odds` 契約は壊さない
+- 既存 cache の意味は維持する
+- 可観測性として今回追加した prediction trace は残し、改善後比較に使う
