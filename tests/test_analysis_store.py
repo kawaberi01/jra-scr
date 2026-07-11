@@ -412,6 +412,204 @@ def test_analysis_store_creates_bet_record_with_box_expansion(tmp_path):
     assert store.count_rows("bet_record_tickets") == 4
 
 
+def test_analysis_store_upserts_prediction_record_with_race_context(tmp_path):
+    path = tmp_path / "analysis.sqlite"
+    store = AnalysisSQLiteStore(path)
+
+    result = store.upsert_prediction_record(
+        {
+            "prediction_id": "pred-1",
+            "race_id": "2026070921040410",
+            "theory_version": "assistant:v1",
+            "mode": "integrated_betting",
+            "budget": 1000,
+            "pre_race_snapshot": {
+                "date": "2026-07-09",
+                "course": "kawasaki",
+                "race_no": 10,
+                "meeting_no": 4,
+                "meeting_day": 4,
+                "card": {
+                    "race_id": "2026070921040410",
+                    "race_name": "江戸切子特別",
+                    "course": "kawasaki",
+                    "distance": "1400",
+                    "surface": "dirt",
+                    "start_time": "19:40",
+                    "source": "card",
+                    "fetched_at": datetime.now(UTC).isoformat(),
+                    "runners": [
+                        {"horse_no": "6", "horse_name": "ダンデライオン", "frame_no": "6"},
+                        {"horse_no": "10", "horse_name": "ナリノエンブレム", "frame_no": "8"},
+                    ],
+                },
+            },
+            "prediction_json": {
+                "predicted_top3": [
+                    {"horse_no": "6", "horse_name": "ダンデライオン", "odds": 1.4, "role": "head_axis"},
+                    {"horse_no": "10", "horse_name": "ナリノエンブレム", "odds": 6.4},
+                    {"horse_no": "11", "horse_name": "トンボ", "odds": 14.2},
+                ]
+            },
+            "prediction_tickets": [
+                {"ticket_id": "pt-1", "bucket": "core", "bet_type": "quinella", "selection": ["6", "10"], "amount": 500},
+                {"ticket_id": "pt-2", "bucket": "reserve", "bet_type": "wide", "selection": "11-6", "amount": 500},
+            ],
+        }
+    )
+
+    assert result["predictions"] == 1
+    assert result["prediction_tickets"] == 2
+    assert store.count_rows("races") == 1
+    assert store.count_rows("runners") == 2
+
+    with sqlite3.connect(path) as conn:
+        conn.row_factory = sqlite3.Row
+        race = conn.execute("select race_date, course, race_no, meeting_no, meeting_day from races where race_id = ?", ("2026070921040410",)).fetchone()
+        ticket = conn.execute("select selection from prediction_tickets where ticket_id = ?", ("pt-2",)).fetchone()
+
+    assert race["race_date"] == "2026-07-09"
+    assert race["course"] == "kawasaki"
+    assert race["race_no"] == 10
+    assert race["meeting_no"] == 4
+    assert race["meeting_day"] == 4
+    assert ticket["selection"] == "6-11"
+
+
+def test_analysis_store_evaluates_prediction_record_from_saved_tickets_and_payouts(tmp_path):
+    path = tmp_path / "analysis.sqlite"
+    store = AnalysisSQLiteStore(path)
+    store.upsert_prediction_record(
+        {
+            "prediction_id": "pred-1",
+            "race_id": "2026070921040410",
+            "theory_version": "assistant:v1",
+            "mode": "integrated_betting",
+            "budget": 1000,
+            "pre_race_snapshot": {
+                "date": "2026-07-09",
+                "course": "kawasaki",
+                "race_no": 10,
+                "meeting_no": 4,
+                "meeting_day": 4,
+            },
+            "prediction_json": {
+                "predicted_top3": [
+                    {"horse_no": "6", "horse_name": "ダンデライオン", "odds": 1.4, "role": "head_axis"},
+                    {"horse_no": "7", "horse_name": "ラムテリオス", "odds": 21.6},
+                    {"horse_no": "5", "horse_name": "エムティワイザー", "odds": 12.4},
+                ],
+                "middle_hole_candidates": [{"horse_no": "7", "horse_name": "ラムテリオス", "odds": 21.6}],
+            },
+            "prediction_tickets": [
+                {"ticket_id": "pt-1", "bucket": "core", "bet_type": "wide", "selection": ["5", "7"], "amount": 500},
+                {"ticket_id": "pt-2", "bucket": "reserve", "bet_type": "quinella", "selection": ["6", "10"], "amount": 500},
+            ],
+        }
+    )
+    store.write_result(
+        RaceResult(
+            race_id="2026070921040410",
+            race_name="江戸切子特別",
+            results=[
+                ResultEntry(rank="1", horse_no="7", horse_name="ラムテリオス", jockey="佐野遥久", time="1:30.8"),
+                ResultEntry(rank="2", horse_no="3", horse_name="ボニーマジェスティ", jockey="櫻井光輔", time="1:31.0"),
+                ResultEntry(rank="3", horse_no="5", horse_name="エムティワイザー", jockey="古岡勇樹", time="1:31.1"),
+            ],
+            payouts=[
+                PayoutEntry(bet_type="wide", combination="5-7", payout="1090", popularity="13"),
+                PayoutEntry(bet_type="quinella", combination="3-7", payout="27310", popularity="38"),
+            ],
+            fetched_at=datetime.now(UTC),
+            source="result",
+        )
+    )
+
+    result = store.evaluate_prediction_record(
+        {
+            "prediction_id": "pred-1",
+            "evaluation_id": "eval-1",
+            "review_notes": ["会話予想を保存後に評価"],
+        }
+    )
+
+    assert result["evaluations"] == 1
+    assert result["evaluation_ticket_results"] == 2
+    assert result["total_bet"] == 1000
+    assert result["total_payout"] == 5450
+    assert result["hit"] is True
+
+    with sqlite3.connect(path) as conn:
+        conn.row_factory = sqlite3.Row
+        evaluation = conn.execute(
+            "select total_bet, total_payout, hit, gami, axis_in_top3, middle_hole_in_top3 from evaluations where evaluation_id = ?",
+            ("eval-1",),
+        ).fetchone()
+        ticket_rows = conn.execute(
+            "select selection, payout, hit from evaluation_ticket_results where evaluation_id = ? order by selection",
+            ("eval-1",),
+        ).fetchall()
+
+    assert evaluation["total_bet"] == 1000
+    assert evaluation["total_payout"] == 5450
+    assert evaluation["hit"] == 1
+    assert evaluation["gami"] == 0
+    assert evaluation["axis_in_top3"] == 0
+    assert evaluation["middle_hole_in_top3"] == 1
+    assert [(row["selection"], row["payout"], row["hit"]) for row in ticket_rows] == [("5-7", 5450, 1), ("6-10", 0, 0)]
+
+
+def test_analysis_store_scales_payout_by_ticket_amount_when_evaluating_prediction(tmp_path):
+    path = tmp_path / "analysis.sqlite"
+    store = AnalysisSQLiteStore(path)
+    store.upsert_prediction_record(
+        {
+            "prediction_id": "pred-1",
+            "race_id": "2026070921040410",
+            "theory_version": "assistant:v1",
+            "mode": "integrated_betting",
+            "budget": 200,
+            "pre_race_snapshot": {
+                "date": "2026-07-09",
+                "course": "kawasaki",
+                "race_no": 10,
+                "meeting_no": 4,
+                "meeting_day": 4,
+            },
+            "prediction_json": {
+                "predicted_top3": [
+                    {"horse_no": "7", "horse_name": "Ramterios", "odds": 21.6, "role": "head_axis"},
+                    {"horse_no": "3", "horse_name": "Bonnie Majesty", "odds": 41.3},
+                    {"horse_no": "5", "horse_name": "MT Wiser", "odds": 12.4},
+                ]
+            },
+            "prediction_tickets": [
+                {"ticket_id": "pt-1", "bucket": "core", "bet_type": "wide", "selection": ["5", "7"], "amount": 200},
+            ],
+        }
+    )
+    store.write_result(
+        RaceResult(
+            race_id="2026070921040410",
+            race_name="Sample",
+            results=[
+                ResultEntry(rank="1", horse_no="7", horse_name="Ramterios", jockey="Jockey A", time="1:30.8"),
+                ResultEntry(rank="2", horse_no="3", horse_name="Bonnie Majesty", jockey="Jockey B", time="1:31.0"),
+                ResultEntry(rank="3", horse_no="5", horse_name="MT Wiser", jockey="Jockey C", time="1:31.1"),
+            ],
+            payouts=[PayoutEntry(bet_type="wide", combination="5-7", payout="1090", popularity="13")],
+            fetched_at=datetime.now(UTC),
+            source="result",
+        )
+    )
+
+    result = store.evaluate_prediction_record({"prediction_id": "pred-1", "evaluation_id": "eval-1"})
+
+    assert result["total_bet"] == 200
+    assert result["total_payout"] == 2180
+    assert result["return_rate"] == 10.9
+
+
 def test_analysis_store_creates_bet_record_with_16_digit_nankan_race_id(tmp_path):
     store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
 
@@ -593,6 +791,35 @@ def test_analysis_store_settles_unordered_bet_type_with_normalized_match(tmp_pat
     assert settlement.total_payout == 1610
     assert settlement.ticket_results[0].selection == "2-10"
     assert settlement.ticket_results[0].payout == 1610
+
+
+def test_analysis_store_scales_payout_by_ticket_amount_when_settling(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    store.write_result(
+        RaceResult(
+            race_id="202607051011",
+            race_name="Kitakyushu Kinen",
+            results=[],
+            payouts=[PayoutEntry(bet_type="wide", combination="10-2", payout="1610")],
+            fetched_at=datetime.now(UTC),
+            source="result",
+        )
+    )
+    record = store.create_bet_record(
+        BetRecordCreateRequest.model_validate(
+            {
+                "race_id": "202607051011",
+                "decision_source": "manual",
+                "total_amount": 200,
+                "tickets": [{"bet_type": "wide", "selection": ["2", "10"], "amount": 200}],
+            }
+        )
+    )
+
+    settlement = store.settle_bet_record(record.bet_record_id)
+
+    assert settlement.total_payout == 3220
+    assert settlement.ticket_results[0].payout == 3220
 
 
 def test_analysis_store_settles_ordered_bet_types_with_order_preserved(tmp_path):

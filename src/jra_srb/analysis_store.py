@@ -921,6 +921,300 @@ class AnalysisSQLiteStore:
             ).fetchall()
         return [_row_to_dict(row) for row in rows]
 
+    def upsert_prediction_record(self, payload: dict) -> dict[str, object]:
+        prediction_id = str(payload["prediction_id"])
+        race_id = str(payload["race_id"])
+        theory_version = str(payload["theory_version"])
+        mode = payload.get("mode")
+        budget = int(payload["budget"]) if payload.get("budget") is not None else None
+        pre_race_snapshot = payload.get("pre_race_snapshot") or {}
+        prediction_json = payload.get("prediction_json") or {}
+        created_at = _coerce_datetime_text(payload.get("created_at")) or _now()
+        prediction_tickets = payload.get("prediction_tickets") or []
+        race_context = _extract_prediction_race_context(payload, race_id)
+
+        with self._connect() as conn:
+            if race_context is not None:
+                _upsert_race_context(conn, race_context)
+            conn.execute(
+                """
+                insert into predictions
+                (prediction_id, race_id, theory_version, mode, budget, pre_race_snapshot_json, prediction_json, created_at)
+                values (?, ?, ?, ?, ?, ?, ?, ?)
+                on conflict(prediction_id) do update set
+                    race_id = excluded.race_id,
+                    theory_version = excluded.theory_version,
+                    mode = excluded.mode,
+                    budget = excluded.budget,
+                    pre_race_snapshot_json = excluded.pre_race_snapshot_json,
+                    prediction_json = excluded.prediction_json,
+                    created_at = excluded.created_at
+                """,
+                (
+                    prediction_id,
+                    race_id,
+                    theory_version,
+                    mode,
+                    budget,
+                    json.dumps(pre_race_snapshot, ensure_ascii=False),
+                    json.dumps(prediction_json, ensure_ascii=False),
+                    created_at,
+                ),
+            )
+            conn.execute("delete from prediction_tickets where prediction_id = ?", (prediction_id,))
+            for ticket in prediction_tickets:
+                normalized = _normalize_prediction_ticket(ticket, prediction_id, race_id)
+                conn.execute(
+                    """
+                    insert into prediction_tickets
+                    (ticket_id, prediction_id, race_id, bucket, bet_type, selection, selection_json, amount, reason)
+                    values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        normalized["ticket_id"],
+                        prediction_id,
+                        race_id,
+                        normalized["bucket"],
+                        normalized["bet_type"],
+                        normalized["selection"],
+                        json.dumps(normalized["selection_json"], ensure_ascii=False),
+                        normalized["amount"],
+                        normalized["reason"],
+                    ),
+                )
+            prediction_count = int(
+                conn.execute("select count(*) from predictions where prediction_id = ?", (prediction_id,)).fetchone()[0]
+            )
+            ticket_count = int(
+                conn.execute("select count(*) from prediction_tickets where prediction_id = ?", (prediction_id,)).fetchone()[0]
+            )
+        return {
+            "prediction_id": prediction_id,
+            "race_id": race_id,
+            "predictions": prediction_count,
+            "prediction_tickets": ticket_count,
+        }
+
+    def evaluate_prediction_record(self, payload: dict) -> dict[str, object]:
+        prediction_id = str(payload["prediction_id"])
+        evaluation_id = str(payload.get("evaluation_id") or f"eval-{prediction_id}")
+        created_at = _coerce_datetime_text(payload.get("created_at")) or _now()
+
+        with self._connect() as conn:
+            prediction_row = conn.execute(
+                """
+                select prediction_id, race_id, theory_version, mode, budget, pre_race_snapshot_json, prediction_json, created_at
+                from predictions
+                where prediction_id = ?
+                """,
+                (prediction_id,),
+            ).fetchone()
+            if prediction_row is None:
+                raise LookupError(f"prediction not found for prediction_id={prediction_id}")
+
+            prediction = _row_to_dict(prediction_row)
+            prediction["pre_race_snapshot_json"] = json.loads(prediction["pre_race_snapshot_json"])
+            prediction["prediction_json"] = json.loads(prediction["prediction_json"])
+            race_id = prediction["race_id"]
+            ticket_rows = conn.execute(
+                """
+                select ticket_id, prediction_id, race_id, bucket, bet_type, selection, selection_json, amount, reason
+                from prediction_tickets
+                where prediction_id = ?
+                order by rowid
+                """,
+                (prediction_id,),
+            ).fetchall()
+            result_rows = conn.execute(
+                """
+                select rank, horse_no, horse_name, jockey, finish_time
+                from result_entries
+                where race_id = ?
+                order by rank
+                """,
+                (race_id,),
+            ).fetchall()
+            if not result_rows:
+                raise LookupError(f"result_entries not found for race_id={race_id}")
+
+            payout_rows = conn.execute(
+                """
+                select bet_type, combination, payout, popularity
+                from payouts
+                where race_id = ?
+                order by rowid
+                """,
+                (race_id,),
+            ).fetchall()
+            if not payout_rows:
+                payout_rows = conn.execute(
+                    """
+                    select bet_type, combination, payout, popularity
+                    from netkeiba_payouts
+                    where jra_race_id = ?
+                    order by rowid
+                    """,
+                    (race_id,),
+                ).fetchall()
+
+            payout_index = self._load_payout_index(race_id)
+            ticket_results = []
+            total_bet = 0
+            total_payout = 0
+            firework_ticket_hit = False
+            for row in ticket_rows:
+                payout = _scale_payout_for_amount(
+                    int(payout_index.get((row["bet_type"], row["selection"]), 0)),
+                    int(row["amount"]),
+                )
+                total_bet += int(row["amount"])
+                total_payout += payout
+                bucket = row["bucket"]
+                hit = payout > 0
+                if bucket in {"festival", "firework", "mini_firework"} and hit:
+                    firework_ticket_hit = True
+                ticket_results.append(
+                    {
+                        "ticket_result_id": str(uuid4()),
+                        "ticket_id": row["ticket_id"],
+                        "bucket": bucket,
+                        "bet_type": row["bet_type"],
+                        "selection": row["selection"],
+                        "amount": int(row["amount"]),
+                        "hit": hit,
+                        "payout": payout,
+                    }
+                )
+
+            prediction_json = prediction["prediction_json"]
+            predicted_top3 = _extract_predicted_top3(prediction_json)
+            predicted_top3_horses = [str(item["horse_no"]) for item in predicted_top3 if item.get("horse_no") is not None]
+            actual_top3 = [_row_to_dict(row) for row in result_rows[:3]]
+            actual_top3_horses = [str(item["horse_no"]) for item in actual_top3 if item.get("horse_no") is not None]
+            axis_horse_numbers = _extract_axis_horse_numbers(prediction_json)
+            middle_hole_horse_numbers = _extract_middle_hole_horse_numbers(prediction_json)
+            review = payload.get("review") or {}
+            winner_hit = bool(actual_top3_horses and actual_top3_horses[0] in predicted_top3_horses)
+            top3_box_hit = len(actual_top3_horses) == 3 and set(actual_top3_horses).issubset(set(predicted_top3_horses))
+            axis_in_top3 = any(horse_no in actual_top3_horses for horse_no in axis_horse_numbers) if axis_horse_numbers else None
+            middle_hole_in_top3 = (
+                any(horse_no in actual_top3_horses for horse_no in middle_hole_horse_numbers)
+                if middle_hole_horse_numbers
+                else None
+            )
+            firework_hit = payload.get("firework_hit")
+            if firework_hit is None:
+                firework_hit = firework_ticket_hit if any(ticket["bucket"] in {"festival", "firework", "mini_firework"} for ticket in ticket_results) else None
+
+            review_summary = {
+                "winner_hit": winner_hit,
+                "top3_box_hit": top3_box_hit,
+                "axis_in_top3": axis_in_top3,
+                "middle_hole_in_top3": middle_hole_in_top3,
+                "firework_hit": firework_hit,
+                "predicted_top3_contains_winner": winner_hit,
+            }
+            review_summary.update(review)
+            evaluation_json = {
+                "prediction_id": prediction_id,
+                "race_id": race_id,
+                "theory_version": prediction["theory_version"],
+                "summary": review_summary,
+                "predicted_top3": predicted_top3,
+                "actual_top3": actual_top3,
+                "payouts": [_row_to_dict(row) for row in payout_rows],
+                "ticket_review": {
+                    "total_bet": total_bet,
+                    "total_payout": total_payout,
+                    "ticket_results": ticket_results,
+                },
+                "review_notes": payload.get("review_notes") or [],
+            }
+            gami = total_payout > 0 and total_payout < total_bet
+            max_odds_selected = payload.get("max_odds_selected")
+            if max_odds_selected is None:
+                max_odds_selected = _compute_max_selected_odds(prediction_json)
+
+            conn.execute("delete from evaluation_ticket_results where evaluation_id = ?", (evaluation_id,))
+            conn.execute(
+                """
+                insert into evaluations
+                (evaluation_id, prediction_id, race_id, theory_version, total_bet, total_payout,
+                 return_rate, hit, gami, axis_in_top3, middle_hole_in_top3, firework_hit,
+                 max_odds_selected, evaluation_json, created_at)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                on conflict(evaluation_id) do update set
+                    prediction_id = excluded.prediction_id,
+                    race_id = excluded.race_id,
+                    theory_version = excluded.theory_version,
+                    total_bet = excluded.total_bet,
+                    total_payout = excluded.total_payout,
+                    return_rate = excluded.return_rate,
+                    hit = excluded.hit,
+                    gami = excluded.gami,
+                    axis_in_top3 = excluded.axis_in_top3,
+                    middle_hole_in_top3 = excluded.middle_hole_in_top3,
+                    firework_hit = excluded.firework_hit,
+                    max_odds_selected = excluded.max_odds_selected,
+                    evaluation_json = excluded.evaluation_json,
+                    created_at = excluded.created_at
+                """,
+                (
+                    evaluation_id,
+                    prediction_id,
+                    race_id,
+                    prediction["theory_version"],
+                    total_bet,
+                    total_payout,
+                    (total_payout / total_bet) if total_bet else 0.0,
+                    int(total_payout > 0),
+                    int(gami),
+                    _to_db_bool(axis_in_top3),
+                    _to_db_bool(middle_hole_in_top3),
+                    _to_db_bool(firework_hit),
+                    max_odds_selected,
+                    json.dumps(evaluation_json, ensure_ascii=False),
+                    created_at,
+                ),
+            )
+            for ticket_result in ticket_results:
+                conn.execute(
+                    """
+                    insert into evaluation_ticket_results
+                    (ticket_result_id, evaluation_id, ticket_id, bucket, bet_type, selection, amount, hit, payout)
+                    values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        ticket_result["ticket_result_id"],
+                        evaluation_id,
+                        ticket_result["ticket_id"],
+                        ticket_result["bucket"],
+                        ticket_result["bet_type"],
+                        ticket_result["selection"],
+                        ticket_result["amount"],
+                        int(ticket_result["hit"]),
+                        ticket_result["payout"],
+                    ),
+                )
+
+            evaluation_count = int(
+                conn.execute("select count(*) from evaluations where evaluation_id = ?", (evaluation_id,)).fetchone()[0]
+            )
+            ticket_result_count = int(
+                conn.execute("select count(*) from evaluation_ticket_results where evaluation_id = ?", (evaluation_id,)).fetchone()[0]
+            )
+        return {
+            "evaluation_id": evaluation_id,
+            "prediction_id": prediction_id,
+            "race_id": race_id,
+            "evaluations": evaluation_count,
+            "evaluation_ticket_results": ticket_result_count,
+            "total_bet": total_bet,
+            "total_payout": total_payout,
+            "return_rate": (total_payout / total_bet) if total_bet else 0.0,
+            "hit": total_payout > 0,
+        }
+
     def create_bet_record(self, request: BetRecordCreateRequest | dict) -> BetRecord:
         request = BetRecordCreateRequest.model_validate(request)
         expanded_tickets = _expand_bet_record_tickets(request)
@@ -1142,7 +1436,10 @@ class AnalysisSQLiteStore:
         ticket_results: list[BetRecordResultTicket] = []
         total_payout = 0
         for ticket in record.tickets:
-            payout = payout_index.get((ticket.bet_type, ticket.selection), 0)
+            payout = _scale_payout_for_amount(
+                int(payout_index.get((ticket.bet_type, ticket.selection), 0)),
+                int(ticket.amount),
+            )
             ticket_result = BetRecordResultTicket(
                 bet_type=ticket.bet_type,
                 selection=ticket.selection,
@@ -1808,6 +2105,213 @@ def _normalize_payout_bet_type(value: str | None) -> str | None:
     if value is None:
         return None
     return PAYOUT_BET_TYPE_MAP.get(value, value if value in SINGLE_BET_TYPES | UNORDERED_BET_TYPES | ORDERED_BET_TYPES else None)
+
+
+def _scale_payout_for_amount(base_payout: int, amount: int) -> int:
+    if base_payout <= 0 or amount <= 0:
+        return 0
+    return int(round(base_payout * (amount / 100.0)))
+
+
+def _coerce_datetime_text(value: object) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.isoformat()
+    text = str(value).strip()
+    return text or None
+
+
+def _to_db_bool(value: bool | None) -> int | None:
+    if value is None:
+        return None
+    return int(bool(value))
+
+
+def _normalize_prediction_ticket(ticket: dict, prediction_id: str, race_id: str) -> dict[str, object]:
+    bet_type = str(ticket["bet_type"])
+    raw_selection = ticket.get("selection")
+    if isinstance(raw_selection, list):
+        selection_json = _normalize_selection_items(bet_type, [str(item) for item in raw_selection])
+        selection = "-".join(selection_json)
+    elif raw_selection is not None:
+        selection = _normalize_selection_string(bet_type, str(raw_selection))
+        selection_json = selection.split("-")
+    else:
+        raise BadRequestError(f"prediction ticket selection is required for prediction_id={prediction_id}")
+    return {
+        "ticket_id": str(ticket.get("ticket_id") or str(uuid4())),
+        "prediction_id": prediction_id,
+        "race_id": race_id,
+        "bucket": ticket.get("bucket"),
+        "bet_type": bet_type,
+        "selection": selection,
+        "selection_json": selection_json,
+        "amount": int(ticket["amount"]),
+        "reason": ticket.get("reason"),
+    }
+
+
+def _extract_prediction_race_context(payload: dict, race_id: str) -> dict[str, object] | None:
+    context = payload.get("race_context")
+    if isinstance(context, dict):
+        merged = dict(context)
+        merged.setdefault("race_id", race_id)
+        return merged
+
+    snapshot = payload.get("pre_race_snapshot")
+    if not isinstance(snapshot, dict):
+        return None
+    card = snapshot.get("card") if isinstance(snapshot.get("card"), dict) else None
+    source = card or snapshot
+    race_date = snapshot.get("date") or snapshot.get("race_date")
+    course = snapshot.get("course") or (card.get("course") if card else None)
+    race_no = snapshot.get("race_no")
+    if race_date is None or course is None or race_no is None:
+        return None
+    runners = None
+    if card and isinstance(card.get("runners"), list):
+        runners = card.get("runners")
+    elif isinstance(snapshot.get("runners"), list):
+        runners = snapshot.get("runners")
+    return {
+        "race_id": str(source.get("race_id") or race_id),
+        "race_date": race_date,
+        "course": course,
+        "meeting_no": snapshot.get("meeting_no"),
+        "meeting_day": snapshot.get("meeting_day"),
+        "race_no": race_no,
+        "race_name": source.get("race_name"),
+        "start_time": source.get("start_time"),
+        "surface": source.get("surface"),
+        "distance": source.get("distance"),
+        "source": source.get("source"),
+        "fetched_at": source.get("fetched_at"),
+        "runners": runners,
+    }
+
+
+def _upsert_race_context(conn: sqlite3.Connection, context: dict[str, object]) -> None:
+    race_id = str(context["race_id"])
+    conn.execute(
+        """
+        insert into races
+        (race_id, race_date, course, meeting_no, meeting_day, race_no, race_name, start_time, surface, distance, source, fetched_at)
+        values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        on conflict(race_id) do update set
+            race_date = excluded.race_date,
+            course = excluded.course,
+            meeting_no = coalesce(excluded.meeting_no, races.meeting_no),
+            meeting_day = coalesce(excluded.meeting_day, races.meeting_day),
+            race_no = excluded.race_no,
+            race_name = coalesce(excluded.race_name, races.race_name),
+            start_time = coalesce(excluded.start_time, races.start_time),
+            surface = coalesce(excluded.surface, races.surface),
+            distance = coalesce(excluded.distance, races.distance),
+            source = coalesce(excluded.source, races.source),
+            fetched_at = coalesce(excluded.fetched_at, races.fetched_at)
+        """,
+        (
+            race_id,
+            context.get("race_date"),
+            context.get("course"),
+            _parse_int(_stringify_optional(context.get("meeting_no"))),
+            _parse_int(_stringify_optional(context.get("meeting_day"))),
+            _parse_int(_stringify_optional(context.get("race_no"))),
+            context.get("race_name"),
+            context.get("start_time"),
+            context.get("surface"),
+            _stringify_optional(context.get("distance")),
+            context.get("source"),
+            _coerce_datetime_text(context.get("fetched_at")),
+        ),
+    )
+    runners = context.get("runners")
+    if not isinstance(runners, list):
+        return
+    conn.execute("delete from runners where race_id = ?", (race_id,))
+    for runner in runners:
+        if not isinstance(runner, dict):
+            continue
+        horse_no = runner.get("horse_no")
+        horse_name = runner.get("horse_name")
+        if horse_no is None or horse_name is None:
+            continue
+        conn.execute(
+            """
+            insert into runners
+            (race_id, horse_no, frame_no, horse_name, sex_age, weight_carried, jockey, trainer, card_odds, card_popularity)
+            values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                race_id,
+                str(horse_no),
+                _stringify_optional(runner.get("frame_no")),
+                str(horse_name),
+                _stringify_optional(runner.get("sex_age")),
+                _stringify_optional(runner.get("weight_carried")),
+                _stringify_optional(runner.get("jockey")),
+                _stringify_optional(runner.get("trainer")),
+                _parse_float(_stringify_optional(runner.get("odds"))),
+                _parse_int(_stringify_optional(runner.get("popularity"))),
+            ),
+        )
+
+
+def _extract_predicted_top3(prediction_json: dict) -> list[dict]:
+    top3 = prediction_json.get("predicted_top3")
+    if isinstance(top3, list):
+        return [item for item in top3 if isinstance(item, dict)]
+    ranking = prediction_json.get("predicted_ranking")
+    if isinstance(ranking, list):
+        return [item for item in ranking if isinstance(item, dict)]
+    return []
+
+
+def _extract_axis_horse_numbers(prediction_json: dict) -> list[str]:
+    values: list[str] = []
+    axis_numbers = prediction_json.get("axis_horse_numbers")
+    if isinstance(axis_numbers, list):
+        values.extend(str(item) for item in axis_numbers if item is not None)
+    axis = prediction_json.get("axis")
+    if isinstance(axis, dict) and axis.get("horse_no") is not None:
+        values.append(str(axis["horse_no"]))
+    for item in _extract_predicted_top3(prediction_json):
+        role = str(item.get("role") or "")
+        if role in {"axis", "head_axis", "axis_head"} and item.get("horse_no") is not None:
+            values.append(str(item["horse_no"]))
+    return list(dict.fromkeys(values))
+
+
+def _extract_middle_hole_horse_numbers(prediction_json: dict) -> list[str]:
+    candidates = prediction_json.get("middle_hole_candidates")
+    if not isinstance(candidates, list):
+        return []
+    return [str(item["horse_no"]) for item in candidates if isinstance(item, dict) and item.get("horse_no") is not None]
+
+
+def _compute_max_selected_odds(prediction_json: dict) -> float | None:
+    values: list[float] = []
+    for item in _extract_predicted_top3(prediction_json):
+        value = _parse_float(_stringify_optional(item.get("odds")) or _stringify_optional(item.get("win_odds")))
+        if value is not None:
+            values.append(value)
+    contenders = prediction_json.get("other_contenders")
+    if isinstance(contenders, list):
+        for item in contenders:
+            if not isinstance(item, dict):
+                continue
+            value = _parse_float(_stringify_optional(item.get("odds")) or _stringify_optional(item.get("win_odds")))
+            if value is not None:
+                values.append(value)
+    return max(values) if values else None
+
+
+def _stringify_optional(value: object) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
 
 
 def _bet_record_result_from_row(row: sqlite3.Row) -> BetRecordResult:
