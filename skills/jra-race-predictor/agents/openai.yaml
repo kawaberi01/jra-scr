@@ -1,0 +1,6 @@
+interface:
+  display_name: "JRAレース予想"
+  short_description: "JRA当日API材料から順位・根拠・買い目・結果照合を行う"
+  default_prompt: "Use $jra-race-predictor to predict today's specified JRA race."
+policy:
+  allow_implicit_invocation: true

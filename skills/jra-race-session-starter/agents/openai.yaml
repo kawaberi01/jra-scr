@@ -1,0 +1,6 @@
+interface:
+  display_name: "JRA予想セッション開始"
+  short_description: "日付・場・レース番号だけでJRA当日予想を開始する"
+  default_prompt: "Use $jra-race-session-starter to predict the specified JRA race."
+policy:
+  allow_implicit_invocation: true
