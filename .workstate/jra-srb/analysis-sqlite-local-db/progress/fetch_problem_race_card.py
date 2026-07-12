@@ -1,5 +1,4 @@
 import asyncio
-from pathlib import Path
 
 from jra_srb.provider import HttpProvider
 from jra_srb.service import JraService

@@ -7,10 +7,6 @@ import importlib.util
 from pathlib import Path
 import sys
 
-from jra_srb.netkeiba_provider import NetkeibaHttpProvider
-from jra_srb.netkeiba_service import NetkeibaService
-
-
 WORKSTATE_DIR = Path(".workstate/jra-srb/prediction-v1-validation")
 EVALUATOR_PATH = WORKSTATE_DIR / "evaluate_v1_validation.py"
 DB_PATH = Path("data/analysis.sqlite")
@@ -78,21 +74,12 @@ async def main() -> None:
     theory = evaluator.THEORIES[args.theory_version]
     history = evaluator.build_history(races, args.from_date)
     race_ids = evaluator.race_ids_in_period(races, args.from_date, args.to_date)
-    provider = evaluator.DiskCachedNetkeibaProvider(
-        inner=NetkeibaHttpProvider(min_interval_seconds=5.0, timeout=15.0, retries=1),
-        cache_dir=CACHE_DIR,
-        offline=True,
-        max_live_requests=0,
-    )
-    service = NetkeibaService(provider=provider)
-
     by_axis_bucket = defaultdict(lambda: {"bet": 0, "pay": 0, "hits": 0, "tickets": 0})
     by_gap_bucket = defaultdict(lambda: {"bet": 0, "pay": 0, "hits": 0, "tickets": 0})
     by_ratio_bucket = defaultdict(lambda: {"bet": 0, "pay": 0, "hits": 0, "tickets": 0})
 
     for race_id in race_ids:
         race_rows = races[race_id]
-        meta = race_rows[0]
         result = db_results_by_jra[race_id]
         nk_by_name = {evaluator.norm_name(item.horse_name): item for item in result.results}
         candidates = []

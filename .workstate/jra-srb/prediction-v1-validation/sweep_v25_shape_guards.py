@@ -16,8 +16,8 @@ SRC_DIR = ROOT_DIR / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from jra_srb.netkeiba_provider import NetkeibaHttpProvider
-from jra_srb.netkeiba_service import NetkeibaService
+from jra_srb.netkeiba_provider import NetkeibaHttpProvider  # noqa: E402
+from jra_srb.netkeiba_service import NetkeibaService  # noqa: E402
 
 
 WORKSTATE_DIR = Path(".workstate/jra-srb/prediction-v1-validation")

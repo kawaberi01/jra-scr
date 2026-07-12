@@ -49,7 +49,6 @@ from jra_srb.models import (
 )
 from jra_srb.nankankeiba_pattern_provider import NankankeibaPatternFixtureProvider 
 from jra_srb.nankankeiba_pattern_service import NankankeibaPatternService 
-from jra_srb.nankan_prediction_service import NankanPredictionService
 from jra_srb.nar_netkeiba_provider import NarNetkeibaFixtureProvider 
 from jra_srb.nar_netkeiba_service import NarNetkeibaService
 from jra_srb.nankan_provider import NankanFixtureProvider
