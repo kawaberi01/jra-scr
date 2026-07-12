@@ -36,6 +36,7 @@ description: Predict JRA races from the local same-day API with explicit rationa
 - `v89` は候補、`v90` は夏開催のシャドー、いずれも購入理論として確定していない。`ticket_status=shadow_only` の候補を買い目として出さない。
 - 出力では二モデルの予想の後に、V系単独の軸・相手・見送り理由を別枠で示す。
 - `total_evaluation` は三者の上位順位を 3 / 2 / 1 点で集計する説明可能な参考順位であり、確率合算・購入推奨ではない。三者一致だけを強い参考根拠として示す。
+- `jra-dansou-keiba-reference` を使い、予想本体の最後に固定テンプレートの `断層競馬参考` を必ず付ける。断層参考は本命・順位・買い目を上書きしない。
 
 ## 評価の優先順
 
@@ -66,6 +67,7 @@ description: Predict JRA races from the local same-day API with explicit rationa
 13. `マークシート向け`
 14. `注意点`
 15. `結果検証`（確定後のみ）
+16. `断層競馬参考`
 
 ## 状態ルール
 

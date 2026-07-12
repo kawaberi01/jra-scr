@@ -1,0 +1,4 @@
+interface:
+  display_name: "JRA断層競馬参考"
+  short_description: "JRA当日APIの情報差を固定テンプレートで参考表示する"
+  default_prompt: "JRA断層競馬の参考出力を固定テンプレートで出してください。"
