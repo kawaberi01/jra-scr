@@ -59,6 +59,7 @@ from .jra_prediction_service import JraPredictionService
 from .jra_prediction_engine import build_prediction_record
 from .jra_history_dataset import build_live_feature_records
 from .jra_history_model import load_model_artifact, score_live_records
+from .jra_v_theory import build_three_way_consensus, build_v_theory_prediction
 from .jra_betting_decision import build_win_ev_decision
 from .prediction_trace import (
     build_prediction_trace_logger,
@@ -1274,6 +1275,18 @@ async def get_jra_model_comparison(
     except FileNotFoundError as exc:
         history = {"status": "unavailable", "reason": str(exc)}
         comparison = None
+    try:
+        v_theory = build_v_theory_prediction(
+            _default_analysis_db_path(), target_date=date_, course=str(course), card=bundle.card,
+            win_odds={item["horse_no"]: item["win_odds"] for item in materials_ranking if item.get("win_odds")},
+        )
+    except (FileNotFoundError, ValueError) as exc:
+        v_theory = {"status": "unavailable", "reason": str(exc)}
+    total_evaluation = build_three_way_consensus(
+        materials_ranking,
+        history.get("ranking", []) if history["status"] == "available" else [],
+        v_theory,
+    )
     return {
         "race_id": bundle.race_id,
         "as_of": bundle.fetched_at,
@@ -1283,7 +1296,9 @@ async def get_jra_model_comparison(
             "component_status": bundle.meta.component_status,
         },
         "history_model": history,
+        "v_theory": v_theory,
         "comparison": comparison,
+        "total_evaluation": total_evaluation,
     }
 
 

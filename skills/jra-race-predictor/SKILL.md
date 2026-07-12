@@ -15,7 +15,7 @@ description: Predict JRA races from the local same-day API with explicit rationa
    - `GET /jra/meetings/{date}/{course}/races/{race_no}/prediction-bundle?meeting_no=...&meeting_day=...&refresh=true`
    - 履歴モデルの成果物が利用可能なら、`GET /jra/meetings/{date}/{course}/races/{race_no}/model-comparison?meeting_no=...&meeting_day=...&refresh=true`
    - 買い目を検討する場合は、`GET /jra/meetings/{date}/{course}/races/{race_no}/betting-decision?meeting_no=...&meeting_day=...&budget=...&refresh=true` を使う。
-4. `card`、`odds_summary`、`trend_context`、`public_analysis`、3種の lite 指標と、比較APIの両モデル順位を確認する。
+4. `card`、`odds_summary`、`trend_context`、`public_analysis`、3種の lite 指標と、比較APIの二モデル・V系・総合評価を確認する。
 5. `component_status` と取得日時を明記する。Umanity会員限定欄などは `unavailable` のまま扱う。
 6. 頭候補、軸候補、相手候補を分け、順位と各馬の根拠を出す。
 7. `betting_decision.status=recommended` のときだけ、返却された単勝買い目を使う。`no_bet` または `unavailable` なら順位のみを出し、買い目を作らない。
@@ -29,6 +29,13 @@ description: Predict JRA races from the local same-day API with explicit rationa
 - 上位が食い違う場合は、馬番・両者の順位・履歴モデルの特徴量寄与を示し、当日情報またはオッズに理由があるか確認する。
 - `history_model.status=unavailable` のときは公開材料モデルのみで予想し、履歴モデルの値を補完しない。
 - 単勝期待値判定は履歴モデルのレース内正規化勝率と単勝オッズを比較する。ワイド・馬連・三連系は共同確率が未実装のため自動提案しない。
+
+## V系と総合評価の扱い
+
+- `v_theory` は競馬場別に呼び分ける。東京・中山・京都・阪神は `v89`、札幌・函館・福島・新潟・小倉は `v90`、中京は対象外とする。
+- `v89` は候補、`v90` は夏開催のシャドー、いずれも購入理論として確定していない。`ticket_status=shadow_only` の候補を買い目として出さない。
+- 出力では二モデルの予想の後に、V系単独の軸・相手・見送り理由を別枠で示す。
+- `total_evaluation` は三者の上位順位を 3 / 2 / 1 点で集計する説明可能な参考順位であり、確率合算・購入推奨ではない。三者一致だけを強い参考根拠として示す。
 
 ## 評価の優先順
 
@@ -52,11 +59,13 @@ description: Predict JRA races from the local same-day API with explicit rationa
 6. `熱さ判定`
 7. `予想順位`
 8. `予想の根拠`
-9. `買い方`
-10. `予算別の買い方`（1000円 / 2000円 / 3000円）
-11. `マークシート向け`
-12. `注意点`
-13. `結果検証`（確定後のみ）
+9. `V系単独予想`
+10. `三者総合評価`
+11. `買い方`
+12. `予算別の買い方`（1000円 / 2000円 / 3000円）
+13. `マークシート向け`
+14. `注意点`
+15. `結果検証`（確定後のみ）
 
 ## 状態ルール
 
