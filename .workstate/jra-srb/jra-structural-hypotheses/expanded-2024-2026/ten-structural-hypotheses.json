@@ -1,0 +1,1122 @@
+[
+  {
+    "theory": "experience",
+    "mechanism": "経験量",
+    "iterations": [
+      {
+        "threshold": 0.05,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.7232505643340857,
+          "no_max_roi": 0.7077966101694916,
+          "no_top3_roi": 0.6774631936579841
+        }
+      },
+      {
+        "threshold": 0.08,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.7232505643340857,
+          "no_max_roi": 0.7077966101694916,
+          "no_top3_roi": 0.6774631936579841
+        }
+      },
+      {
+        "threshold": 0.1,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.7232505643340857,
+          "no_max_roi": 0.7077966101694916,
+          "no_top3_roi": 0.6774631936579841
+        }
+      },
+      {
+        "threshold": 0.12,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.7232505643340857,
+          "no_max_roi": 0.7077966101694916,
+          "no_top3_roi": 0.6774631936579841
+        }
+      },
+      {
+        "threshold": 0.15,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.7232505643340857,
+          "no_max_roi": 0.7077966101694916,
+          "no_top3_roi": 0.6774631936579841
+        }
+      },
+      {
+        "threshold": 0.18,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.7232505643340857,
+          "no_max_roi": 0.7077966101694916,
+          "no_top3_roi": 0.6774631936579841
+        }
+      },
+      {
+        "threshold": 0.2,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.7232505643340857,
+          "no_max_roi": 0.7077966101694916,
+          "no_top3_roi": 0.6774631936579841
+        }
+      },
+      {
+        "threshold": 0.25,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.7232505643340857,
+          "no_max_roi": 0.7077966101694916,
+          "no_top3_roi": 0.6774631936579841
+        }
+      },
+      {
+        "threshold": 0.3,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.7232505643340857,
+          "no_max_roi": 0.7077966101694916,
+          "no_top3_roi": 0.6774631936579841
+        }
+      },
+      {
+        "threshold": 0.35,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.7232505643340857,
+          "no_max_roi": 0.7077966101694916,
+          "no_top3_roi": 0.6774631936579841
+        }
+      }
+    ],
+    "chosen": {
+      "threshold": 0.05,
+      "calibration": {
+        "candidates": 886,
+        "roi": 0.7232505643340857,
+        "no_max_roi": 0.7077966101694916,
+        "no_top3_roi": 0.6774631936579841
+      }
+    },
+    "external": {
+      "candidates": 835,
+      "roi": 0.7677844311377245,
+      "no_max_roi": 0.7511990407673861,
+      "no_top3_roi": 0.7192307692307692
+    },
+    "passed": false
+  },
+  {
+    "theory": "distance_fit",
+    "mechanism": "距離適性",
+    "iterations": [
+      {
+        "threshold": 0.05,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.6668171557562077,
+          "no_max_roi": 0.6506214689265537,
+          "no_top3_roi": 0.6186862967157418
+        }
+      },
+      {
+        "threshold": 0.08,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.6668171557562077,
+          "no_max_roi": 0.6506214689265537,
+          "no_top3_roi": 0.6186862967157418
+        }
+      },
+      {
+        "threshold": 0.1,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.6668171557562077,
+          "no_max_roi": 0.6506214689265537,
+          "no_top3_roi": 0.6186862967157418
+        }
+      },
+      {
+        "threshold": 0.12,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.6668171557562077,
+          "no_max_roi": 0.6506214689265537,
+          "no_top3_roi": 0.6186862967157418
+        }
+      },
+      {
+        "threshold": 0.15,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.6668171557562077,
+          "no_max_roi": 0.6506214689265537,
+          "no_top3_roi": 0.6186862967157418
+        }
+      },
+      {
+        "threshold": 0.18,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.6668171557562077,
+          "no_max_roi": 0.6506214689265537,
+          "no_top3_roi": 0.6186862967157418
+        }
+      },
+      {
+        "threshold": 0.2,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.6668171557562077,
+          "no_max_roi": 0.6506214689265537,
+          "no_top3_roi": 0.6186862967157418
+        }
+      },
+      {
+        "threshold": 0.25,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.6668171557562077,
+          "no_max_roi": 0.6506214689265537,
+          "no_top3_roi": 0.6186862967157418
+        }
+      },
+      {
+        "threshold": 0.3,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.6668171557562077,
+          "no_max_roi": 0.6506214689265537,
+          "no_top3_roi": 0.6186862967157418
+        }
+      },
+      {
+        "threshold": 0.35,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.6668171557562077,
+          "no_max_roi": 0.6506214689265537,
+          "no_top3_roi": 0.6186862967157418
+        }
+      }
+    ],
+    "chosen": {
+      "threshold": 0.05,
+      "calibration": {
+        "candidates": 886,
+        "roi": 0.6668171557562077,
+        "no_max_roi": 0.6506214689265537,
+        "no_top3_roi": 0.6186862967157418
+      }
+    },
+    "external": {
+      "candidates": 835,
+      "roi": 0.8,
+      "no_max_roi": 0.7838129496402878,
+      "no_top3_roi": 0.7521634615384616
+    },
+    "passed": false
+  },
+  {
+    "theory": "surface_fit",
+    "mechanism": "馬場適性",
+    "iterations": [
+      {
+        "threshold": 0.05,
+        "calibration": {
+          "candidates": 883,
+          "roi": 0.7595696489241223,
+          "no_max_roi": 0.7436507936507937,
+          "no_top3_roi": 0.7128409090909091
+        }
+      },
+      {
+        "threshold": 0.08,
+        "calibration": {
+          "candidates": 883,
+          "roi": 0.7595696489241223,
+          "no_max_roi": 0.7436507936507937,
+          "no_top3_roi": 0.7128409090909091
+        }
+      },
+      {
+        "threshold": 0.1,
+        "calibration": {
+          "candidates": 883,
+          "roi": 0.7595696489241223,
+          "no_max_roi": 0.7436507936507937,
+          "no_top3_roi": 0.7128409090909091
+        }
+      },
+      {
+        "threshold": 0.12,
+        "calibration": {
+          "candidates": 883,
+          "roi": 0.7595696489241223,
+          "no_max_roi": 0.7436507936507937,
+          "no_top3_roi": 0.7128409090909091
+        }
+      },
+      {
+        "threshold": 0.15,
+        "calibration": {
+          "candidates": 883,
+          "roi": 0.7595696489241223,
+          "no_max_roi": 0.7436507936507937,
+          "no_top3_roi": 0.7128409090909091
+        }
+      },
+      {
+        "threshold": 0.18,
+        "calibration": {
+          "candidates": 883,
+          "roi": 0.7595696489241223,
+          "no_max_roi": 0.7436507936507937,
+          "no_top3_roi": 0.7128409090909091
+        }
+      },
+      {
+        "threshold": 0.2,
+        "calibration": {
+          "candidates": 883,
+          "roi": 0.7595696489241223,
+          "no_max_roi": 0.7436507936507937,
+          "no_top3_roi": 0.7128409090909091
+        }
+      },
+      {
+        "threshold": 0.25,
+        "calibration": {
+          "candidates": 883,
+          "roi": 0.7595696489241223,
+          "no_max_roi": 0.7436507936507937,
+          "no_top3_roi": 0.7128409090909091
+        }
+      },
+      {
+        "threshold": 0.3,
+        "calibration": {
+          "candidates": 883,
+          "roi": 0.7595696489241223,
+          "no_max_roi": 0.7436507936507937,
+          "no_top3_roi": 0.7128409090909091
+        }
+      },
+      {
+        "threshold": 0.35,
+        "calibration": {
+          "candidates": 883,
+          "roi": 0.7595696489241223,
+          "no_max_roi": 0.7436507936507937,
+          "no_top3_roi": 0.7128409090909091
+        }
+      }
+    ],
+    "chosen": {
+      "threshold": 0.05,
+      "calibration": {
+        "candidates": 883,
+        "roi": 0.7595696489241223,
+        "no_max_roi": 0.7436507936507937,
+        "no_top3_roi": 0.7128409090909091
+      }
+    },
+    "external": {
+      "candidates": 821,
+      "roi": 0.838246041412911,
+      "no_max_roi": 0.8214634146341463,
+      "no_top3_roi": 0.7889975550122249
+    },
+    "passed": false
+  },
+  {
+    "theory": "course_fit",
+    "mechanism": "コース適性",
+    "iterations": [
+      {
+        "threshold": 0.05,
+        "calibration": {
+          "candidates": 884,
+          "roi": 0.7635746606334841,
+          "no_max_roi": 0.7481313703284258,
+          "no_top3_roi": 0.7181611804767309
+        }
+      },
+      {
+        "threshold": 0.08,
+        "calibration": {
+          "candidates": 884,
+          "roi": 0.7635746606334841,
+          "no_max_roi": 0.7481313703284258,
+          "no_top3_roi": 0.7181611804767309
+        }
+      },
+      {
+        "threshold": 0.1,
+        "calibration": {
+          "candidates": 884,
+          "roi": 0.7635746606334841,
+          "no_max_roi": 0.7481313703284258,
+          "no_top3_roi": 0.7181611804767309
+        }
+      },
+      {
+        "threshold": 0.12,
+        "calibration": {
+          "candidates": 884,
+          "roi": 0.7635746606334841,
+          "no_max_roi": 0.7481313703284258,
+          "no_top3_roi": 0.7181611804767309
+        }
+      },
+      {
+        "threshold": 0.15,
+        "calibration": {
+          "candidates": 884,
+          "roi": 0.7635746606334841,
+          "no_max_roi": 0.7481313703284258,
+          "no_top3_roi": 0.7181611804767309
+        }
+      },
+      {
+        "threshold": 0.18,
+        "calibration": {
+          "candidates": 884,
+          "roi": 0.7635746606334841,
+          "no_max_roi": 0.7481313703284258,
+          "no_top3_roi": 0.7181611804767309
+        }
+      },
+      {
+        "threshold": 0.2,
+        "calibration": {
+          "candidates": 884,
+          "roi": 0.7635746606334841,
+          "no_max_roi": 0.7481313703284258,
+          "no_top3_roi": 0.7181611804767309
+        }
+      },
+      {
+        "threshold": 0.25,
+        "calibration": {
+          "candidates": 884,
+          "roi": 0.7635746606334841,
+          "no_max_roi": 0.7481313703284258,
+          "no_top3_roi": 0.7181611804767309
+        }
+      },
+      {
+        "threshold": 0.3,
+        "calibration": {
+          "candidates": 884,
+          "roi": 0.7635746606334841,
+          "no_max_roi": 0.7481313703284258,
+          "no_top3_roi": 0.7181611804767309
+        }
+      },
+      {
+        "threshold": 0.35,
+        "calibration": {
+          "candidates": 884,
+          "roi": 0.7635746606334841,
+          "no_max_roi": 0.7481313703284258,
+          "no_top3_roi": 0.7181611804767309
+        }
+      }
+    ],
+    "chosen": {
+      "threshold": 0.05,
+      "calibration": {
+        "candidates": 884,
+        "roi": 0.7635746606334841,
+        "no_max_roi": 0.7481313703284258,
+        "no_top3_roi": 0.7181611804767309
+      }
+    },
+    "external": {
+      "candidates": 833,
+      "roi": 0.75078031212485,
+      "no_max_roi": 0.7349759615384616,
+      "no_top3_roi": 0.7039759036144578
+    },
+    "passed": false
+  },
+  {
+    "theory": "jockey_win",
+    "mechanism": "騎手勝率",
+    "iterations": [
+      {
+        "threshold": 0.05,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.7840857787810384,
+          "no_max_roi": 0.7682485875706214,
+          "no_top3_roi": 0.7389580973952435
+        }
+      },
+      {
+        "threshold": 0.08,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.7840857787810384,
+          "no_max_roi": 0.7682485875706214,
+          "no_top3_roi": 0.7389580973952435
+        }
+      },
+      {
+        "threshold": 0.1,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.7840857787810384,
+          "no_max_roi": 0.7682485875706214,
+          "no_top3_roi": 0.7389580973952435
+        }
+      },
+      {
+        "threshold": 0.12,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.7840857787810384,
+          "no_max_roi": 0.7682485875706214,
+          "no_top3_roi": 0.7389580973952435
+        }
+      },
+      {
+        "threshold": 0.15,
+        "calibration": {
+          "candidates": 884,
+          "roi": 0.7811085972850679,
+          "no_max_roi": 0.7652321630804076,
+          "no_top3_roi": 0.7358683314415437
+        }
+      },
+      {
+        "threshold": 0.18,
+        "calibration": {
+          "candidates": 875,
+          "roi": 0.7624,
+          "no_max_roi": 0.7465675057208238,
+          "no_top3_roi": 0.7189220183486239
+        }
+      },
+      {
+        "threshold": 0.2,
+        "calibration": {
+          "candidates": 852,
+          "roi": 0.7573943661971831,
+          "no_max_roi": 0.7411280846063455,
+          "no_top3_roi": 0.7127208480565371
+        }
+      },
+      {
+        "threshold": 0.25,
+        "calibration": {
+          "candidates": 797,
+          "roi": 0.7254705144291091,
+          "no_max_roi": 0.7103015075376884,
+          "no_top3_roi": 0.6806045340050377
+        }
+      },
+      {
+        "threshold": 0.3,
+        "calibration": {
+          "candidates": 668,
+          "roi": 0.7278443113772455,
+          "no_max_roi": 0.7097451274362818,
+          "no_top3_roi": 0.6754887218045112
+        }
+      },
+      {
+        "threshold": 0.35,
+        "calibration": {
+          "candidates": 530,
+          "roi": 0.7547169811320755,
+          "no_max_roi": 0.7319470699432892,
+          "no_top3_roi": 0.6888045540796964
+        }
+      }
+    ],
+    "chosen": {
+      "threshold": 0.05,
+      "calibration": {
+        "candidates": 886,
+        "roi": 0.7840857787810384,
+        "no_max_roi": 0.7682485875706214,
+        "no_top3_roi": 0.7389580973952435
+      }
+    },
+    "external": {
+      "candidates": 835,
+      "roi": 0.8118562874251497,
+      "no_max_roi": 0.7959232613908873,
+      "no_top3_roi": 0.7668269230769231
+    },
+    "passed": false
+  },
+  {
+    "theory": "jockey_top3",
+    "mechanism": "騎手複勝率",
+    "iterations": [
+      {
+        "threshold": 0.05,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.8025959367945824,
+          "no_max_roi": 0.7865536723163842,
+          "no_top3_roi": 0.755039637599094
+        }
+      },
+      {
+        "threshold": 0.08,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.8025959367945824,
+          "no_max_roi": 0.7865536723163842,
+          "no_top3_roi": 0.755039637599094
+        }
+      },
+      {
+        "threshold": 0.1,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.8025959367945824,
+          "no_max_roi": 0.7865536723163842,
+          "no_top3_roi": 0.755039637599094
+        }
+      },
+      {
+        "threshold": 0.12,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.8025959367945824,
+          "no_max_roi": 0.7865536723163842,
+          "no_top3_roi": 0.755039637599094
+        }
+      },
+      {
+        "threshold": 0.15,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.8025959367945824,
+          "no_max_roi": 0.7865536723163842,
+          "no_top3_roi": 0.755039637599094
+        }
+      },
+      {
+        "threshold": 0.18,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.8025959367945824,
+          "no_max_roi": 0.7865536723163842,
+          "no_top3_roi": 0.755039637599094
+        }
+      },
+      {
+        "threshold": 0.2,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.8025959367945824,
+          "no_max_roi": 0.7865536723163842,
+          "no_top3_roi": 0.755039637599094
+        }
+      },
+      {
+        "threshold": 0.25,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.8025959367945824,
+          "no_max_roi": 0.7865536723163842,
+          "no_top3_roi": 0.755039637599094
+        }
+      },
+      {
+        "threshold": 0.3,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.8025959367945824,
+          "no_max_roi": 0.7865536723163842,
+          "no_top3_roi": 0.755039637599094
+        }
+      },
+      {
+        "threshold": 0.35,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.8025959367945824,
+          "no_max_roi": 0.7865536723163842,
+          "no_top3_roi": 0.755039637599094
+        }
+      }
+    ],
+    "chosen": {
+      "threshold": 0.05,
+      "calibration": {
+        "candidates": 886,
+        "roi": 0.8025959367945824,
+        "no_max_roi": 0.7865536723163842,
+        "no_top3_roi": 0.755039637599094
+      }
+    },
+    "external": {
+      "candidates": 835,
+      "roi": 0.7334131736526946,
+      "no_max_roi": 0.7173860911270983,
+      "no_top3_roi": 0.6879807692307692
+    },
+    "passed": false
+  },
+  {
+    "theory": "trainer_win",
+    "mechanism": "厩舎勝率",
+    "iterations": [
+      {
+        "threshold": 0.05,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.7806997742663657,
+          "no_max_roi": 0.7648587570621469,
+          "no_top3_roi": 0.7346545866364665
+        }
+      },
+      {
+        "threshold": 0.08,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.7806997742663657,
+          "no_max_roi": 0.7648587570621469,
+          "no_top3_roi": 0.7346545866364665
+        }
+      },
+      {
+        "threshold": 0.1,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.7806997742663657,
+          "no_max_roi": 0.7648587570621469,
+          "no_top3_roi": 0.7346545866364665
+        }
+      },
+      {
+        "threshold": 0.12,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.7806997742663657,
+          "no_max_roi": 0.7648587570621469,
+          "no_top3_roi": 0.7346545866364665
+        }
+      },
+      {
+        "threshold": 0.15,
+        "calibration": {
+          "candidates": 884,
+          "roi": 0.7824660633484163,
+          "no_max_roi": 0.7665911664779161,
+          "no_top3_roi": 0.7363223609534619
+        }
+      },
+      {
+        "threshold": 0.18,
+        "calibration": {
+          "candidates": 878,
+          "roi": 0.7878132118451026,
+          "no_max_roi": 0.7718358038768529,
+          "no_top3_roi": 0.7413714285714286
+        }
+      },
+      {
+        "threshold": 0.2,
+        "calibration": {
+          "candidates": 873,
+          "roi": 0.7923253150057273,
+          "no_max_roi": 0.7762614678899082,
+          "no_top3_roi": 0.745632183908046
+        }
+      },
+      {
+        "threshold": 0.25,
+        "calibration": {
+          "candidates": 803,
+          "roi": 0.7789539227895392,
+          "no_max_roi": 0.7619700748129676,
+          "no_top3_roi": 0.7295
+        }
+      },
+      {
+        "threshold": 0.3,
+        "calibration": {
+          "candidates": 478,
+          "roi": 0.8399581589958159,
+          "no_max_roi": 0.8127882599580712,
+          "no_top3_roi": 0.7642105263157895
+        }
+      },
+      {
+        "threshold": 0.35,
+        "calibration": {
+          "candidates": 188,
+          "roi": 0.8430851063829787,
+          "no_max_roi": 0.7887700534759359,
+          "no_top3_roi": 0.701081081081081
+        }
+      }
+    ],
+    "chosen": {
+      "threshold": 0.3,
+      "calibration": {
+        "candidates": 478,
+        "roi": 0.8399581589958159,
+        "no_max_roi": 0.8127882599580712,
+        "no_top3_roi": 0.7642105263157895
+      }
+    },
+    "external": {
+      "candidates": 462,
+      "roi": 0.8305194805194805,
+      "no_max_roi": 0.8010845986984816,
+      "no_top3_roi": 0.744880174291939
+    },
+    "passed": false
+  },
+  {
+    "theory": "trainer_top3",
+    "mechanism": "厩舎複勝率",
+    "iterations": [
+      {
+        "threshold": 0.05,
+        "calibration": {
+          "candidates": 742,
+          "roi": 0.7425876010781671,
+          "no_max_roi": 0.7236167341430499,
+          "no_top3_roi": 0.6871447902571042
+        }
+      },
+      {
+        "threshold": 0.08,
+        "calibration": {
+          "candidates": 742,
+          "roi": 0.7425876010781671,
+          "no_max_roi": 0.7236167341430499,
+          "no_top3_roi": 0.6871447902571042
+        }
+      },
+      {
+        "threshold": 0.1,
+        "calibration": {
+          "candidates": 742,
+          "roi": 0.7425876010781671,
+          "no_max_roi": 0.7236167341430499,
+          "no_top3_roi": 0.6871447902571042
+        }
+      },
+      {
+        "threshold": 0.12,
+        "calibration": {
+          "candidates": 742,
+          "roi": 0.7425876010781671,
+          "no_max_roi": 0.7236167341430499,
+          "no_top3_roi": 0.6871447902571042
+        }
+      },
+      {
+        "threshold": 0.15,
+        "calibration": {
+          "candidates": 742,
+          "roi": 0.7425876010781671,
+          "no_max_roi": 0.7236167341430499,
+          "no_top3_roi": 0.6871447902571042
+        }
+      },
+      {
+        "threshold": 0.18,
+        "calibration": {
+          "candidates": 742,
+          "roi": 0.7425876010781671,
+          "no_max_roi": 0.7236167341430499,
+          "no_top3_roi": 0.6871447902571042
+        }
+      },
+      {
+        "threshold": 0.2,
+        "calibration": {
+          "candidates": 742,
+          "roi": 0.7425876010781671,
+          "no_max_roi": 0.7236167341430499,
+          "no_top3_roi": 0.6871447902571042
+        }
+      },
+      {
+        "threshold": 0.25,
+        "calibration": {
+          "candidates": 742,
+          "roi": 0.7425876010781671,
+          "no_max_roi": 0.7236167341430499,
+          "no_top3_roi": 0.6871447902571042
+        }
+      },
+      {
+        "threshold": 0.3,
+        "calibration": {
+          "candidates": 742,
+          "roi": 0.7425876010781671,
+          "no_max_roi": 0.7236167341430499,
+          "no_top3_roi": 0.6871447902571042
+        }
+      },
+      {
+        "threshold": 0.35,
+        "calibration": {
+          "candidates": 742,
+          "roi": 0.7425876010781671,
+          "no_max_roi": 0.7236167341430499,
+          "no_top3_roi": 0.6871447902571042
+        }
+      }
+    ],
+    "chosen": {
+      "threshold": 0.05,
+      "calibration": {
+        "candidates": 742,
+        "roi": 0.7425876010781671,
+        "no_max_roi": 0.7236167341430499,
+        "no_top3_roi": 0.6871447902571042
+      }
+    },
+    "external": {
+      "candidates": 681,
+      "roi": 0.7737151248164464,
+      "no_max_roi": 0.7548529411764706,
+      "no_top3_roi": 0.7176991150442478
+    },
+    "passed": false
+  },
+  {
+    "theory": "finish_strength",
+    "mechanism": "過去着順強度",
+    "iterations": [
+      {
+        "threshold": 0.05,
+        "calibration": {
+          "candidates": 805,
+          "roi": 0.7421118012422361,
+          "no_max_roi": 0.7246268656716418,
+          "no_top3_roi": 0.6908977556109726
+        }
+      },
+      {
+        "threshold": 0.08,
+        "calibration": {
+          "candidates": 805,
+          "roi": 0.7421118012422361,
+          "no_max_roi": 0.7246268656716418,
+          "no_top3_roi": 0.6908977556109726
+        }
+      },
+      {
+        "threshold": 0.1,
+        "calibration": {
+          "candidates": 805,
+          "roi": 0.7421118012422361,
+          "no_max_roi": 0.7246268656716418,
+          "no_top3_roi": 0.6908977556109726
+        }
+      },
+      {
+        "threshold": 0.12,
+        "calibration": {
+          "candidates": 805,
+          "roi": 0.7421118012422361,
+          "no_max_roi": 0.7246268656716418,
+          "no_top3_roi": 0.6908977556109726
+        }
+      },
+      {
+        "threshold": 0.15,
+        "calibration": {
+          "candidates": 805,
+          "roi": 0.7421118012422361,
+          "no_max_roi": 0.7246268656716418,
+          "no_top3_roi": 0.6908977556109726
+        }
+      },
+      {
+        "threshold": 0.18,
+        "calibration": {
+          "candidates": 805,
+          "roi": 0.7421118012422361,
+          "no_max_roi": 0.7246268656716418,
+          "no_top3_roi": 0.6908977556109726
+        }
+      },
+      {
+        "threshold": 0.2,
+        "calibration": {
+          "candidates": 805,
+          "roi": 0.7421118012422361,
+          "no_max_roi": 0.7246268656716418,
+          "no_top3_roi": 0.6908977556109726
+        }
+      },
+      {
+        "threshold": 0.25,
+        "calibration": {
+          "candidates": 805,
+          "roi": 0.7421118012422361,
+          "no_max_roi": 0.7246268656716418,
+          "no_top3_roi": 0.6908977556109726
+        }
+      },
+      {
+        "threshold": 0.3,
+        "calibration": {
+          "candidates": 805,
+          "roi": 0.7421118012422361,
+          "no_max_roi": 0.7246268656716418,
+          "no_top3_roi": 0.6908977556109726
+        }
+      },
+      {
+        "threshold": 0.35,
+        "calibration": {
+          "candidates": 805,
+          "roi": 0.7421118012422361,
+          "no_max_roi": 0.7246268656716418,
+          "no_top3_roi": 0.6908977556109726
+        }
+      }
+    ],
+    "chosen": {
+      "threshold": 0.05,
+      "calibration": {
+        "candidates": 805,
+        "roi": 0.7421118012422361,
+        "no_max_roi": 0.7246268656716418,
+        "no_top3_roi": 0.6908977556109726
+      }
+    },
+    "external": {
+      "candidates": 794,
+      "roi": 0.7926952141057935,
+      "no_max_roi": 0.7757881462799495,
+      "no_top3_roi": 0.7424778761061946
+    },
+    "passed": false
+  },
+  {
+    "theory": "horse_top3",
+    "mechanism": "馬の通算複勝率",
+    "iterations": [
+      {
+        "threshold": 0.05,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.6900677200902935,
+          "no_max_roi": 0.6763841807909604,
+          "no_top3_roi": 0.6491506228765572
+        }
+      },
+      {
+        "threshold": 0.08,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.6900677200902935,
+          "no_max_roi": 0.6763841807909604,
+          "no_top3_roi": 0.6491506228765572
+        }
+      },
+      {
+        "threshold": 0.1,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.6900677200902935,
+          "no_max_roi": 0.6763841807909604,
+          "no_top3_roi": 0.6491506228765572
+        }
+      },
+      {
+        "threshold": 0.12,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.6900677200902935,
+          "no_max_roi": 0.6763841807909604,
+          "no_top3_roi": 0.6491506228765572
+        }
+      },
+      {
+        "threshold": 0.15,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.6900677200902935,
+          "no_max_roi": 0.6763841807909604,
+          "no_top3_roi": 0.6491506228765572
+        }
+      },
+      {
+        "threshold": 0.18,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.6900677200902935,
+          "no_max_roi": 0.6763841807909604,
+          "no_top3_roi": 0.6491506228765572
+        }
+      },
+      {
+        "threshold": 0.2,
+        "calibration": {
+          "candidates": 886,
+          "roi": 0.6900677200902935,
+          "no_max_roi": 0.6763841807909604,
+          "no_top3_roi": 0.6491506228765572
+        }
+      },
+      {
+        "threshold": 0.25,
+        "calibration": {
+          "candidates": 885,
+          "roi": 0.6908474576271186,
+          "no_max_roi": 0.6771493212669684,
+          "no_top3_roi": 0.6498866213151927
+        }
+      },
+      {
+        "threshold": 0.3,
+        "calibration": {
+          "candidates": 885,
+          "roi": 0.6908474576271186,
+          "no_max_roi": 0.6771493212669684,
+          "no_top3_roi": 0.6498866213151927
+        }
+      },
+      {
+        "threshold": 0.35,
+        "calibration": {
+          "candidates": 885,
+          "roi": 0.6908474576271186,
+          "no_max_roi": 0.6771493212669684,
+          "no_top3_roi": 0.6498866213151927
+        }
+      }
+    ],
+    "chosen": {
+      "threshold": 0.25,
+      "calibration": {
+        "candidates": 885,
+        "roi": 0.6908474576271186,
+        "no_max_roi": 0.6771493212669684,
+        "no_top3_roi": 0.6498866213151927
+      }
+    },
+    "external": {
+      "candidates": 834,
+      "roi": 0.7045563549160672,
+      "no_max_roi": 0.6881152460984393,
+      "no_top3_roi": 0.6566787003610108
+    },
+    "passed": false
+  }
+]
