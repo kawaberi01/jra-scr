@@ -1,4 +1,5 @@
 from datetime import date
+from pathlib import Path
 
 from jra_srb.jra_prediction_materials import build_source_keys
 from jra_srb.jra_public_analysis_extractors import (
@@ -38,3 +39,14 @@ def test_public_extractors_keep_only_visible_fields():
     )
     assert umanity.status == "unavailable"
     assert umanity.locked_fields == ["前走情報"]
+
+
+def test_keibalab_recent_races_keep_blank_initial_runner_column():
+    html = Path("tests/fixtures/keibalab_umabashira_initial_runner.html").read_text(encoding="utf-8")
+
+    keibalab = parse_keibalab_umabashira(html, "https://example.test/keibalab")
+
+    runners = {runner.horse_no: runner for runner in keibalab.runners}
+    assert [race.source_date for race in runners["16"].recent_races] == [date(2026, 6, 21), date(2026, 5, 31)]
+    assert [race.source_date for race in runners["15"].recent_races] == [date(2026, 6, 14), date(2026, 5, 25)]
+    assert runners["14"].recent_races == []

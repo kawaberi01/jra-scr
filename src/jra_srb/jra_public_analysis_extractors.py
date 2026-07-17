@@ -61,7 +61,7 @@ def parse_keibalab_umabashira(html: str, source_url: str) -> JraPublicSourceAnal
         runner.omega_index = _float(value)
     recent_rows = [row for row in table.select("tr") if any(cls.startswith("zensou") for cls in row.get("class", []))]
     for row in recent_rows[:5]:
-        cells = [cell for cell in row.find_all("td", recursive=False) if cell.select_one("table.zensouTable")]
+        cells = row.find_all("td", recursive=False)
         for runner, cell in zip(runners, cells):
             if recent := _parse_keibalab_recent_race(cell, source_url):
                 runner.recent_races.append(recent)
