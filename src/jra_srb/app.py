@@ -29,6 +29,9 @@ from .models import (
     BET_RECORD_RACE_ID_PATTERN,
     BetType,
     CourseCode, 
+    EvaluationRecord,
+    EvaluationRecordPage,
+    EvaluationSummary,
     JraPredictionBundle,
     NarCalendarPage, 
     NankankeibaPatternBundle, 
@@ -41,6 +44,8 @@ from .models import (
     NankanRaceBestTime, 
     NankanRaceClosingSpeed, 
     NankanRaceStyleProfile, 
+    PredictionRecord,
+    PredictionRecordPage,
     RaceCard, 
     RaceOdds,
     RaceSearchItem, 
@@ -1372,6 +1377,48 @@ async def create_jra_prediction(
     return {"record": record, "saved": store.upsert_prediction_record(record)}
 
 
+@app.get(
+    "/jra/predictions",
+    tags=["jra-analysis"],
+    summary="保存済みJRA予想を検索",
+    response_model=PredictionRecordPage,
+)
+async def list_jra_predictions(
+    race_id: str | None = Query(default=None, pattern=r"^\d{12}$"),
+    from_date: date | None = Query(default=None),
+    to_date: date | None = Query(default=None),
+    theory_version: str | None = Query(default=None),
+    mode: str | None = Query(default=None),
+    limit: int = Query(default=DEFAULT_PAGE_LIMIT, ge=1, le=MAX_PAGE_LIMIT),
+    offset: int = Query(default=0, ge=0),
+    store: AnalysisSQLiteStore = Depends(get_analysis_store),
+):
+    if from_date is not None and to_date is not None and from_date > to_date:
+        raise BadRequestError("from_date must be on or before to_date")
+    return store.list_prediction_records(
+        race_id=race_id,
+        from_date=from_date,
+        to_date=to_date,
+        theory_version=theory_version,
+        mode=mode,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@app.get(
+    "/jra/predictions/{prediction_id}",
+    tags=["jra-analysis"],
+    summary="保存済みJRA予想を取得",
+    response_model=PredictionRecord,
+)
+async def get_jra_prediction(
+    prediction_id: str,
+    store: AnalysisSQLiteStore = Depends(get_analysis_store),
+):
+    return store.get_prediction_record(prediction_id)
+
+
 @app.post("/jra/predictions/{prediction_id}/evaluate", tags=["jra-analysis"])
 async def evaluate_jra_prediction(
     prediction_id: str,
@@ -1379,6 +1426,69 @@ async def evaluate_jra_prediction(
     store: AnalysisSQLiteStore = Depends(get_analysis_store),
 ):
     return store.evaluate_prediction_record({"prediction_id": prediction_id, **payload})
+
+
+@app.get(
+    "/jra/evaluations/summary",
+    tags=["jra-analysis"],
+    summary="保存済みJRA予想評価を集計",
+    response_model=EvaluationSummary,
+)
+async def summarize_jra_evaluations(
+    from_date: date | None = Query(default=None),
+    to_date: date | None = Query(default=None),
+    theory_version: str | None = Query(default=None),
+    store: AnalysisSQLiteStore = Depends(get_analysis_store),
+):
+    if from_date is not None and to_date is not None and from_date > to_date:
+        raise BadRequestError("from_date must be on or before to_date")
+    return store.summarize_evaluations(
+        from_date=from_date,
+        to_date=to_date,
+        theory_version=theory_version,
+    )
+
+
+@app.get(
+    "/jra/evaluations",
+    tags=["jra-analysis"],
+    summary="保存済みJRA予想評価を検索",
+    response_model=EvaluationRecordPage,
+)
+async def list_jra_evaluations(
+    prediction_id: str | None = Query(default=None),
+    race_id: str | None = Query(default=None, pattern=r"^\d{12}$"),
+    from_date: date | None = Query(default=None),
+    to_date: date | None = Query(default=None),
+    theory_version: str | None = Query(default=None),
+    limit: int = Query(default=DEFAULT_PAGE_LIMIT, ge=1, le=MAX_PAGE_LIMIT),
+    offset: int = Query(default=0, ge=0),
+    store: AnalysisSQLiteStore = Depends(get_analysis_store),
+):
+    if from_date is not None and to_date is not None and from_date > to_date:
+        raise BadRequestError("from_date must be on or before to_date")
+    return store.list_evaluation_records(
+        prediction_id=prediction_id,
+        race_id=race_id,
+        from_date=from_date,
+        to_date=to_date,
+        theory_version=theory_version,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@app.get(
+    "/jra/evaluations/{evaluation_id}",
+    tags=["jra-analysis"],
+    summary="保存済みJRA予想評価を取得",
+    response_model=EvaluationRecord,
+)
+async def get_jra_evaluation(
+    evaluation_id: str,
+    store: AnalysisSQLiteStore = Depends(get_analysis_store),
+):
+    return store.get_evaluation_record(evaluation_id)
 
 
 @app.post("/jra/meetings/{date_}/{course}/races/{race_no}/result/save", tags=["jra-analysis"])

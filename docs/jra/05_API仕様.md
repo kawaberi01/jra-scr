@@ -259,6 +259,35 @@ netkeiba のオッズページから補完オッズを返す。
 
 - [15_nankankeiba_pattern_usage.md](/D:/develop/jra-scr/docs/jra/15_nankankeiba_pattern_usage.md)
 
+## JRA予想・評価参照 API
+
+### `GET /jra/predictions`
+
+保存済みJRA予想を一覧取得する。主なクエリは `race_id`、`from_date`、`to_date`、`theory_version`、`mode`、`limit`、`offset`。レスポンスは `items`、`total`、`limit`、`offset` を持つ。
+
+### `GET /jra/predictions/{prediction_id}`
+
+保存済みJRA予想の詳細と `prediction_tickets` を取得する。保存時のJSONは `pre_race_snapshot` と `prediction` として返す。
+
+### `GET /jra/evaluations`
+
+保存済みJRA予想評価を一覧取得する。主なクエリは `prediction_id`、`race_id`、`from_date`、`to_date`、`theory_version`、`limit`、`offset`。
+
+### `GET /jra/evaluations/{evaluation_id}`
+
+保存済みJRA予想評価の詳細と `ticket_results` を取得する。保存時のJSONは `evaluation` として返す。
+
+### `GET /jra/evaluations/summary`
+
+`from_date`、`to_date`、`theory_version` で絞り込み、購入額、払戻、回収率、的中率、ガミ率、軸・中穴・花火指標、最大払戻除外後回収率を集計する。
+
+共通仕様:
+
+- `race_id` は12桁のJRA形式。
+- `limit` は既定100、最大500。`offset` は既定0。
+- `from_date` が `to_date` より後の場合は400。
+- 詳細が存在しない場合は404。
+
 ## 保存済み結果 API
 
 ### `GET /stored/results`
