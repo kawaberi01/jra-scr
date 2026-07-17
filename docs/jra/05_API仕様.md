@@ -259,6 +259,55 @@ netkeiba のオッズページから補完オッズを返す。
 
 - [15_nankankeiba_pattern_usage.md](/D:/develop/jra-scr/docs/jra/15_nankankeiba_pattern_usage.md)
 
+## JRA発走前保存データ参照 API
+
+### `GET /jra/races/{race_id}/pre-race-snapshot`
+
+`analysis.sqlite` に保存済みの発走前レース、出走馬、オッズ snapshot を返す。外部サイトへの再取得は行わない。
+
+主なクエリ:
+
+- `include_odds`
+  - 既定は `true`。`false` の場合は `odds` と `available_odds_timings` が空配列になる。
+- `odds_timing`
+  - 収集時点ラベルを完全一致で指定する。省略時は券種ごとの最新 snapshot を返す。
+
+レスポンスの `meta` には、指定条件、利用可能な収集時点、欠損 component を含む。レースが存在しても該当オッズがなければ200と空配列を返す。結果、払戻、評価は含まない。
+
+例:
+
+```http
+GET /jra/races/202607180211/pre-race-snapshot
+GET /jra/races/202607180211/pre-race-snapshot?include_odds=true&odds_timing=t_minus_10m
+```
+
+### `GET /jra/races/{race_id}/odds-timeline`
+
+`analysis.sqlite` に保存済みの指定券種のオッズ snapshot を `fetched_at` 昇順で返す。
+
+主なクエリ:
+
+- `bet_type`
+  - 必須。`win`、`place`、`quinella`、`wide`、`exacta`、`trio`、`trifecta`。
+- `combination`
+  - 任意。カンマ区切りの馬番。指定時も一致 entry がない snapshot は `entries=[]` のまま残る。
+
+`quinella`、`wide`、`trio` は馬番順を正規化する。`exacta`、`trifecta` は指定順を保持する。組み合わせ点数が券種と一致しない場合は400。
+
+例:
+
+```http
+GET /jra/races/202607180211/odds-timeline?bet_type=win
+GET /jra/races/202607180211/odds-timeline?bet_type=wide&combination=4,10
+```
+
+両 endpoint の共通仕様:
+
+- `race_id` は12桁のJRA形式。形式不正は422。
+- raceが保存されていない場合は404。
+- `JRA_SRB_ANALYSIS_DB_PATH` で指定したSQLiteのみを参照する。
+- `refresh` クエリはなく、MCP tool としては公開しない。
+
 ## JRA予想・評価参照 API
 
 ### `GET /jra/predictions`

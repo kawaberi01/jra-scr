@@ -4,6 +4,7 @@ import sqlite3
 import pytest
 
 from jra_srb.analysis_store import AnalysisSQLiteStore
+from jra_srb.errors import BadRequestError
 from jra_srb.models import (
     BetRecordCreateRequest,
     MeetingRace,
@@ -17,6 +18,89 @@ from jra_srb.models import (
     ResultEntry,
     Runner,
 )
+
+
+def _write_pre_race_timeline_fixture(store: AnalysisSQLiteStore) -> str:
+    race_id = "202607180211"
+    store.write_card(
+        date(2026, 7, 18),
+        "kokura",
+        11,
+        RaceCard(
+            race_id=race_id,
+            race_name="Sample Stakes",
+            course="kokura",
+            distance="1800",
+            surface="turf",
+            start_time="15:35",
+            runners=[
+                Runner(horse_no="10", frame_no="5", horse_name="Ten"),
+                Runner(horse_no="2", frame_no="1", horse_name="Two"),
+            ],
+            fetched_at=datetime.fromisoformat("2026-07-18T14:55:00+09:00"),
+            source="jra",
+        ),
+    )
+    snapshots = [
+        (
+            "t_minus_30m",
+            "2026-07-18T15:05:02+09:00",
+            "win",
+            [OddsEntry(bet_type="win", combination=["1"], odds="3.2", popularity="2")],
+        ),
+        (
+            "t_minus_30m",
+            "2026-07-18T15:05:03+09:00",
+            "wide",
+            [
+                OddsEntry(bet_type="wide", combination=["4", "10"], odds="8.8", popularity="3"),
+                OddsEntry(bet_type="wide", combination=["1", "2"], odds="12.0"),
+            ],
+        ),
+        (
+            "t_minus_10m",
+            "2026-07-18T15:25:02+09:00",
+            "win",
+            [OddsEntry(bet_type="win", combination=["1"], odds="3.0", popularity="2")],
+        ),
+        (
+            "t_minus_10m",
+            "2026-07-18T15:25:03+09:00",
+            "wide",
+            [OddsEntry(bet_type="wide", combination=["4", "10"], odds="8.5", popularity="3")],
+        ),
+        (
+            "t_minus_10m",
+            "2026-07-18T15:25:04+09:00",
+            "exacta",
+            [OddsEntry(bet_type="exacta", combination=["4", "10"], odds="18.0", popularity="4")],
+        ),
+        (
+            "t_minus_2m",
+            "2026-07-18T15:33:02+09:00",
+            "win",
+            [OddsEntry(bet_type="win", combination=["1"], odds="2.8", popularity="1")],
+        ),
+        (
+            "t_minus_2m",
+            "2026-07-18T15:33:03+09:00",
+            "wide",
+            [OddsEntry(bet_type="wide", combination=["2", "9"], odds="7.0")],
+        ),
+    ]
+    for odds_timing, fetched_at, bet_type, entries in snapshots:
+        store.write_odds(
+            RaceOdds(
+                race_id=race_id,
+                bet_type=bet_type,
+                entries=entries,
+                fetched_at=datetime.fromisoformat(fetched_at),
+                source="jra",
+            ),
+            bet_type=bet_type,
+            odds_timing=odds_timing,
+        )
+    return race_id
 
 
 def test_analysis_store_creates_schema(tmp_path):
@@ -149,17 +233,125 @@ def test_analysis_store_writes_pre_race_and_result_data_without_leaking_result_t
 
     snapshot = store.get_pre_race_snapshot("202603220611")
 
-    assert snapshot["race"]["race_id"] == "202603220611"
-    assert snapshot["runners"][0]["horse_name"] == "Dragon Wells"
-    assert snapshot["runners"][0]["card_odds"] == 12.4
-    assert snapshot["odds"][0]["entries"][0]["odds"] == 16.1
-    assert "results" not in snapshot
-    assert "payouts" not in snapshot
+    assert snapshot.race.race_id == "202603220611"
+    assert snapshot.runners[0].horse_name == "Dragon Wells"
+    assert snapshot.runners[0].card_odds == 12.4
+    assert snapshot.odds[0].entries[0].odds == 16.1
+    assert not hasattr(snapshot, "results")
+    assert not hasattr(snapshot, "payouts")
     assert store.count_rows("result_entries") == 1
     assert store.count_rows("payouts") == 1
     assert store.has_card("202603220611") is True
     assert store.has_result("202603220611") is True
     assert store.has_odds_snapshot("202603220611", "wide") is True
+
+
+def test_analysis_store_reads_latest_and_selected_pre_race_snapshots(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    race_id = _write_pre_race_timeline_fixture(store)
+
+    latest = store.get_pre_race_snapshot(race_id)
+
+    assert latest.race.race_date == date(2026, 7, 18)
+    assert latest.race.fetched_at == datetime.fromisoformat("2026-07-18T14:55:00+09:00")
+    assert [runner.horse_no for runner in latest.runners] == ["2", "10"]
+    assert [snapshot.bet_type for snapshot in latest.odds] == ["exacta", "wide", "win"]
+    assert {
+        snapshot.bet_type: snapshot.odds_timing
+        for snapshot in latest.odds
+    } == {
+        "exacta": "t_minus_10m",
+        "wide": "t_minus_2m",
+        "win": "t_minus_2m",
+    }
+    assert latest.meta.available_odds_timings == [
+        "t_minus_30m",
+        "t_minus_10m",
+        "t_minus_2m",
+    ]
+    assert latest.meta.missing_components == []
+
+    selected = store.get_pre_race_snapshot(race_id, odds_timing="t_minus_10m")
+
+    assert [snapshot.bet_type for snapshot in selected.odds] == ["exacta", "wide", "win"]
+    assert all(snapshot.odds_timing == "t_minus_10m" for snapshot in selected.odds)
+    assert selected.meta.requested_odds_timing == "t_minus_10m"
+
+
+def test_analysis_store_can_skip_odds_in_pre_race_snapshot(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    race_id = _write_pre_race_timeline_fixture(store)
+
+    snapshot = store.get_pre_race_snapshot(
+        race_id,
+        include_odds=False,
+        odds_timing="t_minus_10m",
+    )
+
+    assert snapshot.odds == []
+    assert snapshot.meta.available_odds_timings == []
+    assert snapshot.meta.missing_components == []
+
+
+def test_analysis_store_reads_odds_timeline_with_combination_normalization(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    race_id = _write_pre_race_timeline_fixture(store)
+
+    wide = store.get_odds_timeline(race_id, "wide", ["10", "4"])
+
+    assert wide.combination == ["4", "10"]
+    assert wide.total == 3
+    assert [snapshot.odds_timing for snapshot in wide.snapshots] == [
+        "t_minus_30m",
+        "t_minus_10m",
+        "t_minus_2m",
+    ]
+    assert [snapshot.entries[0].odds for snapshot in wide.snapshots[:2]] == [8.8, 8.5]
+    assert wide.snapshots[2].entries == []
+
+    all_wide = store.get_odds_timeline(race_id, "wide")
+    assert [entry.combination for entry in all_wide.snapshots[0].entries] == [
+        ["4", "10"],
+        ["1", "2"],
+    ]
+
+    exacta_forward = store.get_odds_timeline(race_id, "exacta", ["4", "10"])
+    exacta_reverse = store.get_odds_timeline(race_id, "exacta", ["10", "4"])
+    assert len(exacta_forward.snapshots[0].entries) == 1
+    assert exacta_reverse.snapshots[0].entries == []
+
+
+def test_analysis_store_odds_timeline_handles_empty_not_found_and_invalid_combination(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    race_id = _write_pre_race_timeline_fixture(store)
+    empty_race_id = "202607180212"
+    store.write_race(
+        date(2026, 7, 18),
+        "kokura",
+        MeetingRace(
+            race_no=12,
+            race_id=empty_race_id,
+            race_name="Empty Stakes",
+            start_time="16:10",
+        ),
+        source="jra",
+        fetched_at=datetime.fromisoformat("2026-07-18T15:00:00+09:00"),
+    )
+
+    empty = store.get_odds_timeline(race_id, "trifecta")
+    empty_snapshot = store.get_pre_race_snapshot(empty_race_id)
+
+    assert empty.snapshots == []
+    assert empty.total == 0
+    assert empty_snapshot.runners == []
+    assert empty_snapshot.odds == []
+    assert empty_snapshot.meta.missing_components == ["runners", "odds"]
+    with pytest.raises(BadRequestError):
+        store.get_odds_timeline(race_id, "wide", ["4"])
+    with pytest.raises(LookupError):
+        store.get_pre_race_snapshot("202607180213")
+    with pytest.raises(LookupError):
+        store.get_odds_timeline("202607180213", "wide")
 
 
 def test_analysis_store_upserts_card_and_odds_without_duplicates(tmp_path):

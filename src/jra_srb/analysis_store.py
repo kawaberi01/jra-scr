@@ -30,6 +30,13 @@ from .models import (
     RaceCard,
     RaceOdds,
     RaceResult,
+    StoredOddsEntry,
+    StoredOddsSnapshot,
+    StoredOddsTimeline,
+    StoredPreRace,
+    StoredPreRaceRunner,
+    StoredPreRaceSnapshot,
+    StoredPreRaceSnapshotMeta,
 )
 
 
@@ -1873,7 +1880,13 @@ class AnalysisSQLiteStore:
                 ),
             )
 
-    def get_pre_race_snapshot(self, race_id: str) -> dict:
+    def get_pre_race_snapshot(
+        self,
+        race_id: str,
+        *,
+        include_odds: bool = True,
+        odds_timing: str | None = None,
+    ) -> StoredPreRaceSnapshot:
         with self._connect() as conn:
             race = conn.execute("select * from races where race_id = ?", (race_id,)).fetchone()
             if race is None:
@@ -1882,37 +1895,140 @@ class AnalysisSQLiteStore:
                 "select * from runners where race_id = ? order by cast(horse_no as integer), horse_no",
                 (race_id,),
             ).fetchall()
-            snapshots = conn.execute(
-                "select * from odds_snapshots where race_id = ? order by bet_type, odds_timing",
-                (race_id,),
-            ).fetchall()
-            odds = []
+
+            available_odds_timings: list[str] = []
+            snapshots: list[sqlite3.Row] = []
+            if include_odds:
+                timing_rows = conn.execute(
+                    """
+                    select odds_timing, min(fetched_at) as first_fetched_at
+                    from odds_snapshots
+                    where race_id = ?
+                    group by odds_timing
+                    order by first_fetched_at, odds_timing
+                    """,
+                    (race_id,),
+                ).fetchall()
+                available_odds_timings = [row["odds_timing"] for row in timing_rows]
+                if odds_timing is not None:
+                    snapshots = conn.execute(
+                        """
+                        select *
+                        from odds_snapshots
+                        where race_id = ? and odds_timing = ?
+                        order by bet_type, fetched_at desc, snapshot_id desc
+                        """,
+                        (race_id, odds_timing),
+                    ).fetchall()
+                else:
+                    candidate_snapshots = conn.execute(
+                        """
+                        select *
+                        from odds_snapshots
+                        where race_id = ?
+                        order by bet_type, fetched_at desc, snapshot_id desc
+                        """,
+                        (race_id,),
+                    ).fetchall()
+                    seen_bet_types: set[str] = set()
+                    for snapshot in candidate_snapshots:
+                        if snapshot["bet_type"] in seen_bet_types:
+                            continue
+                        seen_bet_types.add(snapshot["bet_type"])
+                        snapshots.append(snapshot)
+
+            odds: list[StoredOddsSnapshot] = []
             for snapshot in snapshots:
                 entries = conn.execute(
                     """
-                    select bet_type, combination, combination_json, odds, odds_min, odds_max, popularity
+                    select bet_type, combination_json, odds, odds_min, odds_max, popularity
                     from odds_entries
                     where snapshot_id = ?
-                    order by popularity, combination
+                    order by popularity is null, popularity, combination
                     """,
                     (snapshot["snapshot_id"],),
                 ).fetchall()
                 odds.append(
-                    {
-                        "snapshot_id": snapshot["snapshot_id"],
-                        "race_id": snapshot["race_id"],
-                        "bet_type": snapshot["bet_type"],
-                        "odds_timing": snapshot["odds_timing"],
-                        "fetched_at": snapshot["fetched_at"],
-                        "source": snapshot["source"],
-                        "entries": [_row_to_dict(entry) for entry in entries],
-                    }
+                    _stored_odds_snapshot(snapshot, entries)
                 )
-        return {
-            "race": _row_to_dict(race),
-            "runners": [_row_to_dict(runner) for runner in runners],
-            "odds": odds,
-        }
+
+        missing_components = []
+        if not runners:
+            missing_components.append("runners")
+        if include_odds and not odds:
+            missing_components.append("odds")
+        return StoredPreRaceSnapshot(
+            race=StoredPreRace.model_validate(_row_to_dict(race)),
+            runners=[
+                StoredPreRaceRunner.model_validate(_row_to_dict(runner))
+                for runner in runners
+            ],
+            odds=odds,
+            meta=StoredPreRaceSnapshotMeta(
+                include_odds=include_odds,
+                requested_odds_timing=odds_timing,
+                available_odds_timings=available_odds_timings,
+                missing_components=missing_components,
+            ),
+        )
+
+    def get_odds_timeline(
+        self,
+        race_id: str,
+        bet_type: str,
+        combination: list[str] | None = None,
+    ) -> StoredOddsTimeline:
+        with self._connect() as conn:
+            race = conn.execute(
+                "select 1 from races where race_id = ?",
+                (race_id,),
+            ).fetchone()
+            if race is None:
+                raise LookupError(f"race not found for race_id={race_id}")
+            normalized_combination = (
+                _normalize_selection_items(bet_type, combination)
+                if combination is not None
+                else None
+            )
+            snapshot_rows = conn.execute(
+                """
+                select *
+                from odds_snapshots
+                where race_id = ? and bet_type = ?
+                order by fetched_at, snapshot_id
+                """,
+                (race_id, bet_type),
+            ).fetchall()
+            snapshots: list[StoredOddsSnapshot] = []
+            for snapshot in snapshot_rows:
+                entry_rows = conn.execute(
+                    """
+                    select bet_type, combination_json, odds, odds_min, odds_max, popularity
+                    from odds_entries
+                    where snapshot_id = ?
+                    order by popularity is null, popularity, combination
+                    """,
+                    (snapshot["snapshot_id"],),
+                ).fetchall()
+                if normalized_combination is not None:
+                    entry_rows = [
+                        entry
+                        for entry in entry_rows
+                        if _normalize_selection_items(
+                            bet_type,
+                            json.loads(entry["combination_json"]),
+                        )
+                        == normalized_combination
+                    ]
+                snapshots.append(_stored_odds_snapshot(snapshot, entry_rows))
+
+        return StoredOddsTimeline(
+            race_id=race_id,
+            bet_type=bet_type,
+            combination=normalized_combination or [],
+            snapshots=snapshots,
+            total=len(snapshots),
+        )
 
     def count_rows(self, table: str) -> int:
         if not re.fullmatch(r"[a-z_]+", table):
@@ -2646,6 +2762,32 @@ def _parse_datetime(value: str | None) -> datetime | None:
 
 def _now() -> str:
     return datetime.now(UTC).isoformat()
+
+
+def _stored_odds_snapshot(
+    snapshot: sqlite3.Row,
+    entries: list[sqlite3.Row],
+) -> StoredOddsSnapshot:
+    return StoredOddsSnapshot(
+        snapshot_id=snapshot["snapshot_id"],
+        race_id=snapshot["race_id"],
+        bet_type=snapshot["bet_type"],
+        odds_timing=snapshot["odds_timing"],
+        fetched_at=snapshot["fetched_at"],
+        source=snapshot["source"],
+        entries=[_stored_odds_entry(entry) for entry in entries],
+    )
+
+
+def _stored_odds_entry(entry: sqlite3.Row) -> StoredOddsEntry:
+    return StoredOddsEntry(
+        bet_type=entry["bet_type"],
+        combination=json.loads(entry["combination_json"]),
+        odds=entry["odds"],
+        odds_min=entry["odds_min"],
+        odds_max=entry["odds_max"],
+        popularity=entry["popularity"],
+    )
 
 
 def _row_to_dict(row: sqlite3.Row) -> dict:

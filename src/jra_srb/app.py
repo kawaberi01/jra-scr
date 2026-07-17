@@ -55,6 +55,8 @@ from .models import (
     ResultCollectionJobRequest,
     ResultCollectionJobSummary,
     ResultStorageKind,
+    StoredOddsTimeline,
+    StoredPreRaceSnapshot,
     StoredRaceResultPage,
 )
 from .nankankeiba_pattern_provider import NankankeibaPatternHttpProvider 
@@ -77,7 +79,7 @@ from .nankan_provider import NankanHttpProvider
 from .nankan_service import NankanCacheTtls, NankanService, parse_nankan_odds_summary_bet_types
 from .netkeiba_provider import NetkeibaHttpProvider
 from .netkeiba_service import NetkeibaService
-from .normalization import normalize_race_input, parse_bet_types
+from .normalization import normalize_combination, normalize_race_input, parse_bet_types
 from .provider import HttpProvider, ProviderError
 from .service import JraService
 
@@ -1375,6 +1377,62 @@ async def create_jra_prediction(
     )
     record = build_prediction_record(bundle, budget=budget)
     return {"record": record, "saved": store.upsert_prediction_record(record)}
+
+
+@app.get(
+    "/jra/races/{race_id}/pre-race-snapshot",
+    tags=["jra-analysis"],
+    summary="保存済みJRA発走前snapshotを取得",
+    description="analysis SQLiteに保存済みの発走前レース、出走馬、選択したオッズsnapshotを返します。",
+    response_model=StoredPreRaceSnapshot,
+)
+async def get_jra_pre_race_snapshot(
+    race_id: RaceIdPath,
+    include_odds: bool = Query(
+        default=True,
+        description="falseの場合はオッズと利用可能な収集時点を読み込みません。",
+    ),
+    odds_timing: str | None = Query(
+        default=None,
+        description="収集時点ラベルの完全一致。省略時は券種ごとの最新snapshotを返します。",
+    ),
+    store: AnalysisSQLiteStore = Depends(get_analysis_store),
+):
+    return store.get_pre_race_snapshot(
+        race_id,
+        include_odds=include_odds,
+        odds_timing=odds_timing,
+    )
+
+
+@app.get(
+    "/jra/races/{race_id}/odds-timeline",
+    tags=["jra-analysis"],
+    summary="保存済みJRAオッズ時系列を取得",
+    description="analysis SQLiteに保存済みの指定券種のオッズsnapshotを取得時刻順に返します。",
+    response_model=StoredOddsTimeline,
+)
+async def get_jra_odds_timeline(
+    race_id: RaceIdPath,
+    bet_type: BetType = Query(
+        description="券種コード。win, place, quinella, wide, exacta, trio, trifecta。",
+    ),
+    combination: str | None = Query(
+        default=None,
+        description="組み合わせをカンマ区切りで指定します。例: 4,10",
+    ),
+    store: AnalysisSQLiteStore = Depends(get_analysis_store),
+):
+    normalized_combination = (
+        normalize_combination(combination)
+        if combination is not None
+        else None
+    )
+    return store.get_odds_timeline(
+        race_id,
+        str(bet_type),
+        normalized_combination,
+    )
 
 
 @app.get(

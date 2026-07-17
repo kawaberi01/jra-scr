@@ -753,6 +753,75 @@ class NormalizedRaceInput(BaseModel):
     combination: list[str] = Field(default_factory=list)
 
 
+class StoredPreRace(BaseModel):
+    race_id: str
+    race_date: date
+    course: str
+    meeting_no: int | None = None
+    meeting_day: int | None = None
+    race_no: int
+    race_name: str | None = None
+    start_time: str | None = None
+    surface: str | None = None
+    distance: str | None = None
+    source: str | None = None
+    fetched_at: datetime | None = None
+
+
+class StoredPreRaceRunner(BaseModel):
+    race_id: str
+    horse_no: str
+    frame_no: str | None = None
+    horse_name: str
+    sex_age: str | None = None
+    weight_carried: str | None = None
+    jockey: str | None = None
+    trainer: str | None = None
+    card_odds: float | None = None
+    card_popularity: int | None = None
+
+
+class StoredOddsEntry(BaseModel):
+    bet_type: str
+    combination: list[str] = Field(default_factory=list)
+    odds: float | None = None
+    odds_min: float | None = None
+    odds_max: float | None = None
+    popularity: int | None = None
+
+
+class StoredOddsSnapshot(BaseModel):
+    snapshot_id: str
+    race_id: str
+    bet_type: str
+    odds_timing: str
+    fetched_at: datetime
+    source: str
+    entries: list[StoredOddsEntry] = Field(default_factory=list)
+
+
+class StoredPreRaceSnapshotMeta(BaseModel):
+    include_odds: bool
+    requested_odds_timing: str | None = None
+    available_odds_timings: list[str] = Field(default_factory=list)
+    missing_components: list[str] = Field(default_factory=list)
+
+
+class StoredPreRaceSnapshot(BaseModel):
+    race: StoredPreRace
+    runners: list[StoredPreRaceRunner] = Field(default_factory=list)
+    odds: list[StoredOddsSnapshot] = Field(default_factory=list)
+    meta: StoredPreRaceSnapshotMeta
+
+
+class StoredOddsTimeline(BaseModel):
+    race_id: str
+    bet_type: str
+    combination: list[str] = Field(default_factory=list)
+    snapshots: list[StoredOddsSnapshot] = Field(default_factory=list)
+    total: int
+
+
 class StoredRaceResultRecord(BaseModel):
     race_id: str
     date: date

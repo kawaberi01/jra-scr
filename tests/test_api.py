@@ -46,6 +46,7 @@ from jra_srb.models import (
     RaceResult,
     RaceSummary,
     ResultEntry,
+    Runner,
 )
 from jra_srb.nankankeiba_pattern_provider import NankankeibaPatternFixtureProvider 
 from jra_srb.nankankeiba_pattern_service import NankankeibaPatternService 
@@ -68,6 +69,55 @@ MEETING_SUMMARY = "\u958b\u50ac\u4e00\u89a7\u3092\u53d6\u5f97"
 MEETING_ODDS_SUMMARY = "\u958b\u50ac\u65e5\u30fb\u958b\u50ac\u5730\u30fb\u30ec\u30fc\u30b9\u756a\u53f7\u3067\u30aa\u30c3\u30ba\u3092\u53d6\u5f97"
 BET_TYPE_DESCRIPTION = "\u5238\u7a2e\u30b3\u30fc\u30c9\u3002\u4f8b: win, quinella, exacta, wide, trio, trifecta"
 COMBINATION_DESCRIPTION = "\u7d44\u307f\u5408\u308f\u305b\u3092\u30ab\u30f3\u30de\u533a\u5207\u308a\u3067\u6307\u5b9a\u3057\u307e\u3059\u3002\u4f8b: 10,11 \u307e\u305f\u306f 4,10,11"
+
+
+def _write_jra_pre_race_api_fixture(store: AnalysisSQLiteStore) -> str:
+    race_id = "202607180211"
+    store.write_card(
+        date(2026, 7, 18),
+        "kokura",
+        11,
+        RaceCard(
+            race_id=race_id,
+            race_name="Sample Stakes",
+            course="kokura",
+            distance="1800",
+            surface="turf",
+            start_time="15:35",
+            runners=[Runner(horse_no="1", frame_no="1", horse_name="One")],
+            fetched_at=datetime.fromisoformat("2026-07-18T14:55:00+09:00"),
+            source="jra",
+        ),
+    )
+    for odds_timing, fetched_at, entries in [
+        (
+            "t_minus_30m",
+            "2026-07-18T15:05:02+09:00",
+            [OddsEntry(bet_type="wide", combination=["4", "10"], odds="8.8", popularity="3")],
+        ),
+        (
+            "t_minus_10m",
+            "2026-07-18T15:25:02+09:00",
+            [OddsEntry(bet_type="wide", combination=["4", "10"], odds="8.5", popularity="3")],
+        ),
+        (
+            "t_minus_2m",
+            "2026-07-18T15:33:02+09:00",
+            [OddsEntry(bet_type="wide", combination=["2", "9"], odds="7.0")],
+        ),
+    ]:
+        store.write_odds(
+            RaceOdds(
+                race_id=race_id,
+                bet_type="wide",
+                entries=entries,
+                fetched_at=datetime.fromisoformat(fetched_at),
+                source="jra",
+            ),
+            bet_type="wide",
+            odds_timing=odds_timing,
+        )
+    return race_id
 
 
 def test_get_race_card_endpoint():
@@ -762,6 +812,20 @@ def test_openapi_contains_japanese_api_guidance():
     parameters = {item["name"]: item for item in odds_get["parameters"]}
     assert parameters["bet_type"]["description"] == BET_TYPE_DESCRIPTION
     assert parameters["combination"]["description"] == COMBINATION_DESCRIPTION
+    snapshot_get = body["paths"]["/jra/races/{race_id}/pre-race-snapshot"]["get"]
+    timeline_get = body["paths"]["/jra/races/{race_id}/odds-timeline"]["get"]
+    assert snapshot_get["summary"] == "保存済みJRA発走前snapshotを取得"
+    assert timeline_get["summary"] == "保存済みJRAオッズ時系列を取得"
+    snapshot_parameters = {item["name"]: item for item in snapshot_get["parameters"]}
+    timeline_parameters = {item["name"]: item for item in timeline_get["parameters"]}
+    assert "読み込みません" in snapshot_parameters["include_odds"]["description"]
+    assert "カンマ区切り" in timeline_parameters["combination"]["description"]
+    assert snapshot_get["responses"]["200"]["content"]["application/json"]["schema"]["$ref"].endswith(
+        "/StoredPreRaceSnapshot"
+    )
+    assert timeline_get["responses"]["200"]["content"]["application/json"]["schema"]["$ref"].endswith(
+        "/StoredOddsTimeline"
+    )
     assert "ApiErrorResponse" in body["components"]["schemas"]
 
 
@@ -1359,5 +1423,96 @@ def test_jra_prediction_and_evaluation_read_endpoints_validate_queries_and_not_f
         assert reversed_range.json()["error"]["code"] == "bad_request"
         assert invalid_race_id.status_code == 422
         assert invalid_limit.status_code == 422
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_jra_pre_race_snapshot_and_odds_timeline_read_analysis_db_from_env(tmp_path, monkeypatch):
+    path = tmp_path / "analysis.sqlite"
+    store = AnalysisSQLiteStore(path)
+    race_id = _write_jra_pre_race_api_fixture(store)
+    monkeypatch.setenv("JRA_SRB_ANALYSIS_DB_PATH", str(path))
+
+    client = TestClient(app)
+    snapshot_response = client.get(f"/jra/races/{race_id}/pre-race-snapshot")
+    no_odds_response = client.get(
+        f"/jra/races/{race_id}/pre-race-snapshot?include_odds=false"
+    )
+    timeline_response = client.get(
+        f"/jra/races/{race_id}/odds-timeline?bet_type=wide&combination=10,4"
+    )
+
+    assert snapshot_response.status_code == 200
+    snapshot = snapshot_response.json()
+    assert snapshot["race"]["race_date"] == "2026-07-18"
+    assert snapshot["runners"][0]["card_odds"] is None
+    assert snapshot["odds"][0]["odds_timing"] == "t_minus_2m"
+    assert snapshot["meta"]["available_odds_timings"] == [
+        "t_minus_30m",
+        "t_minus_10m",
+        "t_minus_2m",
+    ]
+    assert "results" not in snapshot
+    assert "payouts" not in snapshot
+    assert "evaluations" not in snapshot
+
+    assert no_odds_response.status_code == 200
+    no_odds = no_odds_response.json()
+    assert no_odds["odds"] == []
+    assert no_odds["meta"]["available_odds_timings"] == []
+    assert no_odds["meta"]["missing_components"] == []
+
+    assert timeline_response.status_code == 200
+    timeline = timeline_response.json()
+    assert timeline["combination"] == ["4", "10"]
+    assert timeline["total"] == 3
+    assert [item["odds_timing"] for item in timeline["snapshots"]] == [
+        "t_minus_30m",
+        "t_minus_10m",
+        "t_minus_2m",
+    ]
+    assert timeline["snapshots"][2]["entries"] == []
+    assert "combination_json" not in timeline_response.text
+
+
+def test_jra_pre_race_snapshot_and_odds_timeline_validate_requests(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    race_id = _write_jra_pre_race_api_fixture(store)
+    app.dependency_overrides[get_analysis_store] = lambda: store
+    try:
+        client = TestClient(app)
+
+        missing_race = client.get("/jra/races/202607180212/pre-race-snapshot")
+        missing_timeline_race = client.get(
+            "/jra/races/202607180212/odds-timeline?bet_type=wide"
+        )
+        invalid_race_id = client.get("/jra/races/invalid/pre-race-snapshot")
+        invalid_bool = client.get(
+            f"/jra/races/{race_id}/pre-race-snapshot?include_odds=invalid"
+        )
+        missing_bet_type = client.get(f"/jra/races/{race_id}/odds-timeline")
+        invalid_bet_type = client.get(
+            f"/jra/races/{race_id}/odds-timeline?bet_type=foobar"
+        )
+        invalid_combination = client.get(
+            f"/jra/races/{race_id}/odds-timeline?bet_type=wide&combination=4"
+        )
+        no_saved_odds = client.get(
+            f"/jra/races/{race_id}/odds-timeline?bet_type=trifecta"
+        )
+
+        assert missing_race.status_code == 404
+        assert missing_race.json()["error"]["code"] == "not_found"
+        assert missing_timeline_race.status_code == 404
+        assert missing_timeline_race.json()["error"]["code"] == "not_found"
+        assert invalid_race_id.status_code == 422
+        assert invalid_bool.status_code == 422
+        assert missing_bet_type.status_code == 422
+        assert invalid_bet_type.status_code == 422
+        assert invalid_combination.status_code == 400
+        assert invalid_combination.json()["error"]["code"] == "bad_request"
+        assert no_saved_odds.status_code == 200
+        assert no_saved_odds.json()["snapshots"] == []
+        assert no_saved_odds.json()["total"] == 0
     finally:
         app.dependency_overrides.clear()
