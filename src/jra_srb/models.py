@@ -944,3 +944,91 @@ class BetRecordPage(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+class PredictionTicketRecord(BaseModel):
+    ticket_id: str
+    prediction_id: str
+    race_id: str
+    bucket: str | None = None
+    bet_type: str
+    selection: str
+    selection_json: list[str] = Field(default_factory=list)
+    amount: int
+    reason: str | None = None
+
+
+class PredictionRecord(BaseModel):
+    prediction_id: str
+    race_id: str
+    theory_version: str
+    mode: str | None = None
+    budget: int | None = None
+    pre_race_snapshot: dict
+    prediction: dict
+    created_at: datetime
+    prediction_tickets: list[PredictionTicketRecord] = Field(default_factory=list)
+
+
+class PredictionRecordPage(BaseModel):
+    items: list[PredictionRecord] = Field(default_factory=list)
+    total: int
+    limit: int
+    offset: int
+
+
+class EvaluationTicketResultRecord(BaseModel):
+    ticket_result_id: str
+    evaluation_id: str
+    ticket_id: str | None = None
+    bucket: str | None = None
+    bet_type: str
+    selection: str
+    amount: int
+    hit: bool
+    payout: int
+
+
+class EvaluationRecord(BaseModel):
+    evaluation_id: str
+    prediction_id: str
+    race_id: str
+    theory_version: str
+    total_bet: int
+    total_payout: int
+    return_rate: float
+    hit: bool
+    gami: bool
+    axis_in_top3: bool | None = None
+    middle_hole_in_top3: bool | None = None
+    firework_hit: bool | None = None
+    max_odds_selected: float | None = None
+    evaluation: dict
+    created_at: datetime
+    ticket_results: list[EvaluationTicketResultRecord] = Field(default_factory=list)
+
+
+class EvaluationRecordPage(BaseModel):
+    items: list[EvaluationRecord] = Field(default_factory=list)
+    total: int
+    limit: int
+    offset: int
+
+
+class EvaluationSummary(BaseModel):
+    evaluation_count: int
+    total_bet: int
+    total_payout: int
+    return_rate: float
+    hit_count: int
+    hit_rate: float
+    gami_count: int
+    gami_rate: float
+    axis_in_top3_count: int
+    axis_in_top3_rate: float
+    middle_hole_in_top3_count: int
+    middle_hole_in_top3_rate: float
+    firework_hit_count: int
+    firework_hit_rate: float
+    max_single_payout: int
+    return_rate_without_max_payout: float

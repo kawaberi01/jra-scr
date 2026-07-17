@@ -15,11 +15,18 @@ from .models import (
     BetRecordPage,
     BetRecordResult,
     BetRecordSettlement,
+    EvaluationRecord,
+    EvaluationRecordPage,
+    EvaluationSummary,
+    EvaluationTicketResultRecord,
     BetRecordResultTicket,
     BetRecordTicket,
     MeetingRace,
     NetkeibaRaceResult,
     OddsEntry,
+    PredictionRecord,
+    PredictionRecordPage,
+    PredictionTicketRecord,
     RaceCard,
     RaceOdds,
     RaceResult,
@@ -1218,6 +1225,299 @@ class AnalysisSQLiteStore:
             "hit": total_payout > 0,
         }
 
+    def get_prediction_record(self, prediction_id: str) -> PredictionRecord:
+        with self._connect() as conn:
+            return self._get_prediction_record(conn, prediction_id)
+
+    def _get_prediction_record(self, conn: sqlite3.Connection, prediction_id: str) -> PredictionRecord:
+        row = conn.execute(
+            """
+            select prediction_id, race_id, theory_version, mode, budget,
+                   pre_race_snapshot_json, prediction_json, created_at
+            from predictions
+            where prediction_id = ?
+            """,
+            (prediction_id,),
+        ).fetchone()
+        if row is None:
+            raise LookupError(f"prediction not found for prediction_id={prediction_id}")
+
+        ticket_rows = conn.execute(
+            """
+            select ticket_id, prediction_id, race_id, bucket, bet_type,
+                   selection, selection_json, amount, reason
+            from prediction_tickets
+            where prediction_id = ?
+            order by rowid
+            """,
+            (prediction_id,),
+        ).fetchall()
+        return PredictionRecord(
+            prediction_id=row["prediction_id"],
+            race_id=row["race_id"],
+            theory_version=row["theory_version"],
+            mode=row["mode"],
+            budget=int(row["budget"]) if row["budget"] is not None else None,
+            pre_race_snapshot=json.loads(row["pre_race_snapshot_json"]),
+            prediction=json.loads(row["prediction_json"]),
+            created_at=_parse_datetime(row["created_at"]),
+            prediction_tickets=[
+                PredictionTicketRecord(
+                    ticket_id=ticket["ticket_id"],
+                    prediction_id=ticket["prediction_id"],
+                    race_id=ticket["race_id"],
+                    bucket=ticket["bucket"],
+                    bet_type=ticket["bet_type"],
+                    selection=ticket["selection"],
+                    selection_json=json.loads(ticket["selection_json"]),
+                    amount=int(ticket["amount"]),
+                    reason=ticket["reason"],
+                )
+                for ticket in ticket_rows
+            ],
+        )
+
+    def list_prediction_records(
+        self,
+        race_id: str | None = None,
+        from_date: date | None = None,
+        to_date: date | None = None,
+        theory_version: str | None = None,
+        mode: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> PredictionRecordPage:
+        where: list[str] = []
+        params: list[object] = []
+        if race_id is not None:
+            where.append("p.race_id = ?")
+            params.append(race_id)
+        if from_date is not None:
+            where.append("r.race_date >= ?")
+            params.append(from_date.isoformat())
+        if to_date is not None:
+            where.append("r.race_date <= ?")
+            params.append(to_date.isoformat())
+        if theory_version is not None:
+            where.append("p.theory_version = ?")
+            params.append(theory_version)
+        if mode is not None:
+            where.append("p.mode = ?")
+            params.append(mode)
+        where_sql = f"where {' and '.join(where)}" if where else ""
+
+        with self._connect() as conn:
+            total = int(
+                conn.execute(
+                    f"""
+                    select count(1)
+                    from predictions p
+                    left join races r on r.race_id = p.race_id
+                    {where_sql}
+                    """,
+                    params,
+                ).fetchone()[0]
+            )
+            rows = conn.execute(
+                f"""
+                select p.prediction_id
+                from predictions p
+                left join races r on r.race_id = p.race_id
+                {where_sql}
+                order by p.created_at desc, p.prediction_id desc
+                limit ? offset ?
+                """,
+                [*params, limit, offset],
+            ).fetchall()
+            items = [self._get_prediction_record(conn, row["prediction_id"]) for row in rows]
+        return PredictionRecordPage(items=items, total=total, limit=limit, offset=offset)
+
+    def get_evaluation_record(self, evaluation_id: str) -> EvaluationRecord:
+        with self._connect() as conn:
+            return self._get_evaluation_record(conn, evaluation_id)
+
+    def _get_evaluation_record(self, conn: sqlite3.Connection, evaluation_id: str) -> EvaluationRecord:
+        row = conn.execute(
+            """
+            select evaluation_id, prediction_id, race_id, theory_version, total_bet,
+                   total_payout, return_rate, hit, gami, axis_in_top3,
+                   middle_hole_in_top3, firework_hit, max_odds_selected,
+                   evaluation_json, created_at
+            from evaluations
+            where evaluation_id = ?
+            """,
+            (evaluation_id,),
+        ).fetchone()
+        if row is None:
+            raise LookupError(f"evaluation not found for evaluation_id={evaluation_id}")
+
+        ticket_rows = conn.execute(
+            """
+            select ticket_result_id, evaluation_id, ticket_id, bucket, bet_type,
+                   selection, amount, hit, payout
+            from evaluation_ticket_results
+            where evaluation_id = ?
+            order by rowid
+            """,
+            (evaluation_id,),
+        ).fetchall()
+        return EvaluationRecord(
+            evaluation_id=row["evaluation_id"],
+            prediction_id=row["prediction_id"],
+            race_id=row["race_id"],
+            theory_version=row["theory_version"],
+            total_bet=int(row["total_bet"]),
+            total_payout=int(row["total_payout"]),
+            return_rate=float(row["return_rate"]),
+            hit=bool(row["hit"]),
+            gami=bool(row["gami"]),
+            axis_in_top3=bool(row["axis_in_top3"]) if row["axis_in_top3"] is not None else None,
+            middle_hole_in_top3=(
+                bool(row["middle_hole_in_top3"]) if row["middle_hole_in_top3"] is not None else None
+            ),
+            firework_hit=bool(row["firework_hit"]) if row["firework_hit"] is not None else None,
+            max_odds_selected=(
+                float(row["max_odds_selected"]) if row["max_odds_selected"] is not None else None
+            ),
+            evaluation=json.loads(row["evaluation_json"]),
+            created_at=_parse_datetime(row["created_at"]),
+            ticket_results=[
+                EvaluationTicketResultRecord(
+                    ticket_result_id=ticket["ticket_result_id"],
+                    evaluation_id=ticket["evaluation_id"],
+                    ticket_id=ticket["ticket_id"],
+                    bucket=ticket["bucket"],
+                    bet_type=ticket["bet_type"],
+                    selection=ticket["selection"],
+                    amount=int(ticket["amount"]),
+                    hit=bool(ticket["hit"]),
+                    payout=int(ticket["payout"]),
+                )
+                for ticket in ticket_rows
+            ],
+        )
+
+    def list_evaluation_records(
+        self,
+        prediction_id: str | None = None,
+        race_id: str | None = None,
+        from_date: date | None = None,
+        to_date: date | None = None,
+        theory_version: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> EvaluationRecordPage:
+        where, params = _evaluation_filters(
+            prediction_id=prediction_id,
+            race_id=race_id,
+            from_date=from_date,
+            to_date=to_date,
+            theory_version=theory_version,
+        )
+        where_sql = f"where {' and '.join(where)}" if where else ""
+        with self._connect() as conn:
+            total = int(
+                conn.execute(
+                    f"""
+                    select count(1)
+                    from evaluations e
+                    left join races r on r.race_id = e.race_id
+                    {where_sql}
+                    """,
+                    params,
+                ).fetchone()[0]
+            )
+            rows = conn.execute(
+                f"""
+                select e.evaluation_id
+                from evaluations e
+                left join races r on r.race_id = e.race_id
+                {where_sql}
+                order by e.created_at desc, e.evaluation_id desc
+                limit ? offset ?
+                """,
+                [*params, limit, offset],
+            ).fetchall()
+            items = [self._get_evaluation_record(conn, row["evaluation_id"]) for row in rows]
+        return EvaluationRecordPage(items=items, total=total, limit=limit, offset=offset)
+
+    def summarize_evaluations(
+        self,
+        from_date: date | None = None,
+        to_date: date | None = None,
+        theory_version: str | None = None,
+    ) -> EvaluationSummary:
+        where, params = _evaluation_filters(
+            from_date=from_date,
+            to_date=to_date,
+            theory_version=theory_version,
+        )
+        where_sql = f"where {' and '.join(where)}" if where else ""
+        with self._connect() as conn:
+            row = conn.execute(
+                f"""
+                select count(1) as evaluation_count,
+                       coalesce(sum(e.total_bet), 0) as total_bet,
+                       coalesce(sum(e.total_payout), 0) as total_payout,
+                       coalesce(sum(e.hit), 0) as hit_count,
+                       coalesce(sum(e.gami), 0) as gami_count,
+                       coalesce(sum(case when e.axis_in_top3 = 1 then 1 else 0 end), 0) as axis_in_top3_count,
+                       count(e.axis_in_top3) as axis_in_top3_total,
+                       coalesce(sum(case when e.middle_hole_in_top3 = 1 then 1 else 0 end), 0) as middle_hole_in_top3_count,
+                       count(e.middle_hole_in_top3) as middle_hole_in_top3_total,
+                       coalesce(sum(case when e.firework_hit = 1 then 1 else 0 end), 0) as firework_hit_count,
+                       count(e.firework_hit) as firework_hit_total
+                from evaluations e
+                left join races r on r.race_id = e.race_id
+                {where_sql}
+                """,
+                params,
+            ).fetchone()
+            max_single_payout = int(
+                conn.execute(
+                    f"""
+                    select coalesce(max(etr.payout), 0)
+                    from evaluation_ticket_results etr
+                    join evaluations e on e.evaluation_id = etr.evaluation_id
+                    left join races r on r.race_id = e.race_id
+                    {where_sql}
+                    """,
+                    params,
+                ).fetchone()[0]
+            )
+
+        evaluation_count = int(row["evaluation_count"])
+        total_bet = int(row["total_bet"])
+        total_payout = int(row["total_payout"])
+        hit_count = int(row["hit_count"])
+        gami_count = int(row["gami_count"])
+        axis_count = int(row["axis_in_top3_count"])
+        axis_total = int(row["axis_in_top3_total"])
+        middle_count = int(row["middle_hole_in_top3_count"])
+        middle_total = int(row["middle_hole_in_top3_total"])
+        firework_count = int(row["firework_hit_count"])
+        firework_total = int(row["firework_hit_total"])
+        return EvaluationSummary(
+            evaluation_count=evaluation_count,
+            total_bet=total_bet,
+            total_payout=total_payout,
+            return_rate=(total_payout / total_bet) if total_bet else 0.0,
+            hit_count=hit_count,
+            hit_rate=(hit_count / evaluation_count) if evaluation_count else 0.0,
+            gami_count=gami_count,
+            gami_rate=(gami_count / evaluation_count) if evaluation_count else 0.0,
+            axis_in_top3_count=axis_count,
+            axis_in_top3_rate=(axis_count / axis_total) if axis_total else 0.0,
+            middle_hole_in_top3_count=middle_count,
+            middle_hole_in_top3_rate=(middle_count / middle_total) if middle_total else 0.0,
+            firework_hit_count=firework_count,
+            firework_hit_rate=(firework_count / firework_total) if firework_total else 0.0,
+            max_single_payout=max_single_payout,
+            return_rate_without_max_payout=(
+                (total_payout - max_single_payout) / total_bet if total_bet else 0.0
+            ),
+        )
+
     def create_bet_record(self, request: BetRecordCreateRequest | dict) -> BetRecord:
         request = BetRecordCreateRequest.model_validate(request)
         expanded_tickets = _expand_bet_record_tickets(request)
@@ -2350,6 +2650,33 @@ def _now() -> str:
 
 def _row_to_dict(row: sqlite3.Row) -> dict:
     return dict(row)
+
+
+def _evaluation_filters(
+    prediction_id: str | None = None,
+    race_id: str | None = None,
+    from_date: date | None = None,
+    to_date: date | None = None,
+    theory_version: str | None = None,
+) -> tuple[list[str], list[object]]:
+    where: list[str] = []
+    params: list[object] = []
+    if prediction_id is not None:
+        where.append("e.prediction_id = ?")
+        params.append(prediction_id)
+    if race_id is not None:
+        where.append("e.race_id = ?")
+        params.append(race_id)
+    if from_date is not None:
+        where.append("r.race_date >= ?")
+        params.append(from_date.isoformat())
+    if to_date is not None:
+        where.append("r.race_date <= ?")
+        params.append(to_date.isoformat())
+    if theory_version is not None:
+        where.append("e.theory_version = ?")
+        params.append(theory_version)
+    return where, params
 
 
 def _scalar(conn: sqlite3.Connection, sql: str, params: tuple[object, ...]) -> int:
