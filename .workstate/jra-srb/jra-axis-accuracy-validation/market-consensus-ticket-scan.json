@@ -1,0 +1,180 @@
+{
+  "theory": "market_consensus_axis_v1_ticket_scan",
+  "axis": "market favorite equals history-model top and odds <=2.5",
+  "partner_space": "market ranks 2 through 4; ten pre-fixed ticket shapes",
+  "selection_protocol": "choose one shape on calibration by no_top3_roi, then report unchanged external metrics",
+  "calibration": {
+    "wide_m2": {
+      "axis_races": 262,
+      "tickets": 262,
+      "hits": 110,
+      "roi": 0.7942748091603054,
+      "no_max_roi": 0.7804597701149425,
+      "no_top3_roi": 0.7598455598455598
+    },
+    "wide_m3": {
+      "axis_races": 262,
+      "tickets": 262,
+      "hits": 86,
+      "roi": 0.8530534351145038,
+      "no_max_roi": 0.8386973180076628,
+      "no_top3_roi": 0.8111969111969112
+    },
+    "wide_m4": {
+      "axis_races": 262,
+      "tickets": 262,
+      "hits": 70,
+      "roi": 0.8958015267175573,
+      "no_max_roi": 0.8701149425287357,
+      "no_top3_roi": 0.8347490347490347
+    },
+    "quinella_m2": {
+      "axis_races": 262,
+      "tickets": 262,
+      "hits": 64,
+      "roi": 0.8557251908396947,
+      "no_max_roi": 0.8264367816091954,
+      "no_top3_roi": 0.7826254826254826
+    },
+    "quinella_m3": {
+      "axis_races": 262,
+      "tickets": 262,
+      "hits": 42,
+      "roi": 0.9041984732824427,
+      "no_max_roi": 0.8681992337164751,
+      "no_top3_roi": 0.8023166023166023
+    },
+    "quinella_m4": {
+      "axis_races": 262,
+      "tickets": 262,
+      "hits": 33,
+      "roi": 1.001145038167939,
+      "no_max_roi": 0.9452107279693487,
+      "no_top3_roi": 0.8563706563706563
+    },
+    "trio_m2_m3": {
+      "axis_races": 262,
+      "tickets": 262,
+      "hits": 33,
+      "roi": 0.7541984732824427,
+      "no_max_roi": 0.6931034482758621,
+      "no_top3_roi": 0.5961389961389961
+    },
+    "trio_m2_m4": {
+      "axis_races": 262,
+      "tickets": 262,
+      "hits": 29,
+      "roi": 0.9320610687022901,
+      "no_max_roi": 0.8662835249042146,
+      "no_top3_roi": 0.7621621621621621
+    },
+    "trio_m3_m4": {
+      "axis_races": 262,
+      "tickets": 262,
+      "hits": 16,
+      "roi": 0.6732824427480916,
+      "no_max_roi": 0.5938697318007663,
+      "no_top3_roi": 0.4606177606177606
+    },
+    "trio_box_m2_m4": {
+      "axis_races": 262,
+      "tickets": 786,
+      "hits": 78,
+      "roi": 0.7865139949109414,
+      "no_max_roi": 0.7602547770700637,
+      "no_top3_roi": 0.7155810983397191
+    }
+  },
+  "chosen_ticket_shape": "quinella_m4",
+  "external": {
+    "wide_m2": {
+      "axis_races": 265,
+      "tickets": 265,
+      "hits": 129,
+      "roi": 0.9486792452830188,
+      "no_max_roi": 0.9371212121212121,
+      "no_top3_roi": 0.915648854961832
+    },
+    "wide_m3": {
+      "axis_races": 265,
+      "tickets": 265,
+      "hits": 80,
+      "roi": 0.7830188679245284,
+      "no_max_roi": 0.7670454545454546,
+      "no_top3_roi": 0.7389312977099237
+    },
+    "wide_m4": {
+      "axis_races": 265,
+      "tickets": 265,
+      "hits": 50,
+      "roi": 0.7056603773584905,
+      "no_max_roi": 0.6818181818181818,
+      "no_top3_roi": 0.6377862595419848
+    },
+    "quinella_m2": {
+      "axis_races": 265,
+      "tickets": 265,
+      "hits": 74,
+      "roi": 1.030566037735849,
+      "no_max_roi": 1.0056818181818181,
+      "no_top3_roi": 0.9618320610687023
+    },
+    "quinella_m3": {
+      "axis_races": 265,
+      "tickets": 265,
+      "hits": 25,
+      "roi": 0.5147169811320754,
+      "no_max_roi": 0.4791666666666667,
+      "no_top3_roi": 0.4122137404580153
+    },
+    "quinella_m4": {
+      "axis_races": 265,
+      "tickets": 265,
+      "hits": 18,
+      "roi": 0.6033962264150944,
+      "no_max_roi": 0.5435606060606061,
+      "no_top3_roi": 0.4541984732824427
+    },
+    "trio_m2_m3": {
+      "axis_races": 265,
+      "tickets": 265,
+      "hits": 46,
+      "roi": 1.0739622641509434,
+      "no_max_roi": 1.0170454545454546,
+      "no_top3_roi": 0.9045801526717557
+    },
+    "trio_m2_m4": {
+      "axis_races": 265,
+      "tickets": 265,
+      "hits": 23,
+      "roi": 0.7777358490566038,
+      "no_max_roi": 0.6988636363636364,
+      "no_top3_roi": 0.5778625954198473
+    },
+    "trio_m3_m4": {
+      "axis_races": 265,
+      "tickets": 265,
+      "hits": 11,
+      "roi": 0.5584905660377358,
+      "no_max_roi": 0.44886363636363635,
+      "no_top3_roi": 0.3
+    },
+    "trio_box_m2_m4": {
+      "axis_races": 265,
+      "tickets": 795,
+      "hits": 80,
+      "roi": 0.8033962264150943,
+      "no_max_roi": 0.7672544080604534,
+      "no_top3_roi": 0.7140151515151515
+    }
+  },
+  "external_chosen": {
+    "axis_races": 265,
+    "tickets": 265,
+    "hits": 18,
+    "roi": 0.6033962264150944,
+    "no_max_roi": 0.5435606060606061,
+    "no_top3_roi": 0.4541984732824427
+  },
+  "warning": "Exploratory ticket scan. A positive external result still requires a new untouched period before betting use."
+}

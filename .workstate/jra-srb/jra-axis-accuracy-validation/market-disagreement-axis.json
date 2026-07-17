@@ -1,0 +1,125 @@
+{
+  "theory": "market_disagreement_axis_v1",
+  "mechanism": "市場3〜6番人気だが履歴モデル1位の馬は、市場が過小評価した構造情報を持つ軸候補である",
+  "selection_protocol": "10個の事前固定モデル先頭差から校正候補100件以上・3着内率最大を選び、externalでは固定",
+  "iterations": [
+    {
+      "model_lead_margin": 0.0,
+      "calibration": {
+        "candidates": 209,
+        "win_rate": 0.10526315789473684,
+        "top3_rate": 0.3875598086124402,
+        "roi": 0.7607655502392344,
+        "mean_odds": 7.175598086124402
+      }
+    },
+    {
+      "model_lead_margin": 0.005,
+      "calibration": {
+        "candidates": 198,
+        "win_rate": 0.10606060606060606,
+        "top3_rate": 0.3888888888888889,
+        "roi": 0.7666666666666667,
+        "mean_odds": 7.209595959595959
+      }
+    },
+    {
+      "model_lead_margin": 0.01,
+      "calibration": {
+        "candidates": 174,
+        "win_rate": 0.10919540229885058,
+        "top3_rate": 0.40229885057471265,
+        "roi": 0.7833333333333333,
+        "mean_odds": 7.174712643678162
+      }
+    },
+    {
+      "model_lead_margin": 0.015,
+      "calibration": {
+        "candidates": 154,
+        "win_rate": 0.1038961038961039,
+        "top3_rate": 0.38961038961038963,
+        "roi": 0.7571428571428571,
+        "mean_odds": 7.088961038961039
+      }
+    },
+    {
+      "model_lead_margin": 0.02,
+      "calibration": {
+        "candidates": 136,
+        "win_rate": 0.10294117647058823,
+        "top3_rate": 0.41911764705882354,
+        "roi": 0.7551470588235294,
+        "mean_odds": 6.997794117647059
+      }
+    },
+    {
+      "model_lead_margin": 0.025,
+      "calibration": {
+        "candidates": 121,
+        "win_rate": 0.10743801652892562,
+        "top3_rate": 0.4297520661157025,
+        "roi": 0.775206611570248,
+        "mean_odds": 6.9842975206611575
+      }
+    },
+    {
+      "model_lead_margin": 0.03,
+      "calibration": {
+        "candidates": 106,
+        "win_rate": 0.09433962264150944,
+        "top3_rate": 0.4528301886792453,
+        "roi": 0.6650943396226415,
+        "mean_odds": 7.027358490566037
+      }
+    },
+    {
+      "model_lead_margin": 0.04,
+      "calibration": {
+        "candidates": 89,
+        "win_rate": 0.10112359550561797,
+        "top3_rate": 0.48314606741573035,
+        "roi": 0.7202247191011236,
+        "mean_odds": 6.893258426966292
+      }
+    },
+    {
+      "model_lead_margin": 0.05,
+      "calibration": {
+        "candidates": 73,
+        "win_rate": 0.1095890410958904,
+        "top3_rate": 0.4931506849315068,
+        "roi": 0.7602739726027398,
+        "mean_odds": 6.843835616438357
+      }
+    },
+    {
+      "model_lead_margin": 0.06,
+      "calibration": {
+        "candidates": 58,
+        "win_rate": 0.1206896551724138,
+        "top3_rate": 0.5172413793103449,
+        "roi": 0.8793103448275862,
+        "mean_odds": 6.687931034482758
+      }
+    }
+  ],
+  "chosen": {
+    "model_lead_margin": 0.03,
+    "calibration": {
+      "candidates": 106,
+      "win_rate": 0.09433962264150944,
+      "top3_rate": 0.4528301886792453,
+      "roi": 0.6650943396226415,
+      "mean_odds": 7.027358490566037
+    }
+  },
+  "external": {
+    "candidates": 74,
+    "win_rate": 0.10810810810810811,
+    "top3_rate": 0.2972972972972973,
+    "roi": 0.7054054054054054,
+    "mean_odds": 7.671621621621623
+  },
+  "warning": "A non-favorite accuracy experiment; positive ROI is not assumed or promoted without a further untouched period."
+}

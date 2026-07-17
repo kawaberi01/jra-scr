@@ -1,0 +1,110 @@
+{
+  "theory": "market_consensus_axis_v1",
+  "mechanism": "市場1番人気と履歴モデル1位が一致する馬は、二つの事前情報が整合した軸候補である",
+  "selection_protocol": "calibrationで8個の事前固定オッズ上限から候補100件以上・3着内率最大を選び、externalでは固定",
+  "baselines_external": {
+    "market_favorite": {
+      "candidates": 838,
+      "win_rate": 0.3233890214797136,
+      "top3_rate": 0.662291169451074,
+      "mean_odds": 2.6973747016706446
+    },
+    "model_top": {
+      "candidates": 838,
+      "win_rate": 0.23389021479713604,
+      "top3_rate": 0.5465393794749404,
+      "mean_odds": 4.780787589498807
+    }
+  },
+  "iterations": [
+    {
+      "odds_ceiling": 2.5,
+      "calibration": {
+        "candidates": 262,
+        "win_rate": 0.4618320610687023,
+        "top3_rate": 0.8129770992366412,
+        "mean_odds": 1.8591603053435115
+      }
+    },
+    {
+      "odds_ceiling": 3.0,
+      "calibration": {
+        "candidates": 325,
+        "win_rate": 0.4338461538461538,
+        "top3_rate": 0.7876923076923077,
+        "mean_odds": 2.0295384615384617
+      }
+    },
+    {
+      "odds_ceiling": 3.5,
+      "calibration": {
+        "candidates": 371,
+        "win_rate": 0.40161725067385445,
+        "top3_rate": 0.7520215633423181,
+        "mean_odds": 2.181132075471698
+      }
+    },
+    {
+      "odds_ceiling": 4.0,
+      "calibration": {
+        "candidates": 396,
+        "win_rate": 0.3888888888888889,
+        "top3_rate": 0.7272727272727273,
+        "mean_odds": 2.2818181818181817
+      }
+    },
+    {
+      "odds_ceiling": 5.0,
+      "calibration": {
+        "candidates": 410,
+        "win_rate": 0.3804878048780488,
+        "top3_rate": 0.7121951219512195,
+        "mean_odds": 2.3563414634146342
+      }
+    },
+    {
+      "odds_ceiling": 6.0,
+      "calibration": {
+        "candidates": 410,
+        "win_rate": 0.3804878048780488,
+        "top3_rate": 0.7121951219512195,
+        "mean_odds": 2.3563414634146342
+      }
+    },
+    {
+      "odds_ceiling": 8.0,
+      "calibration": {
+        "candidates": 410,
+        "win_rate": 0.3804878048780488,
+        "top3_rate": 0.7121951219512195,
+        "mean_odds": 2.3563414634146342
+      }
+    },
+    {
+      "odds_ceiling": 10.0,
+      "calibration": {
+        "candidates": 410,
+        "win_rate": 0.3804878048780488,
+        "top3_rate": 0.7121951219512195,
+        "mean_odds": 2.3563414634146342
+      }
+    }
+  ],
+  "chosen": {
+    "odds_ceiling": 2.5,
+    "calibration": {
+      "candidates": 262,
+      "win_rate": 0.4618320610687023,
+      "top3_rate": 0.8129770992366412,
+      "mean_odds": 1.8591603053435115
+    }
+  },
+  "external": {
+    "candidates": 265,
+    "win_rate": 0.38113207547169814,
+    "top3_rate": 0.7773584905660378,
+    "mean_odds": 1.9290566037735848
+  },
+  "status": "accuracy_candidate",
+  "warning": "Accuracy theory only. It does not imply positive expected value or a betting recommendation."
+}
