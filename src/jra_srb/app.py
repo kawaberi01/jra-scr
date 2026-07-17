@@ -33,6 +33,7 @@ from .models import (
     EvaluationRecordPage,
     EvaluationSummary,
     JraDayRaceScoutResult,
+    JraLiveShadowObservationPage,
     JraPredictionBundle,
     NarCalendarPage, 
     NankankeibaPatternBundle, 
@@ -1553,6 +1554,26 @@ async def get_jra_odds_timeline(
         race_id,
         str(bet_type),
         normalized_combination,
+    )
+
+
+@app.get(
+    "/jra/races/{race_id}/live-shadow-observations",
+    tags=["jra-analysis"],
+    summary="保存済みJRA発走前ライブシャドー観測を取得",
+    description="race-scout実行時に保存した候補、単勝オッズ、モデル版、shadow判断を新しい順に返します。",
+    response_model=JraLiveShadowObservationPage,
+)
+async def list_jra_live_shadow_observations(
+    race_id: RaceIdPath,
+    limit: int = Query(default=DEFAULT_PAGE_LIMIT, ge=1, le=MAX_PAGE_LIMIT),
+    offset: int = Query(default=0, ge=0),
+    store: AnalysisSQLiteStore = Depends(get_analysis_store),
+):
+    return store.list_jra_live_shadow_observations(
+        race_id,
+        limit=limit,
+        offset=offset,
     )
 
 

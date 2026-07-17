@@ -22,6 +22,9 @@ from jra_srb.batch import JsonlRaceResultStorage, SQLiteRaceResultStorage
 from jra_srb.errors import BadRequestError, ResourceNotFoundError
 from jra_srb.jobs import ResultCollectionJobRegistry
 from jra_srb.models import (
+    JraDayRaceScoutEntry,
+    JraDayRaceScoutResult,
+    JraLiveShadowObservation,
     MeetingRace,
     MeetingSnapshot,
     NankankeibaPatternBundle,
@@ -117,6 +120,59 @@ def _write_jra_pre_race_api_fixture(store: AnalysisSQLiteStore) -> str:
             bet_type="wide",
             odds_timing=odds_timing,
         )
+    return race_id
+
+
+def _write_jra_live_shadow_api_fixture(store: AnalysisSQLiteStore) -> str:
+    race_id = "202607180211"
+    observed_at = datetime(2026, 7, 18, 5, 10, tzinfo=UTC)
+    entry = JraDayRaceScoutEntry(
+        race_id=race_id,
+        course="kokura",
+        race_no=11,
+        race_name="テスト競走",
+        grade="A",
+    )
+    result = JraDayRaceScoutResult(
+        run_id="jra-scout-api",
+        date=date(2026, 7, 18),
+        observed_at=observed_at,
+        status="completed",
+        race_count=1,
+        analyzed_count=1,
+        candidates=[entry],
+        entries=[entry],
+    )
+    observation = JraLiveShadowObservation(
+        observation_id=f"{result.run_id}:{race_id}",
+        run_id=result.run_id,
+        race_id=race_id,
+        race_date=result.date,
+        course="kokura",
+        race_no=11,
+        observed_at=observed_at,
+        model_version="model-v2",
+        trained_through=date(2026, 7, 11),
+        policy_version="policy-v1",
+        decision_status="shadow_only",
+        ticket_status="shadow_only",
+        odds=RaceOdds(
+            race_id=race_id,
+            bet_type="win",
+            entries=[OddsEntry(bet_type="win", combination=["5"], odds="3.5")],
+            fetched_at=observed_at,
+            source="jra",
+        ),
+        materials_ranking=[{"horse_no": "5"}],
+        history_ranking=[{"horse_no": "5", "win_probability_race_normalized": 0.25}],
+        decision={
+            "source_status": "recommended",
+            "status": "shadow_only",
+            "ticket_status": "shadow_only",
+            "tickets": [],
+        },
+    )
+    store.save_jra_scout_result(result, observations=[observation])
     return race_id
 
 
@@ -1593,5 +1649,48 @@ def test_jra_pre_race_snapshot_and_odds_timeline_validate_requests(tmp_path):
         assert no_saved_odds.status_code == 200
         assert no_saved_odds.json()["snapshots"] == []
         assert no_saved_odds.json()["total"] == 0
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_jra_live_shadow_observations_endpoint_returns_saved_payload(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    race_id = _write_jra_live_shadow_api_fixture(store)
+    app.dependency_overrides[get_analysis_store] = lambda: store
+    try:
+        client = TestClient(app)
+
+        response = client.get(
+            f"/jra/races/{race_id}/live-shadow-observations",
+            params={"limit": 1, "offset": 0},
+        )
+
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["race_id"] == race_id
+        assert payload["total"] == 1
+        assert payload["items"][0]["model_version"] == "model-v2"
+        assert payload["items"][0]["decision"]["status"] == "shadow_only"
+        assert payload["items"][0]["decision"]["tickets"] == []
+        assert payload["items"][0]["observed_at"] == payload["items"][0]["odds"]["fetched_at"]
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_jra_live_shadow_observations_endpoint_validates_and_returns_not_found(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    app.dependency_overrides[get_analysis_store] = lambda: store
+    try:
+        client = TestClient(app)
+
+        invalid_limit = client.get(
+            "/jra/races/202607180211/live-shadow-observations",
+            params={"limit": 0},
+        )
+        not_found = client.get("/jra/races/202607180211/live-shadow-observations")
+
+        assert invalid_limit.status_code == 422
+        assert not_found.status_code == 404
+        assert not_found.json()["error"]["code"] == "not_found"
     finally:
         app.dependency_overrides.clear()

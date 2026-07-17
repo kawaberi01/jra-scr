@@ -867,6 +867,35 @@ class StoredOddsTimeline(BaseModel):
     total: int
 
 
+class JraLiveShadowObservation(BaseModel):
+    observation_id: str
+    run_id: str
+    race_id: str
+    race_date: date
+    course: str
+    race_no: int
+    observed_at: datetime
+    model_version: str
+    model_created_at: datetime | None = None
+    trained_through: date | None = None
+    policy_version: str | None = None
+    decision_status: str
+    ticket_status: str
+    odds: RaceOdds
+    materials_ranking: list[dict[str, object]] = Field(default_factory=list)
+    history_ranking: list[dict[str, object]] = Field(default_factory=list)
+    decision: dict[str, object] = Field(default_factory=dict)
+    component_status: dict[str, str] = Field(default_factory=dict)
+
+
+class JraLiveShadowObservationPage(BaseModel):
+    race_id: str
+    items: list[JraLiveShadowObservation] = Field(default_factory=list)
+    total: int
+    limit: int
+    offset: int
+
+
 class StoredRaceResultRecord(BaseModel):
     race_id: str
     date: date

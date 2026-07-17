@@ -20,6 +20,8 @@ from .models import (
     EvaluationSummary,
     EvaluationTicketResultRecord,
     JraDayRaceScoutResult,
+    JraLiveShadowObservation,
+    JraLiveShadowObservationPage,
     BetRecordResultTicket,
     BetRecordTicket,
     MeetingRace,
@@ -421,14 +423,39 @@ class AnalysisSQLiteStore:
                 );
                 create index if not exists idx_jra_scout_entries_run_grade
                 on jra_scout_entries (run_id, grade);
+
+                create table if not exists jra_live_shadow_observations (
+                    observation_id text primary key,
+                    run_id text not null,
+                    race_id text not null,
+                    race_date text not null,
+                    course text not null,
+                    race_no integer not null,
+                    observed_at text not null,
+                    model_version text not null,
+                    policy_version text,
+                    decision_status text not null,
+                    ticket_status text not null,
+                    payload_json text not null,
+                    unique (run_id, race_id),
+                    foreign key (run_id) references jra_scout_runs(run_id)
+                );
+                create index if not exists idx_jra_live_shadow_observations_race_time
+                on jra_live_shadow_observations (race_id, observed_at desc);
                 """
             )
             _ensure_column(conn, "races", "meeting_no", "integer")
             _ensure_column(conn, "races", "meeting_day", "integer")
             _ensure_column(conn, "netkeiba_race_results", "race_laps_json", "text")
 
-    def save_jra_scout_result(self, result: JraDayRaceScoutResult) -> dict[str, object]:
+    def save_jra_scout_result(
+        self,
+        result: JraDayRaceScoutResult,
+        *,
+        observations: list[JraLiveShadowObservation] | None = None,
+    ) -> dict[str, object]:
         payload = result.model_dump(mode="json")
+        observations = observations or []
         with self._connect() as conn:
             conn.execute("pragma foreign_keys = on")
             conn.execute(
@@ -462,7 +489,93 @@ class AnalysisSQLiteStore:
                     for entry in result.entries
                 ],
             )
-        return {"run_id": result.run_id, "entries": len(result.entries)}
+            conn.executemany(
+                """
+                insert into jra_live_shadow_observations
+                (observation_id, run_id, race_id, race_date, course, race_no, observed_at,
+                 model_version, policy_version, decision_status, ticket_status, payload_json)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                on conflict(run_id, race_id) do update set
+                    observation_id=excluded.observation_id,
+                    race_date=excluded.race_date,
+                    course=excluded.course,
+                    race_no=excluded.race_no,
+                    observed_at=excluded.observed_at,
+                    model_version=excluded.model_version,
+                    policy_version=excluded.policy_version,
+                    decision_status=excluded.decision_status,
+                    ticket_status=excluded.ticket_status,
+                    payload_json=excluded.payload_json
+                """,
+                [
+                    (
+                        observation.observation_id,
+                        observation.run_id,
+                        observation.race_id,
+                        observation.race_date.isoformat(),
+                        observation.course,
+                        observation.race_no,
+                        observation.observed_at.isoformat(),
+                        observation.model_version,
+                        observation.policy_version,
+                        observation.decision_status,
+                        observation.ticket_status,
+                        json.dumps(observation.model_dump(mode="json"), ensure_ascii=False),
+                    )
+                    for observation in observations
+                ],
+            )
+        return {
+            "run_id": result.run_id,
+            "entries": len(result.entries),
+            "observations": len(observations),
+        }
+
+    def list_jra_live_shadow_observations(
+        self,
+        race_id: str,
+        *,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> JraLiveShadowObservationPage:
+        with self._connect() as conn:
+            known_race = conn.execute(
+                """
+                select 1 from races where race_id = ?
+                union all
+                select 1 from jra_scout_entries where race_id = ?
+                limit 1
+                """,
+                (race_id, race_id),
+            ).fetchone()
+            if known_race is None:
+                raise LookupError(f"stored race not found for race_id={race_id}")
+            total = int(
+                conn.execute(
+                    "select count(*) from jra_live_shadow_observations where race_id = ?",
+                    (race_id,),
+                ).fetchone()[0]
+            )
+            rows = conn.execute(
+                """
+                select payload_json
+                from jra_live_shadow_observations
+                where race_id = ?
+                order by observed_at desc, observation_id desc
+                limit ? offset ?
+                """,
+                (race_id, limit, offset),
+            ).fetchall()
+        return JraLiveShadowObservationPage(
+            race_id=race_id,
+            items=[
+                JraLiveShadowObservation.model_validate(json.loads(row["payload_json"]))
+                for row in rows
+            ],
+            total=total,
+            limit=limit,
+            offset=offset,
+        )
 
     def create_run(
         self,

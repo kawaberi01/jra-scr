@@ -1,6 +1,10 @@
 
 from jra_srb.extractors import parse_jra_meeting_coordinates
-from jra_srb.jra_day_race_scout import grade_scout_entry, sort_scout_entries
+from jra_srb.jra_day_race_scout import (
+    build_shadow_decision,
+    grade_scout_entry,
+    sort_scout_entries,
+)
 from jra_srb.models import JraDayRaceScoutEntry, JraScoutConfidenceSignal, JraScoutValueSignal
 
 
@@ -48,3 +52,22 @@ def test_sort_scout_entries_uses_grade_value_gap_time_and_race_id():
     ]
 
     assert [item.race_id for item in sort_scout_entries(entries)] == ["1", "2", "3"]
+
+
+def test_build_shadow_decision_removes_tickets_without_mutating_source():
+    decision = {
+        "status": "recommended",
+        "ticket_status": "recommended",
+        "policy_version": "policy-v1",
+        "tickets": [{"bet_type": "win", "amount": 1000}],
+        "candidates": [{"horse_no": "5"}],
+    }
+
+    shadow = build_shadow_decision(decision)
+
+    assert shadow["source_status"] == "recommended"
+    assert shadow["status"] == "shadow_only"
+    assert shadow["ticket_status"] == "shadow_only"
+    assert shadow["tickets"] == []
+    assert shadow["candidates"] == [{"horse_no": "5"}]
+    assert decision["tickets"] == [{"bet_type": "win", "amount": 1000}]

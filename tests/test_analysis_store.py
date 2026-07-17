@@ -7,6 +7,9 @@ from jra_srb.analysis_store import AnalysisSQLiteStore
 from jra_srb.errors import BadRequestError
 from jra_srb.models import (
     BetRecordCreateRequest,
+    JraDayRaceScoutEntry,
+    JraDayRaceScoutResult,
+    JraLiveShadowObservation,
     MeetingRace,
     NetkeibaRaceResult,
     NetkeibaResultEntry,
@@ -101,6 +104,69 @@ def _write_pre_race_timeline_fixture(store: AnalysisSQLiteStore) -> str:
             odds_timing=odds_timing,
         )
     return race_id
+
+
+def _save_live_shadow_observation(
+    store: AnalysisSQLiteStore,
+    *,
+    run_id: str,
+    observed_at: datetime,
+    win_odds: str,
+) -> None:
+    race_id = "202607180211"
+    entry = JraDayRaceScoutEntry(
+        race_id=race_id,
+        course="kokura",
+        race_no=11,
+        race_name="テスト競走",
+        start_time="15:35",
+        grade="A",
+    )
+    result = JraDayRaceScoutResult(
+        run_id=run_id,
+        date=date(2026, 7, 18),
+        observed_at=observed_at,
+        status="completed",
+        race_count=1,
+        analyzed_count=1,
+        candidates=[entry],
+        entries=[entry],
+    )
+    decision = {
+        "source_status": "recommended",
+        "status": "shadow_only",
+        "ticket_status": "shadow_only",
+        "policy_version": "policy-v1",
+        "tickets": [],
+        "candidates": [{"horse_no": "5", "win_odds": float(win_odds)}],
+    }
+    observation = JraLiveShadowObservation(
+        observation_id=f"{run_id}:{race_id}",
+        run_id=run_id,
+        race_id=race_id,
+        race_date=date(2026, 7, 18),
+        course="kokura",
+        race_no=11,
+        observed_at=observed_at,
+        model_version="model-v2",
+        model_created_at=datetime(2026, 7, 16, tzinfo=UTC),
+        trained_through=date(2026, 7, 11),
+        policy_version="policy-v1",
+        decision_status="shadow_only",
+        ticket_status="shadow_only",
+        odds=RaceOdds(
+            race_id=race_id,
+            bet_type="win",
+            entries=[OddsEntry(bet_type="win", combination=["5"], odds=win_odds)],
+            fetched_at=observed_at,
+            source="jra",
+        ),
+        materials_ranking=[{"horse_no": "5"}],
+        history_ranking=[{"horse_no": "5", "win_probability_race_normalized": 0.25}],
+        decision=decision,
+        component_status={"odds": "fresh"},
+    )
+    store.save_jra_scout_result(result, observations=[observation])
 
 
 def test_analysis_store_creates_schema(tmp_path):
@@ -352,6 +418,59 @@ def test_analysis_store_odds_timeline_handles_empty_not_found_and_invalid_combin
         store.get_pre_race_snapshot("202607180213")
     with pytest.raises(LookupError):
         store.get_odds_timeline("202607180213", "wide")
+
+
+def test_analysis_store_saves_and_lists_live_shadow_observations_by_run(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    first = datetime(2026, 7, 18, 5, 0, tzinfo=UTC)
+    first_updated = datetime(2026, 7, 18, 5, 5, tzinfo=UTC)
+    second = datetime(2026, 7, 18, 5, 10, tzinfo=UTC)
+
+    _save_live_shadow_observation(
+        store,
+        run_id="jra-scout-1",
+        observed_at=first,
+        win_odds="4.0",
+    )
+    _save_live_shadow_observation(
+        store,
+        run_id="jra-scout-1",
+        observed_at=first_updated,
+        win_odds="3.8",
+    )
+    _save_live_shadow_observation(
+        store,
+        run_id="jra-scout-2",
+        observed_at=second,
+        win_odds="3.5",
+    )
+
+    newest = store.list_jra_live_shadow_observations(
+        "202607180211",
+        limit=1,
+        offset=0,
+    )
+    older = store.list_jra_live_shadow_observations(
+        "202607180211",
+        limit=1,
+        offset=1,
+    )
+
+    assert store.count_rows("jra_live_shadow_observations") == 2
+    assert newest.total == 2
+    assert newest.items[0].run_id == "jra-scout-2"
+    assert newest.items[0].observed_at == newest.items[0].odds.fetched_at
+    assert newest.items[0].decision["tickets"] == []
+    assert newest.items[0].decision["source_status"] == "recommended"
+    assert older.items[0].run_id == "jra-scout-1"
+    assert older.items[0].odds.entries[0].odds == "3.8"
+
+
+def test_analysis_store_live_shadow_observations_reject_unknown_race(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+
+    with pytest.raises(LookupError):
+        store.list_jra_live_shadow_observations("202607180299")
 
 
 def test_analysis_store_upserts_card_and_odds_without_duplicates(tmp_path):

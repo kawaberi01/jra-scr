@@ -13,6 +13,7 @@ from .jra_prediction_service import JraPredictionService
 from .models import (
     JraDayRaceScoutEntry,
     JraDayRaceScoutResult,
+    JraLiveShadowObservation,
     JraScoutConfidenceSignal,
     JraScoutValueSignal,
 )
@@ -119,6 +120,7 @@ class JraDayRaceScout:
 
         semaphore = asyncio.Semaphore(max_concurrency)
         errors: list[dict[str, object]] = []
+        observations: list[JraLiveShadowObservation] = []
 
         async def analyze(meeting, race):
             if meeting.meeting_no is None or meeting.meeting_day is None:
@@ -146,6 +148,29 @@ class JraDayRaceScout:
                     bundle.odds_summary,
                 )
                 grade, signals, confidence, value = grade_scout_entry(materials, history, decision)
+                shadow_decision = build_shadow_decision(decision)
+                observations.append(
+                    JraLiveShadowObservation(
+                        observation_id=f"{run_id}:{bundle.race_id}",
+                        run_id=run_id,
+                        race_id=bundle.race_id,
+                        race_date=target_date,
+                        course=meeting.course,
+                        race_no=race.race_no,
+                        observed_at=bundle.odds_summary.fetched_at,
+                        model_version=str(artifact.get("model_version") or "unknown"),
+                        model_created_at=artifact.get("created_at"),
+                        trained_through=artifact.get("trained_through"),
+                        policy_version=shadow_decision.get("policy_version"),
+                        decision_status="shadow_only",
+                        ticket_status="shadow_only",
+                        odds=bundle.odds_summary,
+                        materials_ranking=materials,
+                        history_ranking=history,
+                        decision=shadow_decision,
+                        component_status=bundle.meta.component_status,
+                    )
+                )
                 return JraDayRaceScoutEntry(
                     race_id=bundle.race_id, course=meeting.course, race_no=race.race_no,
                     race_name=bundle.card.race_name, start_time=bundle.card.start_time or race.start_time,
@@ -167,7 +192,7 @@ class JraDayRaceScout:
             status="partial" if errors else "completed", race_count=race_count,
             analyzed_count=analyzed_count, candidates=candidates, entries=sorted_entries, errors=errors,
         )
-        self.store.save_jra_scout_result(result)
+        self.store.save_jra_scout_result(result, observations=observations)
         return result
 
     @staticmethod
@@ -189,3 +214,12 @@ def _has_started(target_date: date, start_time: str | None, observed_at: datetim
     return target_date < local_now.date() or (
         target_date == local_now.date() and (hour, minute) <= (local_now.hour, local_now.minute)
     )
+
+
+def build_shadow_decision(decision: dict) -> dict:
+    shadow_decision = dict(decision)
+    shadow_decision["source_status"] = decision.get("status")
+    shadow_decision["status"] = "shadow_only"
+    shadow_decision["ticket_status"] = "shadow_only"
+    shadow_decision["tickets"] = []
+    return shadow_decision
