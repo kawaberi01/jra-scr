@@ -1266,3 +1266,98 @@ def test_invalid_result_storage_env_returns_standard_error(monkeypatch):
     assert response.status_code == 400
     assert response.json()["error"]["code"] == "bad_request"
     assert response.json()["error"]["message"] == "unsupported results storage=bad"
+
+
+def test_jra_prediction_and_evaluation_read_endpoints(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    store.upsert_prediction_record(
+        {
+            "prediction_id": "pred-api-read-1",
+            "race_id": "202607051011",
+            "theory_version": "v-api-read",
+            "mode": "integrated",
+            "budget": 1000,
+            "pre_race_snapshot": {"date": "2026-07-05", "course": "kokura", "race_no": 11},
+            "prediction_json": {"axis": "2"},
+            "prediction_tickets": [
+                {
+                    "ticket_id": "pt-api-read-1",
+                    "bucket": "core",
+                    "bet_type": "wide",
+                    "selection": ["2", "10"],
+                    "amount": 1000,
+                }
+            ],
+        }
+    )
+    with sqlite3.connect(store.path) as conn:
+        conn.execute(
+            """
+            insert into evaluations
+            (evaluation_id, prediction_id, race_id, theory_version, total_bet, total_payout,
+             return_rate, hit, gami, axis_in_top3, middle_hole_in_top3, firework_hit,
+             max_odds_selected, evaluation_json, created_at)
+            values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "eval-api-read-1", "pred-api-read-1", "202607051011", "v-api-read",
+                1000, 1800, 1.8, 1, 0, 1, None, 0, 18.0, '{"status":"reviewed"}',
+                "2026-07-05T16:00:00+00:00",
+            ),
+        )
+        conn.execute(
+            """
+            insert into evaluation_ticket_results
+            (ticket_result_id, evaluation_id, ticket_id, bucket, bet_type, selection, amount, hit, payout)
+            values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            ("etr-api-read-1", "eval-api-read-1", "pt-api-read-1", "core", "wide", "2-10", 1000, 1, 1800),
+        )
+
+    app.dependency_overrides[get_analysis_store] = lambda: store
+    try:
+        client = TestClient(app)
+
+        prediction_detail = client.get("/jra/predictions/pred-api-read-1")
+        prediction_list = client.get(
+            "/jra/predictions?from_date=2026-07-05&to_date=2026-07-05&theory_version=v-api-read"
+        )
+        evaluation_detail = client.get("/jra/evaluations/eval-api-read-1")
+        evaluation_list = client.get("/jra/evaluations?prediction_id=pred-api-read-1")
+        evaluation_summary = client.get("/jra/evaluations/summary?theory_version=v-api-read")
+
+        assert prediction_detail.status_code == 200
+        assert prediction_detail.json()["prediction"] == {"axis": "2"}
+        assert prediction_detail.json()["prediction_tickets"][0]["selection_json"] == ["2", "10"]
+        assert prediction_list.status_code == 200
+        assert prediction_list.json()["total"] == 1
+        assert evaluation_detail.status_code == 200
+        assert evaluation_detail.json()["hit"] is True
+        assert evaluation_detail.json()["middle_hole_in_top3"] is None
+        assert evaluation_list.status_code == 200
+        assert evaluation_list.json()["items"][0]["evaluation_id"] == "eval-api-read-1"
+        assert evaluation_summary.status_code == 200
+        assert evaluation_summary.json()["return_rate"] == 1.8
+        assert evaluation_summary.json()["max_single_payout"] == 1800
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_jra_prediction_and_evaluation_read_endpoints_validate_queries_and_not_found(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    app.dependency_overrides[get_analysis_store] = lambda: store
+    try:
+        client = TestClient(app)
+
+        assert client.get("/jra/predictions/missing").status_code == 404
+        assert client.get("/jra/evaluations/missing").status_code == 404
+        reversed_range = client.get("/jra/evaluations?from_date=2026-07-06&to_date=2026-07-05")
+        invalid_race_id = client.get("/jra/predictions?race_id=invalid")
+        invalid_limit = client.get("/jra/evaluations?limit=501")
+
+        assert reversed_range.status_code == 400
+        assert reversed_range.json()["error"]["code"] == "bad_request"
+        assert invalid_race_id.status_code == 422
+        assert invalid_limit.status_code == 422
+    finally:
+        app.dependency_overrides.clear()

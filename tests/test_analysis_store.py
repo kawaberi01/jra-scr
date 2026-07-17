@@ -866,3 +866,131 @@ def test_analysis_store_rejects_invalid_count_table(tmp_path):
 
     with pytest.raises(ValueError):
         store.count_rows("races; drop table races")
+
+
+def test_analysis_store_reads_and_lists_prediction_records(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    store.upsert_prediction_record(
+        {
+            "prediction_id": "pred-read-1",
+            "race_id": "202607051011",
+            "theory_version": "v-read",
+            "mode": "integrated",
+            "budget": 1000,
+            "pre_race_snapshot": {
+                "date": "2026-07-05",
+                "course": "kokura",
+                "race_no": 11,
+            },
+            "prediction_json": {"axis": "2"},
+            "prediction_tickets": [
+                {
+                    "ticket_id": "pt-read-1",
+                    "bucket": "core",
+                    "bet_type": "wide",
+                    "selection": ["2", "10"],
+                    "amount": 500,
+                    "reason": "read test",
+                }
+            ],
+        }
+    )
+
+    record = store.get_prediction_record("pred-read-1")
+    page = store.list_prediction_records(
+        from_date=date(2026, 7, 5),
+        to_date=date(2026, 7, 5),
+        theory_version="v-read",
+        mode="integrated",
+        limit=10,
+        offset=0,
+    )
+
+    assert record.pre_race_snapshot["course"] == "kokura"
+    assert record.prediction == {"axis": "2"}
+    assert record.prediction_tickets[0].selection_json == ["2", "10"]
+    assert page.total == 1
+    assert page.items[0].prediction_id == "pred-read-1"
+    with pytest.raises(LookupError):
+        store.get_prediction_record("missing")
+
+
+def test_analysis_store_reads_lists_and_summarizes_evaluations(tmp_path):
+    path = tmp_path / "analysis.sqlite"
+    store = AnalysisSQLiteStore(path)
+    store.upsert_prediction_record(
+        {
+            "prediction_id": "pred-read-1",
+            "race_id": "202607051011",
+            "theory_version": "v-read",
+            "pre_race_snapshot": {"date": "2026-07-05", "course": "kokura", "race_no": 11},
+            "prediction_json": {},
+        }
+    )
+    with sqlite3.connect(path) as conn:
+        conn.executemany(
+            """
+            insert into evaluations
+            (evaluation_id, prediction_id, race_id, theory_version, total_bet, total_payout,
+             return_rate, hit, gami, axis_in_top3, middle_hole_in_top3, firework_hit,
+             max_odds_selected, evaluation_json, created_at)
+            values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                (
+                    "eval-read-1", "pred-read-1", "202607051011", "v-read", 200, 500,
+                    2.5, 1, 0, 1, None, 0, 12.5, '{"note":"hit"}', "2026-07-05T16:00:00+00:00",
+                ),
+                (
+                    "eval-read-2", "pred-read-2", "202607051011", "v-read", 300, 0,
+                    0.0, 0, 0, 0, 1, None, None, "{}", "2026-07-05T15:00:00+00:00",
+                ),
+            ],
+        )
+        conn.executemany(
+            """
+            insert into evaluation_ticket_results
+            (ticket_result_id, evaluation_id, ticket_id, bucket, bet_type, selection, amount, hit, payout)
+            values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                ("etr-read-1", "eval-read-1", "pt-read-1", "core", "wide", "2-10", 100, 1, 300),
+                ("etr-read-2", "eval-read-1", "pt-read-2", "reserve", "win", "2", 100, 1, 200),
+            ],
+        )
+
+    record = store.get_evaluation_record("eval-read-1")
+    page = store.list_evaluation_records(
+        race_id="202607051011",
+        from_date=date(2026, 7, 5),
+        to_date=date(2026, 7, 5),
+        theory_version="v-read",
+        limit=1,
+        offset=0,
+    )
+    summary = store.summarize_evaluations(
+        from_date=date(2026, 7, 5),
+        to_date=date(2026, 7, 5),
+        theory_version="v-read",
+    )
+
+    assert record.hit is True
+    assert record.axis_in_top3 is True
+    assert record.middle_hole_in_top3 is None
+    assert record.evaluation == {"note": "hit"}
+    assert record.ticket_results[0].hit is True
+    assert page.total == 2
+    assert len(page.items) == 1
+    assert page.items[0].evaluation_id == "eval-read-1"
+    assert summary.evaluation_count == 2
+    assert summary.total_bet == 500
+    assert summary.total_payout == 500
+    assert summary.return_rate == 1.0
+    assert summary.hit_rate == 0.5
+    assert summary.axis_in_top3_rate == 0.5
+    assert summary.middle_hole_in_top3_rate == 1.0
+    assert summary.firework_hit_rate == 0.0
+    assert summary.max_single_payout == 300
+    assert summary.return_rate_without_max_payout == 0.4
+    with pytest.raises(LookupError):
+        store.get_evaluation_record("missing")
