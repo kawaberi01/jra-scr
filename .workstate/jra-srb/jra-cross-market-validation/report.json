@@ -1,0 +1,648 @@
+{
+  "theory": "win-wide-cross-pool-disagreement-v1",
+  "definition": "expected wide pool share from normalized win shares divided by observed wide pool share",
+  "candidate_count": 20,
+  "candidates": [
+    {
+      "name": "cross_value_1.10",
+      "direction": "value",
+      "threshold": 1.1,
+      "metrics": {
+        "development_2025h1": {
+          "tickets": 1665,
+          "hits": 276,
+          "return_rate": 0.8258,
+          "no_max_return_rate": 0.8154,
+          "no_top3_return_rate": 0.7963,
+          "max_payout": 1820
+        },
+        "external_2025q3": {
+          "tickets": 824,
+          "hits": 129,
+          "return_rate": 0.771,
+          "no_max_return_rate": 0.7486,
+          "no_top3_return_rate": 0.7119,
+          "max_payout": 1920
+        },
+        "external_2025q4": {
+          "tickets": 790,
+          "hits": 120,
+          "return_rate": 0.7763,
+          "no_max_return_rate": 0.7627,
+          "no_top3_return_rate": 0.7375,
+          "max_payout": 1150
+        }
+      },
+      "pass": false
+    },
+    {
+      "name": "cross_value_1.20",
+      "direction": "value",
+      "threshold": 1.2,
+      "metrics": {
+        "development_2025h1": {
+          "tickets": 1631,
+          "hits": 265,
+          "return_rate": 0.8189,
+          "no_max_return_rate": 0.8082,
+          "no_top3_return_rate": 0.7888,
+          "max_payout": 1820
+        },
+        "external_2025q3": {
+          "tickets": 800,
+          "hits": 123,
+          "return_rate": 0.773,
+          "no_max_return_rate": 0.7499,
+          "no_top3_return_rate": 0.7122,
+          "max_payout": 1920
+        },
+        "external_2025q4": {
+          "tickets": 765,
+          "hits": 118,
+          "return_rate": 0.7945,
+          "no_max_return_rate": 0.7805,
+          "no_top3_return_rate": 0.7545,
+          "max_payout": 1150
+        }
+      },
+      "pass": false
+    },
+    {
+      "name": "cross_value_1.30",
+      "direction": "value",
+      "threshold": 1.3,
+      "metrics": {
+        "development_2025h1": {
+          "tickets": 1562,
+          "hits": 252,
+          "return_rate": 0.8207,
+          "no_max_return_rate": 0.8095,
+          "no_top3_return_rate": 0.7892,
+          "max_payout": 1820
+        },
+        "external_2025q3": {
+          "tickets": 757,
+          "hits": 116,
+          "return_rate": 0.7853,
+          "no_max_return_rate": 0.761,
+          "no_top3_return_rate": 0.7211,
+          "max_payout": 1920
+        },
+        "external_2025q4": {
+          "tickets": 723,
+          "hits": 114,
+          "return_rate": 0.8155,
+          "no_max_return_rate": 0.8007,
+          "no_top3_return_rate": 0.7732,
+          "max_payout": 1150
+        }
+      },
+      "pass": false
+    },
+    {
+      "name": "cross_value_1.40",
+      "direction": "value",
+      "threshold": 1.4,
+      "metrics": {
+        "development_2025h1": {
+          "tickets": 1475,
+          "hits": 234,
+          "return_rate": 0.8141,
+          "no_max_return_rate": 0.8023,
+          "no_top3_return_rate": 0.7808,
+          "max_payout": 1820
+        },
+        "external_2025q3": {
+          "tickets": 691,
+          "hits": 105,
+          "return_rate": 0.7849,
+          "no_max_return_rate": 0.7583,
+          "no_top3_return_rate": 0.7145,
+          "max_payout": 1920
+        },
+        "external_2025q4": {
+          "tickets": 662,
+          "hits": 107,
+          "return_rate": 0.8319,
+          "no_max_return_rate": 0.8157,
+          "no_top3_return_rate": 0.7857,
+          "max_payout": 1150
+        }
+      },
+      "pass": false
+    },
+    {
+      "name": "cross_value_1.50",
+      "direction": "value",
+      "threshold": 1.5,
+      "metrics": {
+        "development_2025h1": {
+          "tickets": 1321,
+          "hits": 214,
+          "return_rate": 0.8328,
+          "no_max_return_rate": 0.8196,
+          "no_top3_return_rate": 0.7956,
+          "max_payout": 1820
+        },
+        "external_2025q3": {
+          "tickets": 601,
+          "hits": 92,
+          "return_rate": 0.8105,
+          "no_max_return_rate": 0.7798,
+          "no_top3_return_rate": 0.7296,
+          "max_payout": 1920
+        },
+        "external_2025q4": {
+          "tickets": 571,
+          "hits": 82,
+          "return_rate": 0.7443,
+          "no_max_return_rate": 0.7254,
+          "no_top3_return_rate": 0.6914,
+          "max_payout": 1150
+        }
+      },
+      "pass": false
+    },
+    {
+      "name": "cross_value_1.60",
+      "direction": "value",
+      "threshold": 1.6,
+      "metrics": {
+        "development_2025h1": {
+          "tickets": 1119,
+          "hits": 174,
+          "return_rate": 0.8052,
+          "no_max_return_rate": 0.7896,
+          "no_top3_return_rate": 0.7612,
+          "max_payout": 1820
+        },
+        "external_2025q3": {
+          "tickets": 492,
+          "hits": 75,
+          "return_rate": 0.8067,
+          "no_max_return_rate": 0.7692,
+          "no_top3_return_rate": 0.708,
+          "max_payout": 1920
+        },
+        "external_2025q4": {
+          "tickets": 477,
+          "hits": 72,
+          "return_rate": 0.7996,
+          "no_max_return_rate": 0.7771,
+          "no_top3_return_rate": 0.7365,
+          "max_payout": 1150
+        }
+      },
+      "pass": false
+    },
+    {
+      "name": "cross_value_1.70",
+      "direction": "value",
+      "threshold": 1.7,
+      "metrics": {
+        "development_2025h1": {
+          "tickets": 864,
+          "hits": 137,
+          "return_rate": 0.8356,
+          "no_max_return_rate": 0.8155,
+          "no_top3_return_rate": 0.7787,
+          "max_payout": 1820
+        },
+        "external_2025q3": {
+          "tickets": 388,
+          "hits": 59,
+          "return_rate": 0.8072,
+          "no_max_return_rate": 0.7597,
+          "no_top3_return_rate": 0.6818,
+          "max_payout": 1920
+        },
+        "external_2025q4": {
+          "tickets": 351,
+          "hits": 54,
+          "return_rate": 0.835,
+          "no_max_return_rate": 0.8046,
+          "no_top3_return_rate": 0.7509,
+          "max_payout": 1150
+        }
+      },
+      "pass": false
+    },
+    {
+      "name": "cross_value_1.80",
+      "direction": "value",
+      "threshold": 1.8,
+      "metrics": {
+        "development_2025h1": {
+          "tickets": 633,
+          "hits": 105,
+          "return_rate": 0.8548,
+          "no_max_return_rate": 0.8274,
+          "no_top3_return_rate": 0.7871,
+          "max_payout": 1820
+        },
+        "external_2025q3": {
+          "tickets": 283,
+          "hits": 46,
+          "return_rate": 0.8774,
+          "no_max_return_rate": 0.8124,
+          "no_top3_return_rate": 0.7057,
+          "max_payout": 1920
+        },
+        "external_2025q4": {
+          "tickets": 258,
+          "hits": 34,
+          "return_rate": 0.6655,
+          "no_max_return_rate": 0.6311,
+          "no_top3_return_rate": 0.5678,
+          "max_payout": 950
+        }
+      },
+      "pass": false
+    },
+    {
+      "name": "cross_value_1.90",
+      "direction": "value",
+      "threshold": 1.9,
+      "metrics": {
+        "development_2025h1": {
+          "tickets": 451,
+          "hits": 76,
+          "return_rate": 0.8758,
+          "no_max_return_rate": 0.8373,
+          "no_top3_return_rate": 0.7808,
+          "max_payout": 1820
+        },
+        "external_2025q3": {
+          "tickets": 201,
+          "hits": 31,
+          "return_rate": 0.8662,
+          "no_max_return_rate": 0.7745,
+          "no_top3_return_rate": 0.6232,
+          "max_payout": 1920
+        },
+        "external_2025q4": {
+          "tickets": 173,
+          "hits": 27,
+          "return_rate": 0.7896,
+          "no_max_return_rate": 0.739,
+          "no_top3_return_rate": 0.6453,
+          "max_payout": 950
+        }
+      },
+      "pass": false
+    },
+    {
+      "name": "cross_value_2.00",
+      "direction": "value",
+      "threshold": 2.0,
+      "metrics": {
+        "development_2025h1": {
+          "tickets": 301,
+          "hits": 48,
+          "return_rate": 0.8156,
+          "no_max_return_rate": 0.7577,
+          "no_top3_return_rate": 0.6899,
+          "max_payout": 1820
+        },
+        "external_2025q3": {
+          "tickets": 136,
+          "hits": 21,
+          "return_rate": 0.9493,
+          "no_max_return_rate": 0.8141,
+          "no_top3_return_rate": 0.5895,
+          "max_payout": 1920
+        },
+        "external_2025q4": {
+          "tickets": 111,
+          "hits": 18,
+          "return_rate": 0.8586,
+          "no_max_return_rate": 0.78,
+          "no_top3_return_rate": 0.6352,
+          "max_payout": 950
+        }
+      },
+      "pass": false
+    },
+    {
+      "name": "cross_information_0.90",
+      "direction": "information",
+      "threshold": 0.9,
+      "metrics": {
+        "development_2025h1": {
+          "tickets": 1727,
+          "hits": 81,
+          "return_rate": 0.5951,
+          "no_max_return_rate": 0.5841,
+          "no_top3_return_rate": 0.5628,
+          "max_payout": 1970
+        },
+        "external_2025q3": {
+          "tickets": 888,
+          "hits": 45,
+          "return_rate": 0.6864,
+          "no_max_return_rate": 0.6644,
+          "no_top3_return_rate": 0.6217,
+          "max_payout": 2020
+        },
+        "external_2025q4": {
+          "tickets": 840,
+          "hits": 28,
+          "return_rate": 0.4574,
+          "no_max_return_rate": 0.4336,
+          "no_top3_return_rate": 0.3891,
+          "max_payout": 2040
+        }
+      },
+      "pass": false
+    },
+    {
+      "name": "cross_information_0.85",
+      "direction": "information",
+      "threshold": 0.85,
+      "metrics": {
+        "development_2025h1": {
+          "tickets": 1724,
+          "hits": 81,
+          "return_rate": 0.5962,
+          "no_max_return_rate": 0.5851,
+          "no_top3_return_rate": 0.5638,
+          "max_payout": 1970
+        },
+        "external_2025q3": {
+          "tickets": 888,
+          "hits": 45,
+          "return_rate": 0.6864,
+          "no_max_return_rate": 0.6644,
+          "no_top3_return_rate": 0.6217,
+          "max_payout": 2020
+        },
+        "external_2025q4": {
+          "tickets": 839,
+          "hits": 28,
+          "return_rate": 0.4579,
+          "no_max_return_rate": 0.4341,
+          "no_top3_return_rate": 0.3896,
+          "max_payout": 2040
+        }
+      },
+      "pass": false
+    },
+    {
+      "name": "cross_information_0.80",
+      "direction": "information",
+      "threshold": 0.8,
+      "metrics": {
+        "development_2025h1": {
+          "tickets": 1721,
+          "hits": 81,
+          "return_rate": 0.5972,
+          "no_max_return_rate": 0.5861,
+          "no_top3_return_rate": 0.5648,
+          "max_payout": 1970
+        },
+        "external_2025q3": {
+          "tickets": 888,
+          "hits": 45,
+          "return_rate": 0.6864,
+          "no_max_return_rate": 0.6644,
+          "no_top3_return_rate": 0.6217,
+          "max_payout": 2020
+        },
+        "external_2025q4": {
+          "tickets": 838,
+          "hits": 28,
+          "return_rate": 0.4585,
+          "no_max_return_rate": 0.4346,
+          "no_top3_return_rate": 0.3901,
+          "max_payout": 2040
+        }
+      },
+      "pass": false
+    },
+    {
+      "name": "cross_information_0.75",
+      "direction": "information",
+      "threshold": 0.75,
+      "metrics": {
+        "development_2025h1": {
+          "tickets": 1711,
+          "hits": 81,
+          "return_rate": 0.6007,
+          "no_max_return_rate": 0.5895,
+          "no_top3_return_rate": 0.5681,
+          "max_payout": 1970
+        },
+        "external_2025q3": {
+          "tickets": 883,
+          "hits": 45,
+          "return_rate": 0.6903,
+          "no_max_return_rate": 0.6681,
+          "no_top3_return_rate": 0.6252,
+          "max_payout": 2020
+        },
+        "external_2025q4": {
+          "tickets": 828,
+          "hits": 28,
+          "return_rate": 0.464,
+          "no_max_return_rate": 0.4399,
+          "no_top3_return_rate": 0.3948,
+          "max_payout": 2040
+        }
+      },
+      "pass": false
+    },
+    {
+      "name": "cross_information_0.70",
+      "direction": "information",
+      "threshold": 0.7,
+      "metrics": {
+        "development_2025h1": {
+          "tickets": 1679,
+          "hits": 78,
+          "return_rate": 0.5875,
+          "no_max_return_rate": 0.5761,
+          "no_top3_return_rate": 0.5542,
+          "max_payout": 1970
+        },
+        "external_2025q3": {
+          "tickets": 869,
+          "hits": 44,
+          "return_rate": 0.6892,
+          "no_max_return_rate": 0.6667,
+          "no_top3_return_rate": 0.6231,
+          "max_payout": 2020
+        },
+        "external_2025q4": {
+          "tickets": 813,
+          "hits": 28,
+          "return_rate": 0.4726,
+          "no_max_return_rate": 0.448,
+          "no_top3_return_rate": 0.4021,
+          "max_payout": 2040
+        }
+      },
+      "pass": false
+    },
+    {
+      "name": "cross_information_0.65",
+      "direction": "information",
+      "threshold": 0.65,
+      "metrics": {
+        "development_2025h1": {
+          "tickets": 1610,
+          "hits": 73,
+          "return_rate": 0.5777,
+          "no_max_return_rate": 0.5658,
+          "no_top3_return_rate": 0.543,
+          "max_payout": 1970
+        },
+        "external_2025q3": {
+          "tickets": 838,
+          "hits": 42,
+          "return_rate": 0.685,
+          "no_max_return_rate": 0.6616,
+          "no_top3_return_rate": 0.6164,
+          "max_payout": 2020
+        },
+        "external_2025q4": {
+          "tickets": 780,
+          "hits": 26,
+          "return_rate": 0.46,
+          "no_max_return_rate": 0.4344,
+          "no_top3_return_rate": 0.3865,
+          "max_payout": 2040
+        }
+      },
+      "pass": false
+    },
+    {
+      "name": "cross_information_0.60",
+      "direction": "information",
+      "threshold": 0.6,
+      "metrics": {
+        "development_2025h1": {
+          "tickets": 1502,
+          "hits": 68,
+          "return_rate": 0.576,
+          "no_max_return_rate": 0.5632,
+          "no_top3_return_rate": 0.5388,
+          "max_payout": 1970
+        },
+        "external_2025q3": {
+          "tickets": 787,
+          "hits": 41,
+          "return_rate": 0.71,
+          "no_max_return_rate": 0.6852,
+          "no_top3_return_rate": 0.6371,
+          "max_payout": 2020
+        },
+        "external_2025q4": {
+          "tickets": 722,
+          "hits": 23,
+          "return_rate": 0.4352,
+          "no_max_return_rate": 0.4075,
+          "no_top3_return_rate": 0.3556,
+          "max_payout": 2040
+        }
+      },
+      "pass": false
+    },
+    {
+      "name": "cross_information_0.55",
+      "direction": "information",
+      "threshold": 0.55,
+      "metrics": {
+        "development_2025h1": {
+          "tickets": 1324,
+          "hits": 60,
+          "return_rate": 0.5685,
+          "no_max_return_rate": 0.554,
+          "no_top3_return_rate": 0.5264,
+          "max_payout": 1970
+        },
+        "external_2025q3": {
+          "tickets": 692,
+          "hits": 35,
+          "return_rate": 0.6764,
+          "no_max_return_rate": 0.6482,
+          "no_top3_return_rate": 0.5942,
+          "max_payout": 2020
+        },
+        "external_2025q4": {
+          "tickets": 612,
+          "hits": 20,
+          "return_rate": 0.4583,
+          "no_max_return_rate": 0.4257,
+          "no_top3_return_rate": 0.3645,
+          "max_payout": 2040
+        }
+      },
+      "pass": false
+    },
+    {
+      "name": "cross_information_0.50",
+      "direction": "information",
+      "threshold": 0.5,
+      "metrics": {
+        "development_2025h1": {
+          "tickets": 1132,
+          "hits": 50,
+          "return_rate": 0.5526,
+          "no_max_return_rate": 0.5363,
+          "no_top3_return_rate": 0.5044,
+          "max_payout": 1890
+        },
+        "external_2025q3": {
+          "tickets": 587,
+          "hits": 30,
+          "return_rate": 0.6797,
+          "no_max_return_rate": 0.6464,
+          "no_top3_return_rate": 0.5827,
+          "max_payout": 2020
+        },
+        "external_2025q4": {
+          "tickets": 506,
+          "hits": 16,
+          "return_rate": 0.4619,
+          "no_max_return_rate": 0.4224,
+          "no_top3_return_rate": 0.3483,
+          "max_payout": 2040
+        }
+      },
+      "pass": false
+    },
+    {
+      "name": "cross_information_0.45",
+      "direction": "information",
+      "threshold": 0.45,
+      "metrics": {
+        "development_2025h1": {
+          "tickets": 902,
+          "hits": 33,
+          "return_rate": 0.4377,
+          "no_max_return_rate": 0.4182,
+          "no_top3_return_rate": 0.3805,
+          "max_payout": 1800
+        },
+        "external_2025q3": {
+          "tickets": 461,
+          "hits": 23,
+          "return_rate": 0.6345,
+          "no_max_return_rate": 0.5954,
+          "no_top3_return_rate": 0.5192,
+          "max_payout": 1860
+        },
+        "external_2025q4": {
+          "tickets": 374,
+          "hits": 10,
+          "return_rate": 0.3754,
+          "no_max_return_rate": 0.3257,
+          "no_top3_return_rate": 0.2318,
+          "max_payout": 1890
+        }
+      },
+      "pass": false
+    }
+  ],
+  "eligible": []
+}
