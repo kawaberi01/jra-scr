@@ -123,5 +123,7 @@ async def test_get_race_card_by_meeting_coordinates(service):
 async def test_cache_hit(service):
     first = await service.get_race_card("202603220101")
     second = await service.get_race_card("202603220101")
+    refreshed = await service.get_race_card("202603220101", refresh=True)
     assert first.cache_hit is False
     assert second.cache_hit is True
+    assert refreshed.cache_hit is False

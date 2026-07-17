@@ -13,6 +13,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from fastapi_mcp import FastApiMCP
+from pydantic import AwareDatetime
 
 from .analysis_store import AnalysisSQLiteStore
 from .batch import JsonlRaceResultStorage, ResultStorage, SQLiteRaceResultStorage
@@ -1518,12 +1519,20 @@ async def get_jra_pre_race_snapshot(
         default=None,
         description="収集時点ラベルの完全一致。省略時は券種ごとの最新snapshotを返します。",
     ),
+    as_of: AwareDatetime | None = Query(
+        default=None,
+        description=(
+            "timezone付きISO 8601観測時刻。指定時刻以前の最新出馬表と"
+            "券種ごとの最新オッズを返します。"
+        ),
+    ),
     store: AnalysisSQLiteStore = Depends(get_analysis_store),
 ):
     return store.get_pre_race_snapshot(
         race_id,
         include_odds=include_odds,
         odds_timing=odds_timing,
+        as_of=as_of,
     )
 
 

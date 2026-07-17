@@ -64,3 +64,18 @@
 ### 次回確認
 
 - NEXT-003でも最新値API互換と履歴再現性を分離して設計する。
+
+## 2026-07-17 JRA-NEXT-003完了評価
+
+### 動作評価
+
+| 項目 | 判定 | 根拠 |
+| --- | --- | --- |
+| タスク同期 | OK | 個別Featureと共通backlogをcompletedへ更新 |
+| 仕様先行 | OK | `010/020/030`完成後に直接実装へ移行 |
+| リスク制御 | OK | 不完全card、result page、旧DBを自動test化 |
+| 完了判定 | OK | 全pytest、ruff、compileall、uv build、diff check成功 |
+
+### 次回確認
+
+- `JRA-NEXT-004`着手時も共通タスクを先に`in_progress`へ更新する。

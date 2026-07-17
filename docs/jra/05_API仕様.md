@@ -271,14 +271,21 @@ netkeiba のオッズページから補完オッズを返す。
   - 既定は `true`。`false` の場合は `odds` と `available_odds_timings` が空配列になる。
 - `odds_timing`
   - 収集時点ラベルを完全一致で指定する。省略時は券種ごとの最新 snapshot を返す。
+- `as_of`
+  - 任意。timezone付きISO 8601観測時刻。
+  - 指定時刻以前の最新完全出馬表と、券種ごとの最新オッズsnapshotを返す。
+  - 指定時刻以前に完全出馬表がない場合は404。
 
-レスポンスの `meta` には、指定条件、利用可能な収集時点、欠損 component を含む。レースが存在しても該当オッズがなければ200と空配列を返す。結果、払戻、評価は含まない。
+レスポンスの `meta` には、指定条件、採用したcard snapshot IDと取得時刻、runner集合状態、利用可能な収集時点、欠損 component を含む。runnerには馬体重と`active/withdrawn`状態を含む。レースが存在しても該当オッズがなければ200と空配列を返す。結果、払戻、評価は含まない。
+
+出馬表履歴はcard取得単位で追記保存する。不完全に取得されたcardは監査用には保存するがas-of合成には使わず、完全card間で消えたrunnerだけを取消・除外として導出する。結果ページ由来cardも発走前履歴には使用しない。
 
 例:
 
 ```http
 GET /jra/races/202607180211/pre-race-snapshot
 GET /jra/races/202607180211/pre-race-snapshot?include_odds=true&odds_timing=t_minus_10m
+GET /jra/races/202607180211/pre-race-snapshot?as_of=2026-07-18T15%3A26%3A00%2B09%3A00
 ```
 
 ### `GET /jra/races/{race_id}/odds-timeline`

@@ -1413,3 +1413,251 @@ def test_analysis_store_reads_lists_and_summarizes_evaluations(tmp_path):
     assert summary.return_rate_without_max_payout == 0.4
     with pytest.raises(LookupError):
         store.get_evaluation_record("missing")
+
+
+def test_analysis_store_reconstructs_card_and_odds_as_of_observation_time(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    race_id = "202607180211"
+    first_at = datetime.fromisoformat("2026-07-18T14:00:00+09:00")
+    second_at = datetime.fromisoformat("2026-07-18T14:10:00+09:00")
+    store.write_card(
+        date(2026, 7, 18),
+        "kokura",
+        11,
+        RaceCard(
+            race_id=race_id,
+            race_name="As Of Stakes",
+            course="kokura",
+            runners=[
+                Runner(
+                    horse_no="1",
+                    horse_name="Alpha",
+                    jockey="Old Jockey",
+                    horse_weight="470",
+                    horse_weight_diff="+2",
+                ),
+                Runner(horse_no="2", horse_name="Beta", jockey="Beta Jockey"),
+            ],
+            fetched_at=first_at,
+            source="card-first",
+            data_status={
+                "runner_set": "complete",
+                "source_kind": "pre_race_card",
+            },
+        ),
+    )
+    store.write_odds(
+        RaceOdds(
+            race_id=race_id,
+            bet_type="win",
+            entries=[OddsEntry(combination=["1"], odds="3.2")],
+            fetched_at=datetime.fromisoformat("2026-07-18T14:05:00+09:00"),
+            source="odds-first",
+        ),
+        bet_type="win",
+        odds_timing="t_minus_30m",
+    )
+    store.write_card(
+        date(2026, 7, 18),
+        "kokura",
+        11,
+        RaceCard(
+            race_id=race_id,
+            race_name="As Of Stakes",
+            course="kokura",
+            runners=[
+                Runner(
+                    horse_no="1",
+                    horse_name="Alpha",
+                    jockey="New Jockey",
+                    horse_weight="472",
+                    horse_weight_diff="+4",
+                )
+            ],
+            fetched_at=second_at,
+            source="card-second",
+            data_status={
+                "runner_set": "complete",
+                "source_kind": "pre_race_card",
+            },
+        ),
+    )
+    store.write_odds(
+        RaceOdds(
+            race_id=race_id,
+            bet_type="win",
+            entries=[OddsEntry(combination=["1"], odds="2.8")],
+            fetched_at=datetime.fromisoformat("2026-07-18T14:12:00+09:00"),
+            source="odds-second",
+        ),
+        bet_type="win",
+        odds_timing="t_minus_10m",
+    )
+
+    first = store.get_pre_race_snapshot(
+        race_id,
+        as_of=datetime.fromisoformat("2026-07-18T05:07:00+00:00"),
+    )
+    second = store.get_pre_race_snapshot(
+        race_id,
+        as_of=datetime.fromisoformat("2026-07-18T05:20:00+00:00"),
+    )
+
+    assert first.race.source == "card-first"
+    assert [runner.status for runner in first.runners] == ["active", "active"]
+    assert first.runners[0].jockey == "Old Jockey"
+    assert first.runners[0].horse_weight == 470
+    assert first.odds[0].source == "odds-first"
+    assert first.meta.requested_as_of is not None
+    assert first.meta.runner_set_status == "complete"
+
+    assert second.race.source == "card-second"
+    assert second.runners[0].jockey == "New Jockey"
+    assert second.runners[0].horse_weight_diff == 4
+    assert second.runners[1].horse_name == "Beta"
+    assert second.runners[1].status == "withdrawn"
+    assert second.runners[1].status_source == "derived"
+    assert second.odds[0].source == "odds-second"
+    assert store.count_rows("race_card_snapshots") == 2
+    assert store.count_rows("race_card_snapshot_runners") == 4
+
+
+def test_analysis_store_excludes_incomplete_and_result_cards_from_as_of(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    race_id = "202607180311"
+    store.write_card(
+        date(2026, 7, 18),
+        "fukushima",
+        11,
+        RaceCard(
+            race_id=race_id,
+            runners=[
+                Runner(horse_no="1", horse_name="Alpha"),
+                Runner(horse_no="2", horse_name="Beta"),
+            ],
+            fetched_at=datetime.fromisoformat("2026-07-18T13:00:00+09:00"),
+            source="complete",
+            data_status={
+                "runner_set": "complete",
+                "source_kind": "pre_race_card",
+            },
+        ),
+    )
+    store.write_card(
+        date(2026, 7, 18),
+        "fukushima",
+        11,
+        RaceCard(
+            race_id=race_id,
+            runners=[Runner(horse_no="1", horse_name="Alpha Partial")],
+            fetched_at=datetime.fromisoformat("2026-07-18T13:10:00+09:00"),
+            source="incomplete",
+            data_status={
+                "runner_set": "incomplete",
+                "source_kind": "pre_race_card",
+            },
+        ),
+    )
+    store.write_card(
+        date(2026, 7, 18),
+        "fukushima",
+        11,
+        RaceCard(
+            race_id=race_id,
+            runners=[Runner(horse_no="1", horse_name="Alpha Result")],
+            fetched_at=datetime.fromisoformat("2026-07-18T16:00:00+09:00"),
+            source="result",
+            data_status={
+                "runner_set": "complete",
+                "source_kind": "result_page",
+            },
+        ),
+    )
+
+    snapshot = store.get_pre_race_snapshot(
+        race_id,
+        as_of=datetime.fromisoformat("2026-07-18T17:00:00+09:00"),
+        include_odds=False,
+    )
+
+    assert snapshot.race.source == "complete"
+    assert [runner.horse_name for runner in snapshot.runners] == ["Alpha", "Beta"]
+    assert all(runner.status == "active" for runner in snapshot.runners)
+    assert store.count_rows("race_card_snapshots") == 2
+    with pytest.raises(ValueError, match="timezone"):
+        store.get_pre_race_snapshot(
+            race_id,
+            as_of=datetime.fromisoformat("2026-07-18T13:05:00"),
+        )
+
+
+def test_analysis_store_migrates_legacy_card_tables_and_falls_back_without_as_of(
+    tmp_path,
+):
+    path = tmp_path / "analysis.sqlite"
+    with sqlite3.connect(path) as conn:
+        conn.executescript(
+            """
+            create table races (
+                race_id text primary key,
+                race_date text not null,
+                course text not null,
+                meeting_no integer,
+                meeting_day integer,
+                race_no integer not null,
+                race_name text,
+                start_time text,
+                surface text,
+                distance text,
+                source text,
+                fetched_at text
+            );
+            create table runners (
+                race_id text not null,
+                horse_no text not null,
+                frame_no text,
+                horse_name text not null,
+                sex_age text,
+                weight_carried text,
+                jockey text,
+                trainer text,
+                card_odds real,
+                card_popularity integer,
+                primary key (race_id, horse_no)
+            );
+            insert into races
+            values (
+                '202607180511', '2026-07-18', 'tokyo', null, null, 11,
+                'Legacy', '15:30', 'turf', '1600', 'legacy',
+                '2026-07-18T14:00:00+09:00'
+            );
+            insert into runners
+            values (
+                '202607180511', '1', '1', 'Legacy Runner', null, null,
+                'Legacy Jockey', null, 3.2, 1
+            );
+            """
+        )
+
+    store = AnalysisSQLiteStore(path)
+    snapshot = store.get_pre_race_snapshot(
+        "202607180511",
+        include_odds=False,
+    )
+
+    assert snapshot.race.race_name == "Legacy"
+    assert snapshot.runners[0].status == "active"
+    assert snapshot.meta.card_snapshot_id is None
+    with pytest.raises(LookupError, match="snapshot not found"):
+        store.get_pre_race_snapshot(
+            "202607180511",
+            include_odds=False,
+            as_of=datetime.fromisoformat("2026-07-18T14:30:00+09:00"),
+        )
+    with sqlite3.connect(path) as conn:
+        runner_columns = {
+            row[1] for row in conn.execute("pragma table_info(runners)").fetchall()
+        }
+    assert {"horse_weight", "horse_weight_diff", "status", "status_source"} <= (
+        runner_columns
+    )

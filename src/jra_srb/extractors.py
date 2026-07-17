@@ -8,7 +8,16 @@ from typing import Any
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
-from .models import MeetingRace, OddsEntry, PayoutEntry, RaceSummary, ResultEntry, Runner
+from .models import (
+    MeetingRace,
+    OddsEntry,
+    PayoutEntry,
+    RaceSummary,
+    ResultEntry,
+    Runner,
+    RunnerStatus,
+    RunnerStatusSource,
+)
 
 
 def _select_text(node: Tag, selector: str | None, default: str | None = None) -> str | None:
@@ -45,6 +54,60 @@ def _parse_field(node: Tag, rule: dict[str, Any]) -> str | None:
     return rule.get("default")
 
 
+def _runner_status(row: Tag) -> tuple[RunnerStatus, RunnerStatusSource | None]:
+    row_text = row.get_text(" ", strip=True)
+    if any(marker in row_text for marker in ("出走取消", "競走除外", "取消", "除外")):
+        return RunnerStatus.withdrawn, RunnerStatusSource.explicit
+    return RunnerStatus.active, None
+
+
+def _race_card_data_status(
+    rows: list[Tag],
+    runners: list[Runner],
+    *,
+    source_kind: str,
+) -> dict[str, str | None]:
+    horse_numbers = [runner.horse_no for runner in runners]
+    complete = (
+        bool(rows)
+        and len(rows) == len(runners)
+        and all(horse_numbers)
+        and len(set(horse_numbers)) == len(horse_numbers)
+    )
+    if complete:
+        runner_set = "complete"
+        runner_set_reason = "all candidate rows were parsed with unique horse numbers"
+    elif not rows:
+        runner_set = "incomplete"
+        runner_set_reason = "runner table or candidate rows were not found"
+    else:
+        runner_set = "incomplete"
+        runner_set_reason = (
+            "candidate rows were not fully parsed with unique horse numbers"
+        )
+
+    if any(runner.horse_weight or runner.horse_weight_diff for runner in runners):
+        horse_weight = "available"
+        horse_weight_reason = (
+            "at least one runner has horse_weight or horse_weight_diff"
+        )
+    elif rows:
+        horse_weight = "unpublished"
+        horse_weight_reason = (
+            "all parsed runners have null horse_weight before official publication"
+        )
+    else:
+        horse_weight = "unavailable"
+        horse_weight_reason = "runner table or candidate rows were not found"
+    return {
+        "horse_weight": horse_weight,
+        "horse_weight_reason": horse_weight_reason,
+        "runner_set": runner_set,
+        "runner_set_reason": runner_set_reason,
+        "source_kind": source_kind,
+    }
+
+
 def parse_race_summaries(html: str, config: dict[str, Any]) -> list[RaceSummary]:
     soup = BeautifulSoup(html, "html.parser")
     items = _parse_collection(soup, config["collection"])
@@ -63,11 +126,22 @@ def parse_race_card(html: str, config: dict[str, Any]) -> dict[str, Any]:
     }
     if metadata.get("race_name") is None and soup.select_one(".race_header .race_name"):
         return _parse_jra_race_card(soup)
+    rows = _parse_collection(soup, config["runners"])
     runners = []
-    for row in _parse_collection(soup, config["runners"]):
+    for row in rows:
         data = {name: _parse_field(row, rule) for name, rule in config["runner_fields"].items()}
+        if not data.get("horse_name"):
+            continue
+        status, status_source = _runner_status(row)
+        data["status"] = status
+        data["status_source"] = status_source
         runners.append(Runner(**data))
     metadata["runners"] = runners
+    metadata["data_status"] = _race_card_data_status(
+        rows,
+        runners,
+        source_kind="pre_race_card",
+    )
     return metadata
 
 
@@ -78,12 +152,14 @@ def parse_result_page_as_race_card(html: str) -> dict[str, Any]:
 
     course_text = _select_text(soup, ".race_header .type .course")
     start_time = _select_text(soup, ".race_header .date_line .time strong")
+    rows = soup.select("#race_result .race_result_unit > table tbody tr")
     runners = []
-    for row in soup.select("#race_result .race_result_unit > table tbody tr"):
+    for row in rows:
         horse_no = _select_text(row, "td.num")
         horse_name = _select_text(row, "td.horse a") or _select_text(row, "td.horse")
         if horse_name is None:
             continue
+        status, status_source = _runner_status(row)
         runners.append(
             Runner(
                 frame_no=_select_text(row, "td.waku"),
@@ -93,6 +169,8 @@ def parse_result_page_as_race_card(html: str) -> dict[str, Any]:
                 weight_carried=_select_text(row, "td.weight"),
                 jockey=_select_text(row, "td.jockey"),
                 trainer=_select_text(row, "td.trainer"),
+                status=status,
+                status_source=status_source,
             )
         )
 
@@ -109,6 +187,11 @@ def parse_result_page_as_race_card(html: str) -> dict[str, Any]:
         "surface": surface,
         "start_time": start_time,
         "runners": runners,
+        "data_status": _race_card_data_status(
+            rows,
+            runners,
+            source_kind="result_page",
+        ),
     }
 
 
@@ -136,7 +219,8 @@ def _parse_jra_race_card(soup: BeautifulSoup) -> dict[str, Any]:
     start_time = _select_text(soup, ".race_header .date_line .time strong")
     runners = []
     weight_cells = _parse_jra_card_weight_cells(soup)
-    for index, row in enumerate(soup.select("table.basic.narrow-xy.mt20 tbody tr")):
+    rows = soup.select("table.basic.narrow-xy.mt20 tbody tr")
+    for index, row in enumerate(rows):
         horse_no = _select_text(row, "td.num")
         horse_name = _select_text(row, "td.horse .name a")
         if horse_name is None:
@@ -164,6 +248,7 @@ def _parse_jra_race_card(soup: BeautifulSoup) -> dict[str, Any]:
         )
         if horse_weight is None and index < len(weight_cells):
             horse_weight, horse_weight_diff = weight_cells[index]
+        status, status_source = _runner_status(row)
         runners.append(
             Runner(
                 horse_no=horse_no,
@@ -176,6 +261,8 @@ def _parse_jra_race_card(soup: BeautifulSoup) -> dict[str, Any]:
                 horse_weight_diff=horse_weight_diff,
                 odds=_select_text(row, "td.horse .odds strong"),
                 popularity=popularity,
+                status=status,
+                status_source=status_source,
             )
         )
     distance = None
@@ -191,6 +278,11 @@ def _parse_jra_race_card(soup: BeautifulSoup) -> dict[str, Any]:
         "surface": surface,
         "start_time": start_time,
         "runners": runners,
+        "data_status": _race_card_data_status(
+            rows,
+            runners,
+            source_kind="pre_race_card",
+        ),
     }
 
 

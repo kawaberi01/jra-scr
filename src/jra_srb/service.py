@@ -85,15 +85,21 @@ class JraService:
         self.cache.set(cache_key, races, ttl_seconds=60)
         return races
 
-    async def get_race_card(self, race_id: str) -> RaceCard:
+    async def get_race_card(self, race_id: str, refresh: bool = False) -> RaceCard:
         logger.info("get_race_card", extra={"race_id": race_id})
         if not self._is_fixture_provider():
             target_date, course, race_no = self._split_race_id(race_id)
-            return await self.get_race_card_by_number(target_date, course, race_no)
+            return await self.get_race_card_by_number(
+                target_date,
+                course,
+                race_no,
+                refresh=refresh,
+            )
         cache_key = f"card:{race_id}"
-        cached = self.cache.get(cache_key)
-        if cached is not None:
-            return cached.model_copy(update={"cache_hit": True})
+        if not refresh:
+            cached = self.cache.get(cache_key)
+            if cached is not None:
+                return cached.model_copy(update={"cache_hit": True})
         page = await self.provider.fetch_race_card(race_id)
         parsed = parse_race_card(page.content, load_parser_config("race_card"))
         card = RaceCard(
@@ -244,7 +250,13 @@ class JraService:
             return meetings
         return await self._get_meetings_for_date_from_calendar(target_date)
 
-    async def get_race_card_by_number(self, target_date: date, course: str, race_no: int) -> RaceCard:
+    async def get_race_card_by_number(
+        self,
+        target_date: date,
+        course: str,
+        race_no: int,
+        refresh: bool = False,
+    ) -> RaceCard:
         logger.info(
             "get_race_card_by_number",
             extra={"target_date": target_date.isoformat(), "course": course, "race_no": race_no},
@@ -254,9 +266,10 @@ class JraService:
         if race is None:
             raise ResourceNotFoundError(f"race not found: {course} {target_date} {race_no}")
         cache_key = f"card-by-number:{target_date.isoformat()}:{course}:{race_no}"
-        cached = self.cache.get(cache_key)
-        if cached is not None:
-            return cached.model_copy(update={"cache_hit": True})
+        if not refresh:
+            cached = self.cache.get(cache_key)
+            if cached is not None:
+                return cached.model_copy(update={"cache_hit": True})
         if race.card_cname is None:
             page = await self._load_result_race_page(target_date, course, race_no)
             parsed = parse_result_page_as_race_card(page.content)

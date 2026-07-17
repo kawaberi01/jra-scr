@@ -31,8 +31,12 @@ from .models import (
     PredictionRecordPage,
     PredictionTicketRecord,
     RaceCard,
+    RaceCardRunnerSetStatus,
+    RaceCardSourceKind,
     RaceOdds,
     RaceResult,
+    RunnerStatus,
+    RunnerStatusSource,
     StoredOddsEntry,
     StoredOddsSnapshot,
     StoredOddsTimeline,
@@ -77,7 +81,12 @@ class AnalysisSQLiteStore:
                     race_name text,
                     start_time text,
                     surface text,
+                    surface_label text,
                     distance text,
+                    weather text,
+                    weather_label text,
+                    track_condition text,
+                    track_condition_label text,
                     source text,
                     fetched_at text
                 );
@@ -93,9 +102,60 @@ class AnalysisSQLiteStore:
                     weight_carried text,
                     jockey text,
                     trainer text,
+                    horse_weight integer,
+                    horse_weight_diff integer,
                     card_odds real,
                     card_popularity integer,
+                    status text not null default 'active',
+                    status_source text,
                     primary key (race_id, horse_no)
+                );
+
+                create table if not exists race_card_snapshots (
+                    card_snapshot_id text primary key,
+                    race_id text not null,
+                    race_date text not null,
+                    course text not null,
+                    meeting_no integer,
+                    meeting_day integer,
+                    race_no integer not null,
+                    race_name text,
+                    start_time text,
+                    surface text,
+                    surface_label text,
+                    distance text,
+                    weather text,
+                    weather_label text,
+                    track_condition text,
+                    track_condition_label text,
+                    source text not null,
+                    source_kind text not null,
+                    runner_set_status text not null,
+                    runner_set_reason text,
+                    runner_count integer not null,
+                    fetched_at text not null
+                );
+
+                create table if not exists race_card_snapshot_runners (
+                    card_snapshot_id text not null,
+                    race_id text not null,
+                    horse_no text not null,
+                    frame_no text,
+                    horse_name text not null,
+                    sex_age text,
+                    weight_carried text,
+                    jockey text,
+                    trainer text,
+                    horse_weight integer,
+                    horse_weight_diff integer,
+                    card_odds real,
+                    card_popularity integer,
+                    status text not null,
+                    status_source text,
+                    primary key (card_snapshot_id, horse_no),
+                    foreign key (card_snapshot_id)
+                        references race_card_snapshots(card_snapshot_id)
+                        on delete cascade
                 );
 
                 create table if not exists odds_snapshots (
@@ -452,6 +512,20 @@ class AnalysisSQLiteStore:
             )
             _ensure_column(conn, "races", "meeting_no", "integer")
             _ensure_column(conn, "races", "meeting_day", "integer")
+            _ensure_column(conn, "races", "surface_label", "text")
+            _ensure_column(conn, "races", "weather", "text")
+            _ensure_column(conn, "races", "weather_label", "text")
+            _ensure_column(conn, "races", "track_condition", "text")
+            _ensure_column(conn, "races", "track_condition_label", "text")
+            _ensure_column(conn, "runners", "horse_weight", "integer")
+            _ensure_column(conn, "runners", "horse_weight_diff", "integer")
+            _ensure_column(
+                conn,
+                "runners",
+                "status",
+                "text not null default 'active'",
+            )
+            _ensure_column(conn, "runners", "status_source", "text")
             _ensure_column(conn, "netkeiba_race_results", "race_laps_json", "text")
 
     def save_jra_scout_result(
@@ -666,12 +740,78 @@ class AnalysisSQLiteStore:
 
     def write_card(self, target_date: date, course: str, race_no: int, card: RaceCard) -> None:
         meeting_no, meeting_day = _parse_meeting_fields_from_race_id(card.race_id)
+        horse_numbers = [runner.horse_no for runner in card.runners]
+        structurally_complete = (
+            bool(card.runners)
+            and all(horse_numbers)
+            and len(set(horse_numbers)) == len(horse_numbers)
+        )
+        data_status = card.data_status
+        runner_set_status = (
+            str(data_status.runner_set)
+            if data_status is not None and data_status.runner_set is not None
+            else (
+                RaceCardRunnerSetStatus.complete
+                if structurally_complete
+                else RaceCardRunnerSetStatus.incomplete
+            )
+        )
+        if runner_set_status == RaceCardRunnerSetStatus.complete and not structurally_complete:
+            runner_set_status = RaceCardRunnerSetStatus.incomplete
+        runner_set_reason = (
+            data_status.runner_set_reason
+            if data_status is not None and data_status.runner_set_reason
+            else (
+                "all runners have unique horse numbers"
+                if runner_set_status == RaceCardRunnerSetStatus.complete
+                else "runner collection is empty or has missing/duplicate horse numbers"
+            )
+        )
+        source_kind = (
+            str(data_status.source_kind)
+            if data_status is not None
+            else RaceCardSourceKind.unknown
+        )
+        if source_kind == RaceCardSourceKind.unknown:
+            source_kind = RaceCardSourceKind.pre_race_card
+        is_complete_pre_race = (
+            runner_set_status == RaceCardRunnerSetStatus.complete
+            and source_kind == RaceCardSourceKind.pre_race_card
+        )
+
+        current_runners: dict[str, dict[str, object | None]] = {}
+        for runner in card.runners:
+            horse_no = runner.horse_no or runner.horse_name
+            current_runners[horse_no] = {
+                "race_id": card.race_id,
+                "horse_no": horse_no,
+                "frame_no": runner.frame_no,
+                "horse_name": runner.horse_name,
+                "sex_age": runner.sex_age,
+                "weight_carried": runner.weight_carried,
+                "jockey": runner.jockey,
+                "trainer": runner.trainer,
+                "horse_weight": _parse_int(runner.horse_weight),
+                "horse_weight_diff": _parse_signed_int(runner.horse_weight_diff),
+                "card_odds": _parse_float(runner.odds),
+                "card_popularity": _parse_int(runner.popularity),
+                "status": str(runner.status),
+                "status_source": (
+                    str(runner.status_source)
+                    if runner.status_source is not None
+                    else None
+                ),
+            }
+
         with self._connect() as conn:
             conn.execute(
                 """
                 insert into races
-                (race_id, race_date, course, meeting_no, meeting_day, race_no, race_name, start_time, surface, distance, source, fetched_at)
-                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (race_id, race_date, course, meeting_no, meeting_day, race_no,
+                 race_name, start_time, surface, surface_label, distance,
+                 weather, weather_label, track_condition, track_condition_label,
+                 source, fetched_at)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 on conflict(race_id) do update set
                     race_date = excluded.race_date,
                     course = excluded.course,
@@ -681,7 +821,15 @@ class AnalysisSQLiteStore:
                     race_name = coalesce(excluded.race_name, races.race_name),
                     start_time = coalesce(excluded.start_time, races.start_time),
                     surface = coalesce(excluded.surface, races.surface),
+                    surface_label = coalesce(excluded.surface_label, races.surface_label),
                     distance = coalesce(excluded.distance, races.distance),
+                    weather = coalesce(excluded.weather, races.weather),
+                    weather_label = coalesce(excluded.weather_label, races.weather_label),
+                    track_condition = coalesce(excluded.track_condition, races.track_condition),
+                    track_condition_label = coalesce(
+                        excluded.track_condition_label,
+                        races.track_condition_label
+                    ),
                     source = excluded.source,
                     fetched_at = excluded.fetched_at
                 """,
@@ -698,42 +846,165 @@ class AnalysisSQLiteStore:
                     card.race_name,
                     card.start_time,
                     card.surface,
+                    card.surface_label,
                     card.distance,
+                    card.weather,
+                    card.weather_label,
+                    card.track_condition,
+                    card.track_condition_label,
                     card.source,
                     _dt(card.fetched_at),
                 ),
             )
-            for runner in card.runners:
-                horse_no = runner.horse_no or runner.horse_name
+
+            snapshot_runners = dict(current_runners)
+            if is_complete_pre_race:
+                previous_snapshot = conn.execute(
+                    """
+                    select card_snapshot_id
+                    from race_card_snapshots
+                    where race_id = ?
+                      and runner_set_status = 'complete'
+                      and source_kind = 'pre_race_card'
+                    order by julianday(fetched_at) desc, card_snapshot_id desc
+                    limit 1
+                    """,
+                    (card.race_id,),
+                ).fetchone()
+                if previous_snapshot is not None:
+                    previous_runners = conn.execute(
+                        """
+                        select *
+                        from race_card_snapshot_runners
+                        where card_snapshot_id = ?
+                        """,
+                        (previous_snapshot["card_snapshot_id"],),
+                    ).fetchall()
+                    for previous in previous_runners:
+                        horse_no = str(previous["horse_no"])
+                        if horse_no in snapshot_runners:
+                            continue
+                        carried = _row_to_dict(previous)
+                        carried.pop("card_snapshot_id", None)
+                        carried["status"] = RunnerStatus.withdrawn
+                        if carried.get("status_source") is None:
+                            carried["status_source"] = RunnerStatusSource.derived
+                        snapshot_runners[horse_no] = carried
+
+            if source_kind != RaceCardSourceKind.result_page:
+                card_snapshot_id = uuid4().hex
                 conn.execute(
                     """
-                    insert into runners
-                    (race_id, horse_no, frame_no, horse_name, sex_age, weight_carried, jockey,
-                     trainer, card_odds, card_popularity)
-                    values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    on conflict(race_id, horse_no) do update set
-                        frame_no = excluded.frame_no,
-                        horse_name = excluded.horse_name,
-                        sex_age = excluded.sex_age,
-                        weight_carried = excluded.weight_carried,
-                        jockey = excluded.jockey,
-                        trainer = excluded.trainer,
-                        card_odds = excluded.card_odds,
-                        card_popularity = excluded.card_popularity
+                    insert into race_card_snapshots
+                    (card_snapshot_id, race_id, race_date, course, meeting_no,
+                     meeting_day, race_no, race_name, start_time, surface,
+                     surface_label, distance, weather, weather_label,
+                     track_condition, track_condition_label, source, source_kind,
+                     runner_set_status, runner_set_reason, runner_count, fetched_at)
+                    values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
+                        card_snapshot_id,
                         card.race_id,
-                        horse_no,
-                        runner.frame_no,
-                        runner.horse_name,
-                        runner.sex_age,
-                        runner.weight_carried,
-                        runner.jockey,
-                        runner.trainer,
-                        _parse_float(runner.odds),
-                        _parse_int(runner.popularity),
+                        target_date.isoformat(),
+                        course,
+                        meeting_no,
+                        meeting_day,
+                        race_no,
+                        card.race_name,
+                        card.start_time,
+                        card.surface,
+                        card.surface_label,
+                        card.distance,
+                        card.weather,
+                        card.weather_label,
+                        card.track_condition,
+                        card.track_condition_label,
+                        card.source,
+                        source_kind,
+                        runner_set_status,
+                        runner_set_reason,
+                        len(snapshot_runners),
+                        _dt(card.fetched_at),
                     ),
                 )
+                conn.executemany(
+                    """
+                    insert into race_card_snapshot_runners
+                    (card_snapshot_id, race_id, horse_no, frame_no, horse_name,
+                     sex_age, weight_carried, jockey, trainer, horse_weight,
+                     horse_weight_diff, card_odds, card_popularity, status,
+                     status_source)
+                    values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    [
+                        (
+                            card_snapshot_id,
+                            row["race_id"],
+                            row["horse_no"],
+                            row["frame_no"],
+                            row["horse_name"],
+                            row["sex_age"],
+                            row["weight_carried"],
+                            row["jockey"],
+                            row["trainer"],
+                            row["horse_weight"],
+                            row["horse_weight_diff"],
+                            row["card_odds"],
+                            row["card_popularity"],
+                            row["status"],
+                            row["status_source"],
+                        )
+                        for row in snapshot_runners.values()
+                    ],
+                )
+
+            latest_runners = (
+                snapshot_runners if is_complete_pre_race else current_runners
+            )
+            if is_complete_pre_race:
+                conn.execute("delete from runners where race_id = ?", (card.race_id,))
+            conn.executemany(
+                """
+                insert into runners
+                (race_id, horse_no, frame_no, horse_name, sex_age, weight_carried,
+                 jockey, trainer, horse_weight, horse_weight_diff, card_odds,
+                 card_popularity, status, status_source)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                on conflict(race_id, horse_no) do update set
+                    frame_no = excluded.frame_no,
+                    horse_name = excluded.horse_name,
+                    sex_age = excluded.sex_age,
+                    weight_carried = excluded.weight_carried,
+                    jockey = excluded.jockey,
+                    trainer = excluded.trainer,
+                    horse_weight = excluded.horse_weight,
+                    horse_weight_diff = excluded.horse_weight_diff,
+                    card_odds = excluded.card_odds,
+                    card_popularity = excluded.card_popularity,
+                    status = excluded.status,
+                    status_source = excluded.status_source
+                """,
+                [
+                    (
+                        row["race_id"],
+                        row["horse_no"],
+                        row["frame_no"],
+                        row["horse_name"],
+                        row["sex_age"],
+                        row["weight_carried"],
+                        row["jockey"],
+                        row["trainer"],
+                        row["horse_weight"],
+                        row["horse_weight_diff"],
+                        row["card_odds"],
+                        row["card_popularity"],
+                        row["status"],
+                        row["status_source"],
+                    )
+                    for row in latest_runners.values()
+                ],
+            )
 
     def write_odds(self, odds: RaceOdds, bet_type: str | None = None, odds_timing: str = "final_or_near_final") -> None:
         entries_by_type = _odds_entries_by_type(odds, bet_type)
@@ -2070,43 +2341,100 @@ class AnalysisSQLiteStore:
         *,
         include_odds: bool = True,
         odds_timing: str | None = None,
+        as_of: datetime | None = None,
     ) -> StoredPreRaceSnapshot:
+        if as_of is not None and as_of.tzinfo is None:
+            raise ValueError("as_of must include a timezone offset")
+        as_of_text = _dt(as_of)
         with self._connect() as conn:
-            race = conn.execute("select * from races where race_id = ?", (race_id,)).fetchone()
-            if race is None:
-                raise LookupError(f"race not found for race_id={race_id}")
-            runners = conn.execute(
-                "select * from runners where race_id = ? order by cast(horse_no as integer), horse_no",
+            race_exists = conn.execute(
+                "select 1 from races where race_id = ?",
                 (race_id,),
-            ).fetchall()
+            ).fetchone()
+            if race_exists is None:
+                raise LookupError(f"race not found for race_id={race_id}")
+
+            card_where = """
+                race_id = ?
+                and runner_set_status = 'complete'
+                and source_kind = 'pre_race_card'
+            """
+            card_params: list[object] = [race_id]
+            if as_of_text is not None:
+                card_where += " and julianday(fetched_at) <= julianday(?)"
+                card_params.append(as_of_text)
+            card_snapshot = conn.execute(
+                f"""
+                select *
+                from race_card_snapshots
+                where {card_where}
+                order by julianday(fetched_at) desc, card_snapshot_id desc
+                limit 1
+                """,
+                tuple(card_params),
+            ).fetchone()
+            if card_snapshot is not None:
+                race = card_snapshot
+                runners = conn.execute(
+                    """
+                    select *
+                    from race_card_snapshot_runners
+                    where card_snapshot_id = ?
+                    order by cast(horse_no as integer), horse_no
+                    """,
+                    (card_snapshot["card_snapshot_id"],),
+                ).fetchall()
+            elif as_of is not None:
+                raise LookupError(
+                    f"pre-race card snapshot not found for race_id={race_id} as_of={as_of_text}"
+                )
+            else:
+                race = conn.execute(
+                    "select * from races where race_id = ?",
+                    (race_id,),
+                ).fetchone()
+                runners = conn.execute(
+                    """
+                    select *
+                    from runners
+                    where race_id = ?
+                    order by cast(horse_no as integer), horse_no
+                    """,
+                    (race_id,),
+                ).fetchall()
 
             available_odds_timings: list[str] = []
             snapshots: list[sqlite3.Row] = []
             if include_odds:
+                odds_where = "race_id = ?"
+                odds_params: list[object] = [race_id]
+                if as_of_text is not None:
+                    odds_where += " and julianday(fetched_at) <= julianday(?)"
+                    odds_params.append(as_of_text)
                 timing_rows = conn.execute(
-                    """
-                    select odds_timing, min(fetched_at) as first_fetched_at
+                    f"""
+                    select odds_timing, min(julianday(fetched_at)) as first_fetched_at
                     from odds_snapshots
-                    where race_id = ?
+                    where {odds_where}
                     group by odds_timing
                     order by first_fetched_at, odds_timing
                     """,
-                    (race_id,),
+                    tuple(odds_params),
                 ).fetchall()
                 available_odds_timings = [row["odds_timing"] for row in timing_rows]
                 timing_filter = ""
-                timing_params: tuple[object, ...] = (race_id,)
+                timing_params = list(odds_params)
                 if odds_timing is not None:
                     timing_filter = " and odds_timing = ?"
-                    timing_params = (race_id, odds_timing)
+                    timing_params.append(odds_timing)
                 candidate_snapshots = conn.execute(
                     f"""
                     select *
                     from odds_snapshots
-                    where race_id = ?{timing_filter}
-                    order by bet_type, fetched_at desc, snapshot_id desc
+                    where {odds_where}{timing_filter}
+                    order by bet_type, julianday(fetched_at) desc, snapshot_id desc
                     """,
-                    timing_params,
+                    tuple(timing_params),
                 ).fetchall()
                 seen_bet_types: set[str] = set()
                 for snapshot in candidate_snapshots:
@@ -2145,6 +2473,22 @@ class AnalysisSQLiteStore:
             meta=StoredPreRaceSnapshotMeta(
                 include_odds=include_odds,
                 requested_odds_timing=odds_timing,
+                requested_as_of=as_of,
+                card_snapshot_id=(
+                    str(card_snapshot["card_snapshot_id"])
+                    if card_snapshot is not None
+                    else None
+                ),
+                card_fetched_at=(
+                    _parse_datetime(card_snapshot["fetched_at"])
+                    if card_snapshot is not None
+                    else None
+                ),
+                runner_set_status=(
+                    card_snapshot["runner_set_status"]
+                    if card_snapshot is not None
+                    else None
+                ),
                 available_odds_timings=available_odds_timings,
                 missing_components=missing_components,
             ),

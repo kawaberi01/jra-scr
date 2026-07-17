@@ -40,6 +40,67 @@ def test_parse_race_card_keeps_apprentice_marker_with_jockey_name():
     assert runner.weight_carried == "58.0 kg"
     assert runner.jockey == "▲黒岩"
     assert runner.trainer == "天間 昭一"
+    assert parsed["data_status"]["runner_set"] == "complete"
+    assert parsed["data_status"]["source_kind"] == "pre_race_card"
+
+
+def test_parse_race_card_marks_explicit_withdrawal():
+    html = """
+    <div class="race_header">
+      <div class="race_name">Sample Race</div>
+    </div>
+    <table class="basic narrow-xy mt20">
+      <tbody>
+        <tr>
+          <td class="num">1</td>
+          <td class="horse"><p class="name"><a>Active</a></p></td>
+          <td class="jockey">牡3/鹿 56.0 kg 騎手A</td>
+        </tr>
+        <tr class="cancel">
+          <td class="num">2</td>
+          <td class="horse">
+            <p class="name"><a>Withdrawn</a></p>
+            <span>出走取消</span>
+          </td>
+          <td class="jockey">牡3/鹿 56.0 kg 騎手B</td>
+        </tr>
+      </tbody>
+    </table>
+    """
+
+    parsed = parse_race_card(html, load_parser_config("race_card"))
+
+    assert parsed["data_status"]["runner_set"] == "complete"
+    assert parsed["runners"][0].status == "active"
+    assert parsed["runners"][0].status_source is None
+    assert parsed["runners"][1].status == "withdrawn"
+    assert parsed["runners"][1].status_source == "explicit"
+
+
+def test_parse_race_card_marks_incomplete_when_candidate_row_is_not_parsed():
+    html = """
+    <div class="race_header">
+      <div class="race_name">Sample Race</div>
+    </div>
+    <table class="basic narrow-xy mt20">
+      <tbody>
+        <tr>
+          <td class="num">1</td>
+          <td class="horse"><p class="name"><a>Parsed</a></p></td>
+        </tr>
+        <tr>
+          <td class="num">2</td>
+          <td class="horse"></td>
+        </tr>
+      </tbody>
+    </table>
+    """
+
+    parsed = parse_race_card(html, load_parser_config("race_card"))
+
+    assert len(parsed["runners"]) == 1
+    assert parsed["data_status"]["runner_set"] == "incomplete"
+    assert "not fully parsed" in parsed["data_status"]["runner_set_reason"]
 
 
 def test_parse_jra_race_card_extracts_horse_weight_from_fixture():

@@ -8,7 +8,14 @@ from jra_srb.jra_odds_timeline import (
     build_timeline_tasks,
     parse_start_datetime,
 )
-from jra_srb.models import MeetingRace, MeetingSnapshot, OddsEntry, RaceOdds
+from jra_srb.models import (
+    MeetingRace,
+    MeetingSnapshot,
+    OddsEntry,
+    RaceCard,
+    RaceOdds,
+    Runner,
+)
 
 
 def test_parse_start_datetime_accepts_japanese_time() -> None:
@@ -64,10 +71,36 @@ async def test_timeline_collector_refresh_existing_controls_append(tmp_path) -> 
     class FakeTimelineService:
         def __init__(self) -> None:
             self.odds_calls = 0
+            self.card_calls = 0
 
         async def get_meetings_for_date(self, requested_date):
             assert requested_date == target_date
             return [meeting]
+
+        async def get_race_card_by_number(
+            self,
+            requested_date,
+            course,
+            race_no,
+            refresh,
+        ):
+            assert (requested_date, course, race_no, refresh) == (
+                target_date,
+                "kokura",
+                1,
+                True,
+            )
+            self.card_calls += 1
+            return RaceCard(
+                race_id=race.race_id,
+                runners=[Runner(horse_no="1", horse_name="Runner")],
+                fetched_at=datetime.now(UTC),
+                source="fixture-card-refresh",
+                data_status={
+                    "runner_set": "complete",
+                    "source_kind": "pre_race_card",
+                },
+            )
 
         async def get_race_odds_by_number(
             self,
@@ -134,6 +167,8 @@ async def test_timeline_collector_refresh_existing_controls_append(tmp_path) -> 
     assert skipped.skipped_existing == 1
     assert skipped.live_requests == 0
     assert refreshed.saved == 1
-    assert refreshed.live_requests == 1
+    assert refreshed.live_requests == 2
+    assert service.card_calls == 1
     assert service.odds_calls == 1
+    assert store.count_rows("race_card_snapshots") == 1
     assert store.count_rows("odds_snapshots") == 2

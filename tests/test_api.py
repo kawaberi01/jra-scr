@@ -954,6 +954,8 @@ def test_openapi_contains_japanese_api_guidance():
     snapshot_parameters = {item["name"]: item for item in snapshot_get["parameters"]}
     timeline_parameters = {item["name"]: item for item in timeline_get["parameters"]}
     assert "読み込みません" in snapshot_parameters["include_odds"]["description"]
+    assert "最新出馬表" in snapshot_parameters["as_of"]["description"]
+    assert snapshot_parameters["as_of"]["schema"]["anyOf"][0]["format"] == "date-time"
     assert "カンマ区切り" in timeline_parameters["combination"]["description"]
     assert snapshot_get["responses"]["200"]["content"]["application/json"]["schema"]["$ref"].endswith(
         "/StoredPreRaceSnapshot"
@@ -1573,6 +1575,10 @@ def test_jra_pre_race_snapshot_and_odds_timeline_read_analysis_db_from_env(tmp_p
     no_odds_response = client.get(
         f"/jra/races/{race_id}/pre-race-snapshot?include_odds=false"
     )
+    as_of_response = client.get(
+        f"/jra/races/{race_id}/pre-race-snapshot",
+        params={"as_of": "2026-07-18T15:26:00+09:00"},
+    )
     timeline_response = client.get(
         f"/jra/races/{race_id}/odds-timeline?bet_type=wide&combination=10,4"
     )
@@ -1596,6 +1602,13 @@ def test_jra_pre_race_snapshot_and_odds_timeline_read_analysis_db_from_env(tmp_p
     assert no_odds["odds"] == []
     assert no_odds["meta"]["available_odds_timings"] == []
     assert no_odds["meta"]["missing_components"] == []
+
+    assert as_of_response.status_code == 200
+    as_of = as_of_response.json()
+    assert as_of["meta"]["requested_as_of"] == "2026-07-18T15:26:00+09:00"
+    assert as_of["meta"]["card_snapshot_id"]
+    assert as_of["meta"]["runner_set_status"] == "complete"
+    assert as_of["odds"][0]["odds_timing"] == "t_minus_10m"
 
     assert timeline_response.status_code == 200
     timeline = timeline_response.json()
@@ -1625,6 +1638,14 @@ def test_jra_pre_race_snapshot_and_odds_timeline_validate_requests(tmp_path):
         invalid_bool = client.get(
             f"/jra/races/{race_id}/pre-race-snapshot?include_odds=invalid"
         )
+        naive_as_of = client.get(
+            f"/jra/races/{race_id}/pre-race-snapshot",
+            params={"as_of": "2026-07-18T15:26:00"},
+        )
+        before_first_card = client.get(
+            f"/jra/races/{race_id}/pre-race-snapshot",
+            params={"as_of": "2026-07-18T14:00:00+09:00"},
+        )
         missing_bet_type = client.get(f"/jra/races/{race_id}/odds-timeline")
         invalid_bet_type = client.get(
             f"/jra/races/{race_id}/odds-timeline?bet_type=foobar"
@@ -1642,6 +1663,9 @@ def test_jra_pre_race_snapshot_and_odds_timeline_validate_requests(tmp_path):
         assert missing_timeline_race.json()["error"]["code"] == "not_found"
         assert invalid_race_id.status_code == 422
         assert invalid_bool.status_code == 422
+        assert naive_as_of.status_code == 422
+        assert before_first_card.status_code == 404
+        assert before_first_card.json()["error"]["code"] == "not_found"
         assert missing_bet_type.status_code == 422
         assert invalid_bet_type.status_code == 422
         assert invalid_combination.status_code == 400

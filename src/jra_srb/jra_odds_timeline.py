@@ -132,6 +132,7 @@ class JraOddsTimelineCollector:
                     source=meeting.source,
                     fetched_at=meeting.fetched_at,
                 )
+            pending_bet_types = []
             for bet_type in bet_types:
                 if (
                     not refresh_existing
@@ -143,6 +144,42 @@ class JraOddsTimelineCollector:
                 ):
                     skipped_existing += 1
                     continue
+                pending_bet_types.append(bet_type)
+            if not pending_bet_types:
+                continue
+
+            if max_live_requests is not None and live_requests >= max_live_requests:
+                return OddsTimelineSummary(
+                    len(tasks), saved, skipped_existing, skipped_late, failed, live_requests
+                )
+            if last_request_at is not None:
+                remaining = last_request_at + min_interval_seconds - monotonic()
+                if remaining > 0:
+                    await asyncio.sleep(remaining)
+            try:
+                last_request_at = monotonic()
+                card = await self.service.get_race_card_by_number(
+                    target_date,
+                    task.course,
+                    task.race.race_no,
+                    refresh=True,
+                )
+                live_requests += 1
+                self.store.write_card(
+                    target_date,
+                    task.course,
+                    task.race.race_no,
+                    card,
+                )
+            except Exception as exc:  # noqa: BLE001
+                failed += 1
+                print(
+                    f"failed card {task.course} {task.race.race_no}R "
+                    f"{task.timing_label}: {type(exc).__name__}: {exc}",
+                    flush=True,
+                )
+
+            for bet_type in pending_bet_types:
                 if max_live_requests is not None and live_requests >= max_live_requests:
                     return OddsTimelineSummary(
                         len(tasks), saved, skipped_existing, skipped_late, failed, live_requests

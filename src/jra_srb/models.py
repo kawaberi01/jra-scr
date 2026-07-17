@@ -54,6 +54,27 @@ class DecisionSource(StrEnum):
     agent_plus_manual = "agent_plus_manual"
 
 
+class RunnerStatus(StrEnum):
+    active = "active"
+    withdrawn = "withdrawn"
+
+
+class RunnerStatusSource(StrEnum):
+    explicit = "explicit"
+    derived = "derived"
+
+
+class RaceCardRunnerSetStatus(StrEnum):
+    complete = "complete"
+    incomplete = "incomplete"
+
+
+class RaceCardSourceKind(StrEnum):
+    pre_race_card = "pre_race_card"
+    result_page = "result_page"
+    unknown = "unknown"
+
+
 class CachePolicyMeta(BaseModel):
     cache_policy: str = "db_first_ttl"
     data_source: str
@@ -86,11 +107,16 @@ class Runner(BaseModel):
     horse_weight_diff: str | None = None
     odds: str | None = None
     popularity: str | None = None
+    status: RunnerStatus = RunnerStatus.active
+    status_source: RunnerStatusSource | None = None
 
 
 class RaceCardDataStatus(BaseModel):
     horse_weight: str | None = None
     horse_weight_reason: str | None = None
+    runner_set: RaceCardRunnerSetStatus | None = None
+    runner_set_reason: str | None = None
+    source_kind: RaceCardSourceKind = RaceCardSourceKind.unknown
 
 
 class OddsEntry(BaseModel):
@@ -808,7 +834,12 @@ class StoredPreRace(BaseModel):
     race_name: str | None = None
     start_time: str | None = None
     surface: str | None = None
+    surface_label: str | None = None
     distance: str | None = None
+    weather: str | None = None
+    weather_label: str | None = None
+    track_condition: str | None = None
+    track_condition_label: str | None = None
     source: str | None = None
     fetched_at: datetime | None = None
 
@@ -822,8 +853,12 @@ class StoredPreRaceRunner(BaseModel):
     weight_carried: str | None = None
     jockey: str | None = None
     trainer: str | None = None
+    horse_weight: int | None = None
+    horse_weight_diff: int | None = None
     card_odds: float | None = None
     card_popularity: int | None = None
+    status: RunnerStatus = RunnerStatus.active
+    status_source: RunnerStatusSource | None = None
 
 
 class StoredOddsEntry(BaseModel):
@@ -848,6 +883,10 @@ class StoredOddsSnapshot(BaseModel):
 class StoredPreRaceSnapshotMeta(BaseModel):
     include_odds: bool
     requested_odds_timing: str | None = None
+    requested_as_of: datetime | None = None
+    card_snapshot_id: str | None = None
+    card_fetched_at: datetime | None = None
+    runner_set_status: RaceCardRunnerSetStatus | None = None
     available_odds_timings: list[str] = Field(default_factory=list)
     missing_components: list[str] = Field(default_factory=list)
 

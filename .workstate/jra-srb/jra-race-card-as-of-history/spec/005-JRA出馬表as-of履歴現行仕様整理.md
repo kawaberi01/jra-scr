@@ -50,3 +50,26 @@
 - DB、collector、extractor/model、公開APIに影響が広がる。
 - 取消と不完全取得を誤判定すると履歴の意味が壊れる。
 - analysis-orchestratorの広範囲変更停止条件に従い、`010/020/030`作成前に契約を追加確認する。
+
+## 7. フェーズ2追加確認
+
+- `parse_race_card()`はJRA HTMLのrunner候補行数と変換成功数を比較していない。
+- `RaceCard.data_status`は存在するが、JRA側では生成されず、現状は南関の馬体重状態だけで使われている。
+- JRA HTML fixtureには通常cardしかなく、取消fixtureはない。取消・除外の明示判定は行テキストを使う必要がある。
+- `JraService.get_race_card_by_number()`は180秒cacheを使い、強制再取得引数を持たない。
+- 定刻オッズcollectorは各観測時点でrace最新値とオッズだけを保存し、cardを保存しない。
+- 保存済みsnapshot APIは`as_of`入力を持たず、`races/runners`最新値と全時点中の最新オッズを合成する。
+- SQLiteの日時はISO 8601文字列で保存されるため、異なるoffsetを含む境界比較には`julianday()`を使う必要がある。
+
+## 8. 要件との差分確定
+
+| 項目 | 現行 | 変更後 |
+| --- | --- | --- |
+| card世代 | 最新値のみ | 取得ごとにappend |
+| runner集合品質 | 未判定 | `complete/incomplete`を保存 |
+| 取消 | 表現なし | `active/withdrawn`と`explicit/derived` |
+| 馬体重 | extractorのみ | 履歴・最新値・保存APIへ保持 |
+| 結果page | cardへfallback | 最新値互換のみ。発走前履歴から除外 |
+| API時点 | 指定不可 | timezone付き`as_of`以下を合成 |
+| オッズ時点 | 全期間の最新 | `as_of`指定時は境界以下の最新 |
+| 旧DB | 最新値参照 | `as_of`省略時のみfallback |
