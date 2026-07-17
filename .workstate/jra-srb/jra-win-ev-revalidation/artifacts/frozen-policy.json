@@ -1,0 +1,141 @@
+{
+  "created_at": "2026-07-12T04:00:45.396674+00:00",
+  "dataset_hash": "04a4154f85b4f4beb225eb8e4f698c4b98fc23a70bd44be69f735bb95c71dd26",
+  "model_artifact_hash": "e2bca0c377fd457e009b74412e0519a9932f22add7144558a44cc5afbb6b2bd7",
+  "policy_version": "history_win_ev_revalidation_v1",
+  "policy": {
+    "policy": {
+      "probability_method": "isotonic",
+      "min_expected_return": 1.2,
+      "min_market_edge": 0.05,
+      "max_win_odds": 50.0,
+      "max_model_rank": 5,
+      "min_history_starts": 5,
+      "stake": 100,
+      "max_candidates_per_race": 1
+    },
+    "metrics": {
+      "race_count": 576,
+      "candidate_count": 223,
+      "recommendation_rate": 0.3871527777777778,
+      "hits": 12,
+      "hit_rate": 0.053811659192825115,
+      "total_stake": 22300,
+      "total_return": 19060,
+      "roi": 0.8547085201793722,
+      "roi_excluding_max_return": 0.8585585585585586,
+      "roi_excluding_top3_returns": 0.8663636363636363,
+      "max_return_share": 0.21878279118572927,
+      "max_drawdown": 10540,
+      "max_losing_streak": 46,
+      "mean_odds": 22.204035874439462,
+      "median_odds": 21.6,
+      "over_30_rate": 0.2242152466367713,
+      "over_50_rate": 0.0,
+      "candidate_days": 24,
+      "odds_bands": {
+        "lt_2": {
+          "count": 0,
+          "hits": 0,
+          "roi": 0.0
+        },
+        "2_to_lt_5": {
+          "count": 1,
+          "hits": 0,
+          "roi": 0.0
+        },
+        "5_to_lt_10": {
+          "count": 26,
+          "hits": 5,
+          "roi": 1.3038461538461539
+        },
+        "10_to_lt_20": {
+          "count": 74,
+          "hits": 4,
+          "roi": 0.8148648648648649
+        },
+        "20_to_lt_30": {
+          "count": 71,
+          "hits": 1,
+          "roi": 0.30422535211267604
+        },
+        "30_to_lt_50": {
+          "count": 51,
+          "hits": 2,
+          "roi": 1.4666666666666666
+        },
+        "ge_50": {
+          "count": 0,
+          "hits": 0,
+          "roi": 0.0
+        }
+      },
+      "by_month": {
+        "2025-12": {
+          "candidate_count": 25,
+          "hits": 1,
+          "roi": 0.796
+        },
+        "2026-01": {
+          "candidate_count": 88,
+          "hits": 8,
+          "roi": 1.580681818181818
+        },
+        "2026-02": {
+          "candidate_count": 91,
+          "hits": 3,
+          "roi": 0.34725274725274724
+        },
+        "2026-03": {
+          "candidate_count": 19,
+          "hits": 0,
+          "roi": 0.0
+        }
+      },
+      "by_course": {
+        "chukyo": {
+          "candidate_count": 3,
+          "hits": 0,
+          "roi": 0.0
+        },
+        "hanshin": {
+          "candidate_count": 34,
+          "hits": 1,
+          "roi": 0.5852941176470589
+        },
+        "kokura": {
+          "candidate_count": 42,
+          "hits": 1,
+          "roi": 0.15714285714285714
+        },
+        "kyoto": {
+          "candidate_count": 55,
+          "hits": 3,
+          "roi": 0.649090909090909
+        },
+        "nakayama": {
+          "candidate_count": 54,
+          "hits": 5,
+          "roi": 1.9148148148148147
+        },
+        "tokyo": {
+          "candidate_count": 35,
+          "hits": 2,
+          "roi": 0.7142857142857143
+        }
+      },
+      "by_surface": {
+        "dirt": {
+          "candidate_count": 119,
+          "hits": 6,
+          "roi": 0.8495798319327731
+        },
+        "turf": {
+          "candidate_count": 104,
+          "hits": 6,
+          "roi": 0.8605769230769231
+        }
+      }
+    }
+  }
+}

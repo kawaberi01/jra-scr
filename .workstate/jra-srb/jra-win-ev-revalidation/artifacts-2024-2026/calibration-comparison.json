@@ -1,0 +1,479 @@
+{
+  "created_at": "2026-07-12T12:14:57.571135+00:00",
+  "dataset_hash": "cc4dab6819536ae223496eb6cc4d8a20691d8a42310c3453399f62d71ee12deb",
+  "model_artifact_hash": "570e3f9e9ec74738f7d05f78ada8be94394ef0822bfc075b704e70a12469e09a",
+  "policy_version": "history_win_ev_revalidation_v1",
+  "metrics": {
+    "raw": {
+      "count": 12612,
+      "brier": 0.061857147361412824,
+      "log_loss": 0.22763189937778747,
+      "ece_10_equal_frequency": 0.010520233481026426,
+      "ece_bins_established": true,
+      "bins": [
+        {
+          "count": 1261,
+          "mean_probability": 0.012076608982240411,
+          "win_rate": 0.007137192704203013
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.020612392096324716,
+          "win_rate": 0.010309278350515464
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.02810903001001916,
+          "win_rate": 0.0190325138778747
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.036588255835422696,
+          "win_rate": 0.0317208564631245
+        },
+        {
+          "count": 1262,
+          "mean_probability": 0.04697651394099922,
+          "win_rate": 0.044374009508716325
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.060010198308492434,
+          "win_rate": 0.06502775574940524
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.07693601381620621,
+          "win_rate": 0.06740681998413957
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.10198077835753469,
+          "win_rate": 0.10626486915146709
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.14417987640599264,
+          "win_rate": 0.13560666137985725
+        },
+        {
+          "count": 1262,
+          "mean_probability": 0.267065134915736,
+          "win_rate": 0.22107765451664024
+        }
+      ],
+      "odds_bands": {
+        "lt_2": {
+          "count": 217,
+          "reference_only": false,
+          "brier": 0.3131896492001604,
+          "log_loss": 0.8663245379745799,
+          "mean_probability": 0.2858717130252104,
+          "win_rate": 0.4930875576036866
+        },
+        "2_to_lt_5": {
+          "count": 1537,
+          "reference_only": false,
+          "brier": 0.1843377136495181,
+          "log_loss": 0.5731881885102671,
+          "mean_probability": 0.17436911670984542,
+          "win_rate": 0.22706571242680545
+        },
+        "5_to_lt_10": {
+          "count": 1845,
+          "reference_only": false,
+          "brier": 0.10834477795556584,
+          "log_loss": 0.38286777514243797,
+          "mean_probability": 0.11218357704072275,
+          "win_rate": 0.11761517615176152
+        },
+        "10_to_lt_20": {
+          "count": 1969,
+          "reference_only": false,
+          "brier": 0.06074063799682987,
+          "log_loss": 0.2465048651212287,
+          "mean_probability": 0.08396560429596633,
+          "win_rate": 0.061452513966480445
+        },
+        "20_to_lt_30": {
+          "count": 1168,
+          "reference_only": false,
+          "brier": 0.04079162938140021,
+          "log_loss": 0.18538711130643543,
+          "mean_probability": 0.06951018573077364,
+          "win_rate": 0.038527397260273974
+        },
+        "30_to_lt_50": {
+          "count": 1256,
+          "reference_only": false,
+          "brier": 0.023684962880549616,
+          "log_loss": 0.12304925178654781,
+          "mean_probability": 0.05540758182363443,
+          "win_rate": 0.021496815286624203
+        },
+        "ge_50": {
+          "count": 4620,
+          "reference_only": false,
+          "brier": 0.006918994529690856,
+          "log_loss": 0.05174669126852234,
+          "mean_probability": 0.032271891667100205,
+          "win_rate": 0.005844155844155844
+        }
+      }
+    },
+    "platt": {
+      "count": 12612,
+      "brier": 0.0625133955566987,
+      "log_loss": 0.234067580577362,
+      "ece_10_equal_frequency": 0.02124680065360804,
+      "ece_bins_established": true,
+      "bins": [
+        {
+          "count": 1261,
+          "mean_probability": 0.03895869419413651,
+          "win_rate": 0.007137192704203013
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.04126341716610585,
+          "win_rate": 0.010309278350515464
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.0433974063566731,
+          "win_rate": 0.0190325138778747
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.045941343261690006,
+          "win_rate": 0.0317208564631245
+        },
+        {
+          "count": 1262,
+          "mean_probability": 0.049252562075003,
+          "win_rate": 0.044374009508716325
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.053728142335717335,
+          "win_rate": 0.06502775574940524
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.06012309847863362,
+          "win_rate": 0.06740681998413957
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.0709326016561017,
+          "win_rate": 0.10626486915146709
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.09347032385304599,
+          "win_rate": 0.13560666137985725
+        },
+        {
+          "count": 1262,
+          "mean_probability": 0.2108794179520118,
+          "win_rate": 0.22107765451664024
+        }
+      ],
+      "odds_bands": {
+        "lt_2": {
+          "count": 217,
+          "reference_only": false,
+          "brier": 0.340415968518785,
+          "log_loss": 0.9632863128901805,
+          "mean_probability": 0.25233551107259167,
+          "win_rate": 0.4930875576036866
+        },
+        "2_to_lt_5": {
+          "count": 1537,
+          "reference_only": false,
+          "brier": 0.19085756666572276,
+          "log_loss": 0.6054613674212337,
+          "mean_probability": 0.13154099950868967,
+          "win_rate": 0.22706571242680545
+        },
+        "5_to_lt_10": {
+          "count": 1845,
+          "reference_only": false,
+          "brier": 0.1077174907194563,
+          "log_loss": 0.38272306872296047,
+          "mean_probability": 0.08410502628049228,
+          "win_rate": 0.11761517615176152
+        },
+        "10_to_lt_20": {
+          "count": 1969,
+          "reference_only": false,
+          "brier": 0.058382134028055546,
+          "log_loss": 0.23484907137619274,
+          "mean_probability": 0.06755017646778953,
+          "win_rate": 0.061452513966480445
+        },
+        "20_to_lt_30": {
+          "count": 1168,
+          "reference_only": false,
+          "brier": 0.038562304768916485,
+          "log_loss": 0.17257070442429898,
+          "mean_probability": 0.06050285094199107,
+          "win_rate": 0.038527397260273974
+        },
+        "30_to_lt_50": {
+          "count": 1256,
+          "reference_only": false,
+          "brier": 0.02254161941774257,
+          "log_loss": 0.11818966854016581,
+          "mean_probability": 0.05410352290967168,
+          "win_rate": 0.021496815286624203
+        },
+        "ge_50": {
+          "count": 4620,
+          "reference_only": false,
+          "brier": 0.007392718915557236,
+          "log_loss": 0.06361090580746086,
+          "mean_probability": 0.045291030399796206,
+          "win_rate": 0.005844155844155844
+        }
+      }
+    },
+    "isotonic": {
+      "count": 12612,
+      "brier": 0.06120830278028775,
+      "log_loss": 0.22470007919580434,
+      "ece_10_equal_frequency": 0.0014389706543723073,
+      "ece_bins_established": true,
+      "bins": [
+        {
+          "count": 1261,
+          "mean_probability": 0.006658055229883316,
+          "win_rate": 0.008723235527359239
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.010480887792848335,
+          "win_rate": 0.007930214115781126
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.01740116450617595,
+          "win_rate": 0.019825535289452814
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.0320403276832962,
+          "win_rate": 0.03013481363996828
+        },
+        {
+          "count": 1262,
+          "mean_probability": 0.04448260764233713,
+          "win_rate": 0.043581616481774964
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.05966596090242602,
+          "win_rate": 0.061855670103092786
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.07350843148377277,
+          "win_rate": 0.07216494845360824
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.10393921463047023,
+          "win_rate": 0.10388580491673276
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.13588294866645384,
+          "win_rate": 0.13639968279143536
+        },
+        {
+          "count": 1262,
+          "mean_probability": 0.22389569226336264,
+          "win_rate": 0.22345483359746435
+        }
+      ],
+      "odds_bands": {
+        "lt_2": {
+          "count": 217,
+          "reference_only": false,
+          "brier": 0.32384097748807106,
+          "log_loss": 0.8941329996678286,
+          "mean_probability": 0.23326933447544096,
+          "win_rate": 0.4930875576036866
+        },
+        "2_to_lt_5": {
+          "count": 1537,
+          "reference_only": false,
+          "brier": 0.18224537764703438,
+          "log_loss": 0.5693438919029671,
+          "mean_probability": 0.15453407596640775,
+          "win_rate": 0.22706571242680545
+        },
+        "5_to_lt_10": {
+          "count": 1845,
+          "reference_only": false,
+          "brier": 0.10677758767976639,
+          "log_loss": 0.37977440105328697,
+          "mean_probability": 0.10389305585716098,
+          "win_rate": 0.11761517615176152
+        },
+        "10_to_lt_20": {
+          "count": 1969,
+          "reference_only": false,
+          "brier": 0.059784517769115114,
+          "log_loss": 0.24512572373524025,
+          "mean_probability": 0.07869824189580006,
+          "win_rate": 0.061452513966480445
+        },
+        "20_to_lt_30": {
+          "count": 1168,
+          "reference_only": false,
+          "brier": 0.04011571352208595,
+          "log_loss": 0.18508305772669814,
+          "mean_probability": 0.06473687479969732,
+          "win_rate": 0.038527397260273974
+        },
+        "30_to_lt_50": {
+          "count": 1256,
+          "reference_only": false,
+          "brier": 0.02320444846131966,
+          "log_loss": 0.12033345416301211,
+          "mean_probability": 0.050436193475158445,
+          "win_rate": 0.021496815286624203
+        },
+        "ge_50": {
+          "count": 4620,
+          "reference_only": false,
+          "brier": 0.006678392140436201,
+          "log_loss": 0.04635429138596889,
+          "mean_probability": 0.025814204445524406,
+          "win_rate": 0.005844155844155844
+        }
+      }
+    },
+    "market": {
+      "count": 12612,
+      "brier": 0.056764237738396686,
+      "log_loss": 0.20200534672415246,
+      "ece_10_equal_frequency": 0.004078897063501974,
+      "ece_bins_established": true,
+      "bins": [
+        {
+          "count": 1261,
+          "mean_probability": 0.0024266644436007918,
+          "win_rate": 0.0015860428231562252
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.004895977395325431,
+          "win_rate": 0.0007930214115781126
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.008620552749028341,
+          "win_rate": 0.011895321173671689
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.01464308887119801,
+          "win_rate": 0.010309278350515464
+        },
+        {
+          "count": 1262,
+          "mean_probability": 0.024424766924185447,
+          "win_rate": 0.030903328050713153
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.038631164654945115,
+          "win_rate": 0.04361617763679619
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.0597700266556891,
+          "win_rate": 0.06582077716098335
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.09467795276272216,
+          "win_rate": 0.09199048374306107
+        },
+        {
+          "count": 1261,
+          "mean_probability": 0.1528528813737495,
+          "win_rate": 0.1506740681998414
+        },
+        {
+          "count": 1262,
+          "mean_probability": 0.30616985468374486,
+          "win_rate": 0.30031695721077656
+        }
+      ],
+      "odds_bands": {
+        "lt_2": {
+          "count": 217,
+          "reference_only": false,
+          "brier": 0.23897552739726027,
+          "log_loss": 0.6707527881388019,
+          "mean_probability": 0.49221223159790733,
+          "win_rate": 0.4930875576036866
+        },
+        "2_to_lt_5": {
+          "count": 1537,
+          "reference_only": false,
+          "brier": 0.17181644846352126,
+          "log_loss": 0.5251757380876724,
+          "mean_probability": 0.23868918319922308,
+          "win_rate": 0.22706571242680545
+        },
+        "5_to_lt_10": {
+          "count": 1845,
+          "reference_only": false,
+          "brier": 0.10290639510299189,
+          "log_loss": 0.3578446309611809,
+          "mean_probability": 0.11416510298932321,
+          "win_rate": 0.11761517615176152
+        },
+        "10_to_lt_20": {
+          "count": 1969,
+          "reference_only": false,
+          "brier": 0.05773189996072973,
+          "log_loss": 0.23142678973832118,
+          "mean_probability": 0.057059912291491106,
+          "win_rate": 0.061452513966480445
+        },
+        "20_to_lt_30": {
+          "count": 1168,
+          "reference_only": false,
+          "brier": 0.03708451948637816,
+          "log_loss": 0.1639328945154695,
+          "mean_probability": 0.032740557784587294,
+          "win_rate": 0.038527397260273974
+        },
+        "30_to_lt_50": {
+          "count": 1256,
+          "reference_only": false,
+          "brier": 0.020984653116603372,
+          "log_loss": 0.10261142220115822,
+          "mean_probability": 0.02056489314167144,
+          "win_rate": 0.021496815286624203
+        },
+        "ge_50": {
+          "count": 4620,
+          "reference_only": false,
+          "brier": 0.0057928880001690344,
+          "log_loss": 0.034347772342268844,
+          "mean_probability": 0.0067680977425245955,
+          "win_rate": 0.005844155844155844
+        }
+      }
+    }
+  },
+  "eligible_probability_methods": [
+    "isotonic"
+  ]
+}

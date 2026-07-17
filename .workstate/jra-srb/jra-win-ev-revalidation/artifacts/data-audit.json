@@ -1,0 +1,55 @@
+{
+  "created_at": "2026-07-12T03:56:16.768866+00:00",
+  "policy_version": "history_win_ev_revalidation_v1",
+  "input": {
+    "dataset_path": "D:\\develop\\jra-scr\\data\\db\\analysis.sqlite",
+    "dataset_hash": "04a4154f85b4f4beb225eb8e4f698c4b98fc23a70bd44be69f735bb95c71dd26",
+    "model_artifact_path": "D:\\develop\\jra-scr\\data\\models\\jra_history_v1\\model.json",
+    "model_artifact_hash": "27b6e0bd4886ae1ca802c7f9115e681f19c9ff5cd16ef00623e6775c89d3c6e7"
+  },
+  "scope": {
+    "race_type": "JRA normal flat races",
+    "from_date": "2025-01-01",
+    "to_date": "2026-05-31",
+    "historical_final_odds_source": "netkeiba_result_entries.win_odds"
+  },
+  "counts": {
+    "all_jra_races": 4721,
+    "normal_races_before_cancel_exclusion": 4231,
+    "quality_eligible_races": 3863,
+    "eligible_races": 3863,
+    "eligible_runner_rows": 54091,
+    "date_min": "2025-01-05",
+    "date_max": "2026-05-10"
+  },
+  "coverage": {
+    "result": {
+      "count": 3863,
+      "rate": 1.0
+    },
+    "win_payout": {
+      "count": 3863,
+      "rate": 1.0
+    },
+    "final_win_odds": {
+      "count": 3863,
+      "rate": 1.0
+    }
+  },
+  "excluded_races": {
+    "newcomer": 349,
+    "obstacle": 141,
+    "missing_result": 0,
+    "missing_win_payout": 0,
+    "missing_final_win_odds": 0,
+    "cancelled_or_excluded": 368
+  },
+  "decision": {
+    "status": "ready_for_split",
+    "required_coverage_rate": 0.95,
+    "minimum_external_races": 500,
+    "quality_ok": true,
+    "enough_external_races": true,
+    "next_step": "create_fixed_time_split"
+  }
+}

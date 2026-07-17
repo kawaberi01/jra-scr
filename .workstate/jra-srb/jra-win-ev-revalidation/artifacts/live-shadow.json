@@ -1,0 +1,8 @@
+{
+  "created_at": "2026-07-12T04:00:45.396674+00:00",
+  "dataset_hash": "04a4154f85b4f4beb225eb8e4f698c4b98fc23a70bd44be69f735bb95c71dd26",
+  "model_artifact_hash": "e2bca0c377fd457e009b74412e0519a9932f22add7144558a44cc5afbb6b2bd7",
+  "policy_version": "history_win_ev_revalidation_v1",
+  "status": "not_started",
+  "reason": "外部評価合格後も30開催日かつ200候補のライブ記録が必要"
+}
