@@ -1,0 +1,562 @@
+{
+  "status": "exploratory_only",
+  "reason": "V89の既知validation/holdoutを使うため採用根拠にはしない",
+  "hypotheses": {
+    "baseline": "V89の既存買い目をそのまま集計する対照群",
+    "axis_above_max_gap": "V89軸が最大断層の直上かつ単勝3.0〜10.9倍のときだけ、既存V89買い目を採用する",
+    "middle_above_max_gap": "V89相手が最大断層の直上かつ単勝3.0〜10.9倍のときだけ、そのワイド点を採用する",
+    "either_above_max_gap": "V89軸または相手が最大断層の直上かつ単勝3.0〜10.9倍のときだけ、そのワイド点を採用する"
+  },
+  "periods": {
+    "validation": {
+      "baseline": {
+        "hypothesis": "baseline",
+        "definition": "V89の既存買い目をそのまま集計する対照群",
+        "metrics": {
+          "tickets": 12,
+          "hits": 5,
+          "hit_rate": 0.4166666666666667,
+          "stake": 1200,
+          "payout": 2580,
+          "roi": 2.15,
+          "no_max_roi": 1.6454545454545455,
+          "no_top3_roi": 0.7666666666666667,
+          "max_payout_share": 0.29844961240310075,
+          "patterns": {
+            "p1": 6,
+            "p2": 1,
+            "p3": 1,
+            "p4": 2
+          }
+        },
+        "missing_odds_bet_races": 0,
+        "entries": [
+          {
+            "race_id": "202510040508",
+            "ticket": "2-7",
+            "payout": 0,
+            "pattern": "p1",
+            "max_gap": 3.2631578947368425
+          },
+          {
+            "race_id": "202510110502",
+            "ticket": "11-16",
+            "payout": 770,
+            "pattern": "p1",
+            "max_gap": 2.7894736842105265
+          },
+          {
+            "race_id": "202510130504",
+            "ticket": "6-14",
+            "payout": 0,
+            "pattern": "p4",
+            "max_gap": 2.368421052631579
+          },
+          {
+            "race_id": "202510260501",
+            "ticket": "2-12",
+            "payout": 0,
+            "pattern": "p1",
+            "max_gap": 3.235294117647059
+          },
+          {
+            "race_id": "202511020806",
+            "ticket": "5-9",
+            "payout": 590,
+            "pattern": "no_gap",
+            "max_gap": 1.611111111111111
+          },
+          {
+            "race_id": "202511160808",
+            "ticket": "4-10",
+            "payout": 0,
+            "pattern": "p1",
+            "max_gap": 3.5789473684210527
+          },
+          {
+            "race_id": "202511220808",
+            "ticket": "6-12",
+            "payout": 0,
+            "pattern": "p3",
+            "max_gap": 2.575
+          },
+          {
+            "race_id": "202511240505",
+            "ticket": "2-3",
+            "payout": 530,
+            "pattern": "p2",
+            "max_gap": 2.033333333333333
+          },
+          {
+            "race_id": "202511300807",
+            "ticket": "3-15",
+            "payout": 0,
+            "pattern": "other",
+            "max_gap": 2.1904761904761902
+          },
+          {
+            "race_id": "202512060607",
+            "ticket": "5-6",
+            "payout": 320,
+            "pattern": "p1",
+            "max_gap": 4.133333333333334
+          },
+          {
+            "race_id": "202512060907",
+            "ticket": "8-9",
+            "payout": 0,
+            "pattern": "p1",
+            "max_gap": 2.590909090909091
+          },
+          {
+            "race_id": "202512200608",
+            "ticket": "4-12",
+            "payout": 370,
+            "pattern": "p4",
+            "max_gap": 2.4705882352941178
+          }
+        ]
+      },
+      "axis_above_max_gap": {
+        "hypothesis": "axis_above_max_gap",
+        "definition": "V89軸が最大断層の直上かつ単勝3.0〜10.9倍のときだけ、既存V89買い目を採用する",
+        "metrics": {
+          "tickets": 0,
+          "hits": 0,
+          "hit_rate": 0.0,
+          "stake": 0,
+          "payout": 0,
+          "roi": 0.0,
+          "no_max_roi": 0.0,
+          "no_top3_roi": 0.0,
+          "max_payout_share": 0.0,
+          "patterns": {
+            "p1": 0,
+            "p2": 0,
+            "p3": 0,
+            "p4": 0
+          }
+        },
+        "missing_odds_bet_races": 0,
+        "entries": []
+      },
+      "middle_above_max_gap": {
+        "hypothesis": "middle_above_max_gap",
+        "definition": "V89相手が最大断層の直上かつ単勝3.0〜10.9倍のときだけ、そのワイド点を採用する",
+        "metrics": {
+          "tickets": 0,
+          "hits": 0,
+          "hit_rate": 0.0,
+          "stake": 0,
+          "payout": 0,
+          "roi": 0.0,
+          "no_max_roi": 0.0,
+          "no_top3_roi": 0.0,
+          "max_payout_share": 0.0,
+          "patterns": {
+            "p1": 0,
+            "p2": 0,
+            "p3": 0,
+            "p4": 0
+          }
+        },
+        "missing_odds_bet_races": 0,
+        "entries": []
+      },
+      "either_above_max_gap": {
+        "hypothesis": "either_above_max_gap",
+        "definition": "V89軸または相手が最大断層の直上かつ単勝3.0〜10.9倍のときだけ、そのワイド点を採用する",
+        "metrics": {
+          "tickets": 0,
+          "hits": 0,
+          "hit_rate": 0.0,
+          "stake": 0,
+          "payout": 0,
+          "roi": 0.0,
+          "no_max_roi": 0.0,
+          "no_top3_roi": 0.0,
+          "max_payout_share": 0.0,
+          "patterns": {
+            "p1": 0,
+            "p2": 0,
+            "p3": 0,
+            "p4": 0
+          }
+        },
+        "missing_odds_bet_races": 0,
+        "entries": []
+      }
+    },
+    "known_holdout": {
+      "baseline": {
+        "hypothesis": "baseline",
+        "definition": "V89の既存買い目をそのまま集計する対照群",
+        "metrics": {
+          "tickets": 33,
+          "hits": 9,
+          "hit_rate": 0.2727272727272727,
+          "stake": 3300,
+          "payout": 5070,
+          "roi": 1.5363636363636364,
+          "no_max_roi": 1.328125,
+          "no_top3_roi": 0.97,
+          "max_payout_share": 0.16173570019723865,
+          "patterns": {
+            "p1": 7,
+            "p2": 4,
+            "p3": 9,
+            "p4": 3
+          }
+        },
+        "missing_odds_bet_races": 0,
+        "entries": [
+          {
+            "race_id": "202601040605",
+            "ticket": "12-16",
+            "payout": 0,
+            "pattern": "no_gap",
+            "max_gap": 1.6857142857142857
+          },
+          {
+            "race_id": "202601040607",
+            "ticket": "7-13",
+            "payout": 0,
+            "pattern": "p1",
+            "max_gap": 6.125
+          },
+          {
+            "race_id": "202601040608",
+            "ticket": "3-13",
+            "payout": 0,
+            "pattern": "no_gap",
+            "max_gap": 1.657142857142857
+          },
+          {
+            "race_id": "202601040803",
+            "ticket": "4-16",
+            "payout": 0,
+            "pattern": "no_gap",
+            "max_gap": 1.7419354838709677
+          },
+          {
+            "race_id": "202601050805",
+            "ticket": "2-13",
+            "payout": 0,
+            "pattern": "p3",
+            "max_gap": 2.0217391304347827
+          },
+          {
+            "race_id": "202601100602",
+            "ticket": "2-8",
+            "payout": 560,
+            "pattern": "p2",
+            "max_gap": 2.709677419354839
+          },
+          {
+            "race_id": "202601100801",
+            "ticket": "3-16",
+            "payout": 320,
+            "pattern": "p4",
+            "max_gap": 3.9411764705882355
+          },
+          {
+            "race_id": "202601120604",
+            "ticket": "7-9",
+            "payout": 0,
+            "pattern": "p3",
+            "max_gap": 2.9615384615384617
+          },
+          {
+            "race_id": "202601180803",
+            "ticket": "7-14",
+            "payout": 730,
+            "pattern": "no_gap",
+            "max_gap": 1.948051948051948
+          },
+          {
+            "race_id": "202601240805",
+            "ticket": "4-11",
+            "payout": 0,
+            "pattern": "p3",
+            "max_gap": 2.1764705882352944
+          },
+          {
+            "race_id": "202601240808",
+            "ticket": "10-13",
+            "payout": 0,
+            "pattern": "no_gap",
+            "max_gap": 1.4285714285714286
+          },
+          {
+            "race_id": "202601250608",
+            "ticket": "2-9",
+            "payout": 820,
+            "pattern": "p3",
+            "max_gap": 2.7313432835820897
+          },
+          {
+            "race_id": "202602100501",
+            "ticket": "4-16",
+            "payout": 0,
+            "pattern": "p1",
+            "max_gap": 2.7777777777777777
+          },
+          {
+            "race_id": "202602140501",
+            "ticket": "6-12",
+            "payout": 0,
+            "pattern": "other",
+            "max_gap": 2.2
+          },
+          {
+            "race_id": "202602140807",
+            "ticket": "5-7",
+            "payout": 0,
+            "pattern": "no_gap",
+            "max_gap": 1.8666666666666667
+          },
+          {
+            "race_id": "202602210905",
+            "ticket": "3-15",
+            "payout": 600,
+            "pattern": "p3",
+            "max_gap": 2.227272727272727
+          },
+          {
+            "race_id": "202602220501",
+            "ticket": "7-12",
+            "payout": 0,
+            "pattern": "no_gap",
+            "max_gap": 1.9130434782608698
+          },
+          {
+            "race_id": "202603010602",
+            "ticket": "6-10",
+            "payout": 0,
+            "pattern": "p2",
+            "max_gap": 2.142857142857143
+          },
+          {
+            "race_id": "202603010908",
+            "ticket": "3-5",
+            "payout": 0,
+            "pattern": "p1",
+            "max_gap": 2.75
+          },
+          {
+            "race_id": "202603070605",
+            "ticket": "2-12",
+            "payout": 0,
+            "pattern": "p4",
+            "max_gap": 2.607594936708861
+          },
+          {
+            "race_id": "202603070608",
+            "ticket": "3-5",
+            "payout": 500,
+            "pattern": "p4",
+            "max_gap": 4.357142857142857
+          },
+          {
+            "race_id": "202603070901",
+            "ticket": "5-8",
+            "payout": 0,
+            "pattern": "p1",
+            "max_gap": 4.0625
+          },
+          {
+            "race_id": "202603080604",
+            "ticket": "1-5",
+            "payout": 0,
+            "pattern": "p3",
+            "max_gap": 4.2439024390243905
+          },
+          {
+            "race_id": "202603140902",
+            "ticket": "8-13",
+            "payout": 610,
+            "pattern": "no_gap",
+            "max_gap": 1.925925925925926
+          },
+          {
+            "race_id": "202603150904",
+            "ticket": "7-10",
+            "payout": 0,
+            "pattern": "p1",
+            "max_gap": 3.222222222222222
+          },
+          {
+            "race_id": "202603220604",
+            "ticket": "7-9",
+            "payout": 0,
+            "pattern": "p1",
+            "max_gap": 2.9473684210526314
+          },
+          {
+            "race_id": "202603290907",
+            "ticket": "9-14",
+            "payout": 0,
+            "pattern": "p3",
+            "max_gap": 2.1325301204819276
+          },
+          {
+            "race_id": "202604110906",
+            "ticket": "12-14",
+            "payout": 0,
+            "pattern": "p3",
+            "max_gap": 2.0
+          },
+          {
+            "race_id": "202604250507",
+            "ticket": "6-16",
+            "payout": 0,
+            "pattern": "p2",
+            "max_gap": 2.3333333333333335
+          },
+          {
+            "race_id": "202604260503",
+            "ticket": "14-16",
+            "payout": 470,
+            "pattern": "other",
+            "max_gap": 2.0833333333333335
+          },
+          {
+            "race_id": "202605030806",
+            "ticket": "11-12",
+            "payout": 460,
+            "pattern": "p2",
+            "max_gap": 2.15625
+          },
+          {
+            "race_id": "202605090808",
+            "ticket": "1-6",
+            "payout": 0,
+            "pattern": "p3",
+            "max_gap": 2.3333333333333335
+          },
+          {
+            "race_id": "202605100804",
+            "ticket": "1-16",
+            "payout": 0,
+            "pattern": "p1",
+            "max_gap": 3.6315789473684212
+          }
+        ]
+      },
+      "axis_above_max_gap": {
+        "hypothesis": "axis_above_max_gap",
+        "definition": "V89軸が最大断層の直上かつ単勝3.0〜10.9倍のときだけ、既存V89買い目を採用する",
+        "metrics": {
+          "tickets": 2,
+          "hits": 1,
+          "hit_rate": 0.5,
+          "stake": 200,
+          "payout": 460,
+          "roi": 2.3,
+          "no_max_roi": 0.0,
+          "no_top3_roi": 0.0,
+          "max_payout_share": 1.0,
+          "patterns": {
+            "p1": 0,
+            "p2": 2,
+            "p3": 0,
+            "p4": 0
+          }
+        },
+        "missing_odds_bet_races": 0,
+        "entries": [
+          {
+            "race_id": "202603010602",
+            "ticket": "6-10",
+            "payout": 0,
+            "pattern": "p2",
+            "max_gap": 2.142857142857143
+          },
+          {
+            "race_id": "202605030806",
+            "ticket": "11-12",
+            "payout": 460,
+            "pattern": "p2",
+            "max_gap": 2.15625
+          }
+        ]
+      },
+      "middle_above_max_gap": {
+        "hypothesis": "middle_above_max_gap",
+        "definition": "V89相手が最大断層の直上かつ単勝3.0〜10.9倍のときだけ、そのワイド点を採用する",
+        "metrics": {
+          "tickets": 1,
+          "hits": 0,
+          "hit_rate": 0.0,
+          "stake": 100,
+          "payout": 0,
+          "roi": 0.0,
+          "no_max_roi": 0.0,
+          "no_top3_roi": 0.0,
+          "max_payout_share": 0.0,
+          "patterns": {
+            "p1": 0,
+            "p2": 0,
+            "p3": 1,
+            "p4": 0
+          }
+        },
+        "missing_odds_bet_races": 0,
+        "entries": [
+          {
+            "race_id": "202603290907",
+            "ticket": "9-14",
+            "payout": 0,
+            "pattern": "p3",
+            "max_gap": 2.1325301204819276
+          }
+        ]
+      },
+      "either_above_max_gap": {
+        "hypothesis": "either_above_max_gap",
+        "definition": "V89軸または相手が最大断層の直上かつ単勝3.0〜10.9倍のときだけ、そのワイド点を採用する",
+        "metrics": {
+          "tickets": 3,
+          "hits": 1,
+          "hit_rate": 0.3333333333333333,
+          "stake": 300,
+          "payout": 460,
+          "roi": 1.5333333333333334,
+          "no_max_roi": 0.0,
+          "no_top3_roi": 0.0,
+          "max_payout_share": 1.0,
+          "patterns": {
+            "p1": 0,
+            "p2": 2,
+            "p3": 1,
+            "p4": 0
+          }
+        },
+        "missing_odds_bet_races": 0,
+        "entries": [
+          {
+            "race_id": "202603010602",
+            "ticket": "6-10",
+            "payout": 0,
+            "pattern": "p2",
+            "max_gap": 2.142857142857143
+          },
+          {
+            "race_id": "202603290907",
+            "ticket": "9-14",
+            "payout": 0,
+            "pattern": "p3",
+            "max_gap": 2.1325301204819276
+          },
+          {
+            "race_id": "202605030806",
+            "ticket": "11-12",
+            "payout": 460,
+            "pattern": "p2",
+            "max_gap": 2.15625
+          }
+        ]
+      }
+    }
+  }
+}

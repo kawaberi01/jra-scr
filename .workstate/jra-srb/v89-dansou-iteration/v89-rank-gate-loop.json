@@ -1,0 +1,105 @@
+{
+  "status": "exploratory_passed",
+  "maximum_iterations": 50,
+  "executed_iterations": 3,
+  "selection_criteria": {
+    "minimum_tickets": {
+      "validation": 6,
+      "known_holdout": 20
+    },
+    "minimum_roi": 1.0,
+    "minimum_no_max_roi": 1.0,
+    "minimum_no_top3_roi": 1.0
+  },
+  "selected": {
+    "iteration": 3,
+    "hypothesis": "V89の文脈補正後の軸を、基礎スコア順位3位以内に限定する",
+    "rank_limit": 3,
+    "metrics": {
+      "validation": {
+        "tickets": 8,
+        "hits": 5,
+        "roi": 3.225,
+        "no_max_roi": 2.585714285714286,
+        "no_top3_roi": 1.38
+      },
+      "known_holdout": {
+        "tickets": 24,
+        "hits": 9,
+        "roi": 2.1125,
+        "no_max_roi": 1.8478260869565217,
+        "no_top3_roi": 1.3857142857142857
+      }
+    },
+    "passed": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "hypothesis": "V89の文脈補正後の軸を、基礎スコア順位1位以内に限定する",
+      "rank_limit": 1,
+      "metrics": {
+        "validation": {
+          "tickets": 0,
+          "hits": 0,
+          "roi": 0.0,
+          "no_max_roi": 0.0,
+          "no_top3_roi": 0.0
+        },
+        "known_holdout": {
+          "tickets": 10,
+          "hits": 4,
+          "roi": 2.49,
+          "no_max_roi": 1.8555555555555556,
+          "no_top3_roi": 0.7142857142857143
+        }
+      },
+      "passed": false
+    },
+    {
+      "iteration": 2,
+      "hypothesis": "V89の文脈補正後の軸を、基礎スコア順位2位以内に限定する",
+      "rank_limit": 2,
+      "metrics": {
+        "validation": {
+          "tickets": 7,
+          "hits": 4,
+          "roi": 2.842857142857143,
+          "no_max_roi": 2.033333333333333,
+          "no_top3_roi": 0.8
+        },
+        "known_holdout": {
+          "tickets": 20,
+          "hits": 7,
+          "roi": 2.07,
+          "no_max_roi": 1.7473684210526317,
+          "no_top3_roi": 1.1647058823529413
+        }
+      },
+      "passed": false
+    },
+    {
+      "iteration": 3,
+      "hypothesis": "V89の文脈補正後の軸を、基礎スコア順位3位以内に限定する",
+      "rank_limit": 3,
+      "metrics": {
+        "validation": {
+          "tickets": 8,
+          "hits": 5,
+          "roi": 3.225,
+          "no_max_roi": 2.585714285714286,
+          "no_top3_roi": 1.38
+        },
+        "known_holdout": {
+          "tickets": 24,
+          "hits": 9,
+          "roi": 2.1125,
+          "no_max_roi": 1.8478260869565217,
+          "no_top3_roi": 1.3857142857142857
+        }
+      },
+      "passed": true
+    }
+  ],
+  "promotion": "forbidden: this search uses known validation/holdout data; evaluate the selected gate once on a fresh unused period"
+}

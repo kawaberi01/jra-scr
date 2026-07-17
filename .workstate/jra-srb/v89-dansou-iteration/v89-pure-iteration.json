@@ -1,0 +1,80 @@
+{
+  "status": "exploratory_only",
+  "reason": "既知V89 validation/holdoutを使うため採用根拠にはしない",
+  "hypotheses": {
+    "baseline": "既存V89の対照群",
+    "axis_base_rank_le_3": "文脈補正後の軸が、基礎スコア順位でも3位以内のときだけ採用する",
+    "axis_odds_2_5_to_10": "軸単勝が2.5〜10.0倍のときだけ採用する",
+    "axis_base_rank_le_3_and_odds_2_5_to_10": "基礎スコア順位3位以内かつ軸単勝2.5〜10.0倍のときだけ採用する"
+  },
+  "periods": {
+    "validation": {
+      "baseline": {
+        "tickets": 12,
+        "hits": 5,
+        "roi": 2.15,
+        "no_max_roi": 1.6454545454545455,
+        "no_top3_roi": 0.7666666666666667,
+        "max_payout_share": 0.29844961240310075
+      },
+      "axis_base_rank_le_3": {
+        "tickets": 8,
+        "hits": 5,
+        "roi": 3.225,
+        "no_max_roi": 2.585714285714286,
+        "no_top3_roi": 1.38,
+        "max_payout_share": 0.29844961240310075
+      },
+      "axis_odds_2_5_to_10": {
+        "tickets": 4,
+        "hits": 2,
+        "roi": 2.8,
+        "no_max_roi": 1.7666666666666666,
+        "no_top3_roi": 0.0,
+        "max_payout_share": 0.5267857142857143
+      },
+      "axis_base_rank_le_3_and_odds_2_5_to_10": {
+        "tickets": 2,
+        "hits": 2,
+        "roi": 5.6,
+        "no_max_roi": 5.3,
+        "no_top3_roi": 0.0,
+        "max_payout_share": 0.5267857142857143
+      }
+    },
+    "known_holdout": {
+      "baseline": {
+        "tickets": 33,
+        "hits": 9,
+        "roi": 1.5363636363636364,
+        "no_max_roi": 1.328125,
+        "no_top3_roi": 0.97,
+        "max_payout_share": 0.16173570019723865
+      },
+      "axis_base_rank_le_3": {
+        "tickets": 24,
+        "hits": 9,
+        "roi": 2.1125,
+        "no_max_roi": 1.8478260869565217,
+        "no_top3_roi": 1.3857142857142857,
+        "max_payout_share": 0.16173570019723865
+      },
+      "axis_odds_2_5_to_10": {
+        "tickets": 15,
+        "hits": 3,
+        "roi": 1.2,
+        "no_max_roi": 0.7642857142857142,
+        "no_top3_roi": 0.0,
+        "max_payout_share": 0.40555555555555556
+      },
+      "axis_base_rank_le_3_and_odds_2_5_to_10": {
+        "tickets": 10,
+        "hits": 3,
+        "roi": 1.8,
+        "no_max_roi": 1.1888888888888889,
+        "no_top3_roi": 0.0,
+        "max_payout_share": 0.40555555555555556
+      }
+    }
+  }
+}
