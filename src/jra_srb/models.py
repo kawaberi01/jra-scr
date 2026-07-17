@@ -215,6 +215,8 @@ class MeetingRace(BaseModel):
 class MeetingSnapshot(BaseModel):
     date: date
     course: str
+    meeting_no: int | None = None
+    meeting_day: int | None = None
     races: list[MeetingRace] = Field(default_factory=list)
     weather: str | None = None
     weather_label: str | None = None
@@ -226,6 +228,48 @@ class MeetingSnapshot(BaseModel):
     source: str
     cache_hit: bool = False
     meta: CachePolicyMeta | None = None
+
+
+class JraScoutConfidenceSignal(BaseModel):
+    top_pick_agrees: bool = False
+    top3_agreement_count: int = 0
+    history_probability_gap: float = 0.0
+
+
+class JraScoutValueSignal(BaseModel):
+    status: str
+    horse_no: str | None = None
+    expected_return: float = 0.0
+    market_edge: float = 0.0
+
+
+class JraDayRaceScoutEntry(BaseModel):
+    rank: int | None = None
+    race_id: str
+    course: str
+    race_no: int
+    race_name: str | None = None
+    start_time: str | None = None
+    grade: str
+    signals: list[str] = Field(default_factory=list)
+    confidence_signal: JraScoutConfidenceSignal = Field(default_factory=JraScoutConfidenceSignal)
+    value_signal: JraScoutValueSignal | None = None
+    recheck_required: bool = True
+    reasons: list[str] = Field(default_factory=list)
+    component_status: dict[str, str] = Field(default_factory=dict)
+
+
+class JraDayRaceScoutResult(BaseModel):
+    run_id: str
+    date: date
+    observed_at: datetime
+    phase: str = "morning_scout"
+    status: str
+    race_count: int
+    analyzed_count: int
+    candidates: list[JraDayRaceScoutEntry] = Field(default_factory=list)
+    entries: list[JraDayRaceScoutEntry] = Field(default_factory=list)
+    errors: list[dict[str, object]] = Field(default_factory=list)
 
 
 class NankanTrendFrameEntry(BaseModel):

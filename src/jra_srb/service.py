@@ -10,6 +10,7 @@ from .errors import BadRequestError, ResourceNotFoundError
 from .extractors import (
     parse_calendar_meetings,
     parse_meeting_races,
+    parse_jra_meeting_coordinates,
     parse_jra_table_odds,
     parse_jra_trifecta_odds,
     parse_jra_win_place_odds,
@@ -380,9 +381,12 @@ class JraService:
             races = parse_meeting_races(meeting_page.content)
             if not races:
                 continue
+            coordinates = parse_jra_meeting_coordinates(meeting_page.content)
             meeting = MeetingSnapshot(
                 date=target_date,
                 course=resolved.course,
+                meeting_no=coordinates[0] if coordinates else None,
+                meeting_day=coordinates[1] if coordinates else None,
                 races=races,
                 fetched_at=datetime.now(UTC),
                 source=meeting_page.source,
@@ -524,9 +528,12 @@ class JraService:
                 races = parse_meeting_races(meeting_page.content)
                 if not races:
                     continue
+                coordinates = parse_jra_meeting_coordinates(meeting_page.content)
                 return MeetingSnapshot(
                     date=target_date,
                     course=course,
+                    meeting_no=coordinates[0] if coordinates else None,
+                    meeting_day=coordinates[1] if coordinates else None,
                     races=races,
                     fetched_at=datetime.now(UTC),
                     source=meeting_page.source,

@@ -237,6 +237,19 @@ def parse_meeting_races(html: str) -> list[MeetingRace]:
     return races
 
 
+def parse_jra_meeting_coordinates(html: str) -> tuple[int, int] | None:
+    """Extract meeting number/day from an official JRA race link in the meeting HTML."""
+    soup = BeautifulSoup(html, "html.parser")
+    for link in soup.select("a[href*='CNAME=pw01dde']"):
+        match = re.search(
+            r"CNAME=pw01dde\d{2}\d{2}\d{4}(?P<meeting>\d{2})(?P<day>\d{2})\d{2}\d{8}/",
+            link.get("href", ""),
+        )
+        if match is not None:
+            return int(match.group("meeting")), int(match.group("day"))
+    return None
+
+
 def parse_race_odds(html: str, config: dict[str, Any]) -> dict[str, list[OddsEntry]]:
     soup = BeautifulSoup(html, "html.parser")
     parsed: dict[str, list[OddsEntry]] = {}

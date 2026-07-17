@@ -19,6 +19,7 @@ from .models import (
     EvaluationRecordPage,
     EvaluationSummary,
     EvaluationTicketResultRecord,
+    JraDayRaceScoutResult,
     BetRecordResultTicket,
     BetRecordTicket,
     MeetingRace,
@@ -395,10 +396,73 @@ class AnalysisSQLiteStore:
                 on daily_prediction_log_entries (import_id);
                 create index if not exists idx_daily_prediction_log_entries_race
                 on daily_prediction_log_entries (race_date, course, race_no);
+
+                create table if not exists jra_scout_runs (
+                    run_id text primary key,
+                    race_date text not null,
+                    observed_at text not null,
+                    phase text not null,
+                    status text not null,
+                    race_count integer not null,
+                    analyzed_count integer not null,
+                    candidates_json text not null,
+                    errors_json text not null
+                );
+
+                create table if not exists jra_scout_entries (
+                    run_id text not null,
+                    race_id text not null,
+                    course text not null,
+                    race_no integer not null,
+                    grade text not null,
+                    entry_json text not null,
+                    primary key (run_id, race_id),
+                    foreign key (run_id) references jra_scout_runs(run_id)
+                );
+                create index if not exists idx_jra_scout_entries_run_grade
+                on jra_scout_entries (run_id, grade);
                 """
             )
             _ensure_column(conn, "races", "meeting_no", "integer")
             _ensure_column(conn, "races", "meeting_day", "integer")
+            _ensure_column(conn, "netkeiba_race_results", "race_laps_json", "text")
+
+    def save_jra_scout_result(self, result: JraDayRaceScoutResult) -> dict[str, object]:
+        payload = result.model_dump(mode="json")
+        with self._connect() as conn:
+            conn.execute("pragma foreign_keys = on")
+            conn.execute(
+                """
+                insert into jra_scout_runs
+                (run_id, race_date, observed_at, phase, status, race_count, analyzed_count, candidates_json, errors_json)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                on conflict(run_id) do update set
+                    observed_at=excluded.observed_at, status=excluded.status,
+                    race_count=excluded.race_count, analyzed_count=excluded.analyzed_count,
+                    candidates_json=excluded.candidates_json, errors_json=excluded.errors_json
+                """,
+                (
+                    result.run_id, result.date.isoformat(), result.observed_at.isoformat(), result.phase,
+                    result.status, result.race_count, result.analyzed_count,
+                    json.dumps(payload["candidates"], ensure_ascii=False),
+                    json.dumps(payload["errors"], ensure_ascii=False),
+                ),
+            )
+            conn.execute("delete from jra_scout_entries where run_id = ?", (result.run_id,))
+            conn.executemany(
+                """
+                insert into jra_scout_entries (run_id, race_id, course, race_no, grade, entry_json)
+                values (?, ?, ?, ?, ?, ?)
+                """,
+                [
+                    (
+                        result.run_id, entry.race_id, entry.course, entry.race_no, entry.grade,
+                        json.dumps(entry.model_dump(mode="json"), ensure_ascii=False),
+                    )
+                    for entry in result.entries
+                ],
+            )
+        return {"run_id": result.run_id, "entries": len(result.entries)}
 
     def create_run(
         self,
