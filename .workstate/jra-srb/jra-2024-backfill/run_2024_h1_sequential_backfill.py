@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import sqlite3
 import subprocess
-import sys
 import time
 from datetime import datetime
 from pathlib import Path
@@ -76,36 +75,64 @@ def process_month(label: str, start: str, end: str) -> None:
     mapping_path = OUTPUT_DIR / f"netkeiba_mapping.{label}.csv"
     run(
         [
-            "rtk", "uv", "run", "jra-srb", "generate-netkeiba-mapping",
-            "--from-date", start,
-            "--to-date", end,
-            "--db", str(DB_PATH.relative_to(ROOT)),
-            "--meeting-calendar-csv", str(CALENDAR.relative_to(ROOT)),
-            "--output", str(mapping_path.relative_to(ROOT)),
+            "rtk",
+            "uv",
+            "run",
+            "jra-srb",
+            "generate-netkeiba-mapping",
+            "--from-date",
+            start,
+            "--to-date",
+            end,
+            "--db",
+            str(DB_PATH.relative_to(ROOT)),
+            "--meeting-calendar-csv",
+            str(CALENDAR.relative_to(ROOT)),
+            "--output",
+            str(mapping_path.relative_to(ROOT)),
             "--save-to-db",
         ]
     )
     run(
         [
-            "rtk", "uv", "run", "jra-srb", "collect-netkeiba-results",
-            "--from-date", start,
-            "--to-date", end,
-            "--db", str(DB_PATH.relative_to(ROOT)),
+            "rtk",
+            "uv",
+            "run",
+            "jra-srb",
+            "collect-netkeiba-results",
+            "--from-date",
+            start,
+            "--to-date",
+            end,
+            "--db",
+            str(DB_PATH.relative_to(ROOT)),
             "--use-db-mapping",
-            "--max-live-requests", str(expected),
-            "--min-interval-seconds", "3",
-            "--retries", "1",
+            "--max-live-requests",
+            str(expected),
+            "--min-interval-seconds",
+            "3",
+            "--retries",
+            "1",
         ]
     )
     saved = netkeiba_count(start, end)
     if saved != expected:
-        raise RuntimeError(f"{label}: netkeiba coverage incomplete expected={expected} saved={saved}")
+        raise RuntimeError(
+            f"{label}: netkeiba coverage incomplete expected={expected} saved={saved}"
+        )
     run(
         [
-            "rtk", "uv", "run", "jra-srb", "verify-analysis-joins",
-            "--from-date", start,
-            "--to-date", end,
-            "--db", str(DB_PATH.relative_to(ROOT)),
+            "rtk",
+            "uv",
+            "run",
+            "jra-srb",
+            "verify-analysis-joins",
+            "--from-date",
+            start,
+            "--to-date",
+            end,
+            "--db",
+            str(DB_PATH.relative_to(ROOT)),
         ]
     )
     log(f"{label}: complete races={expected} netkeiba={saved}")
