@@ -371,6 +371,45 @@ def parse_jra_table_odds(html: str, bet_type: str, leg_count: int) -> list[OddsE
                 popularity=_select_text(row, ".popularity"),
             )
         )
+    if entries:
+        return entries
+
+    table_classes = {
+        "quinella": "umaren",
+        "wide": "wide",
+        "exacta": "umatan",
+        "trio": "fuku3",
+    }
+    table_class = table_classes.get(bet_type)
+    if table_class is None:
+        return entries
+
+    for table in soup.select(f"#odds_list table.{table_class}"):
+        caption = _select_text(table, "caption")
+        if caption is None:
+            continue
+        caption_legs = [item.strip() for item in caption.split("-") if item.strip()]
+        for row in table.select("tbody tr"):
+            final_leg = _select_text(row, "th")
+            combination = [*caption_legs, final_leg] if final_leg is not None else caption_legs
+            if len(combination) != leg_count:
+                continue
+            odds_min = _select_text(row, ".min")
+            odds_max = _select_text(row, ".max")
+            odds = None if bet_type == "wide" else _select_text(row, "td")
+            if bet_type == "wide" and odds_min in (None, "") and odds_max in (None, ""):
+                continue
+            if bet_type != "wide" and odds in (None, ""):
+                continue
+            entries.append(
+                OddsEntry(
+                    bet_type=bet_type,
+                    combination=combination,
+                    odds=odds,
+                    odds_min=odds_min,
+                    odds_max=odds_max,
+                )
+            )
     return entries
 
 

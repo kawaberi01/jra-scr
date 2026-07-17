@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from jra_srb.config import load_parser_config
-from jra_srb.extractors import parse_race_card, parse_race_result
+from jra_srb.extractors import parse_jra_table_odds, parse_race_card, parse_race_result
 
 
 def test_parse_race_card_keeps_apprentice_marker_with_jockey_name():
@@ -76,3 +76,78 @@ def test_parse_race_result_supports_jra_result_page_fixture():
     assert len(parsed["payouts"]) >= 8
     assert parsed["payouts"][0].bet_type == "単勝"
     assert parsed["payouts"][0].combination == "10"
+
+
+def test_parse_jra_table_odds_supports_current_quinella_markup():
+    html = """
+    <div id="odds_list">
+      <table class="basic narrow-xy umaren">
+        <caption>2</caption>
+        <tbody><tr><th scope="row">14</th><td><strong class="red">5.8</strong></td></tr></tbody>
+      </table>
+    </div>
+    """
+
+    entries = parse_jra_table_odds(html, bet_type="quinella", leg_count=2)
+
+    assert len(entries) == 1
+    assert entries[0].combination == ["2", "14"]
+    assert entries[0].odds == "5.8"
+
+
+def test_parse_jra_table_odds_supports_current_wide_markup():
+    html = """
+    <div id="odds_list">
+      <table class="basic narrow-xy wide">
+        <caption>2</caption>
+        <tbody>
+          <tr>
+            <th scope="row">14</th>
+            <td class="odds"><span class="inner"><span class="min">2.8</span><span class="cap">-</span><span class="max">3.2</span></span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    """
+
+    entries = parse_jra_table_odds(html, bet_type="wide", leg_count=2)
+
+    assert len(entries) == 1
+    assert entries[0].combination == ["2", "14"]
+    assert entries[0].odds is None
+    assert entries[0].odds_min == "2.8"
+    assert entries[0].odds_max == "3.2"
+
+
+def test_parse_jra_table_odds_supports_current_trio_markup():
+    html = """
+    <div id="odds_list">
+      <table class="basic narrow-xy fuku3">
+        <caption>2-8</caption>
+        <tbody><tr><th scope="row">14</th><td><strong class="red">31.8</strong></td></tr></tbody>
+      </table>
+    </div>
+    """
+
+    entries = parse_jra_table_odds(html, bet_type="trio", leg_count=3)
+
+    assert len(entries) == 1
+    assert entries[0].combination == ["2", "8", "14"]
+    assert entries[0].odds == "31.8"
+
+
+def test_parse_jra_table_odds_supports_current_exacta_markup():
+    html = """
+    <div id="odds_list">
+      <table class="basic narrow-xy umatan">
+        <caption>14</caption>
+        <tbody><tr><th scope="row">2</th><td><strong class="red">12.4</strong></td></tr></tbody>
+      </table>
+    </div>
+    """
+
+    entries = parse_jra_table_odds(html, bet_type="exacta", leg_count=2)
+
+    assert len(entries) == 1
+    assert entries[0].combination == ["14", "2"]
+    assert entries[0].odds == "12.4"
