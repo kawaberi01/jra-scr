@@ -150,6 +150,7 @@ class NetkeibaRaceResult(BaseModel):
     results: list[NetkeibaResultEntry] = Field(default_factory=list)
     payouts: list[PayoutEntry] = Field(default_factory=list)
     corner_passages: list[str] = Field(default_factory=list)
+    race_laps: list[str] = Field(default_factory=list)
     fetched_at: datetime
     source: str
     cache_hit: bool = False

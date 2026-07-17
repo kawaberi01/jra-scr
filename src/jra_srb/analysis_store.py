@@ -162,6 +162,7 @@ class AnalysisSQLiteStore:
                     direction text,
                     weather text,
                     track_condition text,
+                    race_laps_json text,
                     source text not null,
                     fetched_at text not null,
                     raw_json text
@@ -741,8 +742,8 @@ class AnalysisSQLiteStore:
                 """
                 insert into netkeiba_race_results
                 (netkeiba_race_id, jra_race_id, race_date, course, race_no, race_name,
-                 surface, distance, direction, weather, track_condition, source, fetched_at, raw_json)
-                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 surface, distance, direction, weather, track_condition, race_laps_json, source, fetched_at, raw_json)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 on conflict(netkeiba_race_id) do update set
                     jra_race_id = coalesce(excluded.jra_race_id, netkeiba_race_results.jra_race_id),
                     race_date = coalesce(excluded.race_date, netkeiba_race_results.race_date),
@@ -754,6 +755,7 @@ class AnalysisSQLiteStore:
                     direction = excluded.direction,
                     weather = excluded.weather,
                     track_condition = excluded.track_condition,
+                    race_laps_json = excluded.race_laps_json,
                     source = excluded.source,
                     fetched_at = excluded.fetched_at,
                     raw_json = excluded.raw_json
@@ -770,6 +772,7 @@ class AnalysisSQLiteStore:
                     result.direction,
                     result.weather,
                     result.track_condition,
+                    json.dumps(result.race_laps, ensure_ascii=False),
                     result.source,
                     _dt(result.fetched_at),
                     raw_payload,

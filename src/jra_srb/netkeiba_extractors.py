@@ -37,7 +37,12 @@ def parse_netkeiba_race_result(html: str) -> dict[str, Any]:
     soup = BeautifulSoup(html, "html.parser")
     race_name = _text(soup.select_one(".Race_Name"))
     metadata = _parse_race_metadata(soup)
-    results = [_parse_result_row(row) for row in soup.select("#All_Result_Table tr") if "Header" not in row.get("class", [])]
+    corner_by_horse = _parse_corner_orders_by_horse(soup)
+    results = [
+        _parse_result_row(row, corner_by_horse)
+        for row in soup.select("#All_Result_Table tr")
+        if "Header" not in row.get("class", [])
+    ]
     results = [entry for entry in results if entry is not None]
     payouts = _parse_payouts(soup)
     return {
@@ -46,6 +51,7 @@ def parse_netkeiba_race_result(html: str) -> dict[str, Any]:
         "results": results,
         "payouts": payouts,
         "corner_passages": _parse_corner_passages(soup),
+        "race_laps": _parse_race_laps(soup),
     }
 
 
@@ -97,7 +103,7 @@ def _parse_race_metadata(soup: BeautifulSoup) -> dict[str, str | None]:
     }
 
 
-def _parse_result_row(row: Tag) -> NetkeibaResultEntry | None:
+def _parse_result_row(row: Tag, corner_by_horse: dict[str, str] | None = None) -> NetkeibaResultEntry | None:
     rank = _digits(_text(row.select_one(".Result_Num .Rank")) or _text(row.select_one(".Result_Num")))
     horse_name = _text(row.select_one(".Horse_Info .Horse_Name a")) or _text(row.select_one(".Horse_Info .Horse_Name"))
     if rank is None or horse_name is None:
@@ -127,6 +133,7 @@ def _parse_result_row(row: Tag) -> NetkeibaResultEntry | None:
         horse_weight_diff=horse_weight_diff,
         finish_time=finish_time,
         margin=margin,
+        corner_order=(corner_by_horse or {}).get(nums[1] if len(nums) >= 2 else ""),
         final_3f=final_3f,
         win_odds=_strip_unit(odds_text, "倍"),
         popularity=_digits(popularity_text),
@@ -187,6 +194,34 @@ def _parse_corner_passages(soup: BeautifulSoup) -> list[str]:
         if text and text not in passages:
             passages.append(text)
     return passages
+
+
+def _parse_race_laps(soup: BeautifulSoup) -> list[str]:
+    table = soup.select_one("table.Race_HaronTime")
+    if table is None:
+        return []
+    laps = []
+    for cell in table.select("td"):
+        values = re.findall(r"\d{1,2}\.\d", _text(cell) or "")
+        if values:
+            laps.append(values[-1])
+    return laps
+
+
+def _parse_corner_orders_by_horse(soup: BeautifulSoup) -> dict[str, str]:
+    by_horse: dict[str, list[str]] = {}
+    for row in soup.select(".Corner_Num tr"):
+        cells = row.select("td")
+        if not cells:
+            continue
+        tokens = re.findall(r"\([^)]*\)|\d+", _text(cells[-1]) or "")
+        position = 0
+        for token in tokens:
+            position += 1
+            horse_numbers = re.findall(r"\d+", token)
+            for horse_no in horse_numbers:
+                by_horse.setdefault(horse_no, []).append(str(position))
+    return {horse_no: "-".join(positions) for horse_no, positions in by_horse.items()}
 
 
 def _parse_odds_row(bet_type: str, leg_count: int, has_range: bool, row: Any) -> OddsEntry | None:
