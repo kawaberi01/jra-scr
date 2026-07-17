@@ -1,0 +1,567 @@
+{
+  "theory": "hidden-run-rebound-wide-v1",
+  "candidate_count": 20,
+  "candidates": [
+    {
+      "name": "rebound_c0.03_p0.15",
+      "q3": {
+        "tickets": 745,
+        "hits": 132,
+        "return_rate": 0.8103,
+        "no_max_return_rate": 0.7914,
+        "no_top3_return_rate": 0.7687,
+        "max_payout": 1490
+      },
+      "q4": {
+        "tickets": 717,
+        "hits": 132,
+        "return_rate": 0.8473,
+        "no_max_return_rate": 0.8358,
+        "no_top3_return_rate": 0.8154,
+        "max_payout": 910
+      },
+      "h2": {
+        "tickets": 1462,
+        "hits": 264,
+        "return_rate": 0.8285,
+        "no_max_return_rate": 0.8188,
+        "no_top3_return_rate": 0.8071,
+        "max_payout": 1490
+      },
+      "pass": false
+    },
+    {
+      "name": "rebound_c0.03_p0.20",
+      "q3": {
+        "tickets": 567,
+        "hits": 98,
+        "return_rate": 0.7928,
+        "no_max_return_rate": 0.7678,
+        "no_top3_return_rate": 0.7408,
+        "max_payout": 1490
+      },
+      "q4": {
+        "tickets": 582,
+        "hits": 106,
+        "return_rate": 0.8483,
+        "no_max_return_rate": 0.8341,
+        "no_top3_return_rate": 0.809,
+        "max_payout": 910
+      },
+      "h2": {
+        "tickets": 1149,
+        "hits": 204,
+        "return_rate": 0.8209,
+        "no_max_return_rate": 0.8086,
+        "no_top3_return_rate": 0.7945,
+        "max_payout": 1490
+      },
+      "pass": false
+    },
+    {
+      "name": "rebound_c0.03_p0.25",
+      "q3": {
+        "tickets": 300,
+        "hits": 62,
+        "return_rate": 0.9297,
+        "no_max_return_rate": 0.9037,
+        "no_top3_return_rate": 0.8599,
+        "max_payout": 870
+      },
+      "q4": {
+        "tickets": 320,
+        "hits": 65,
+        "return_rate": 0.8969,
+        "no_max_return_rate": 0.8749,
+        "no_top3_return_rate": 0.8382,
+        "max_payout": 790
+      },
+      "h2": {
+        "tickets": 620,
+        "hits": 127,
+        "return_rate": 0.9127,
+        "no_max_return_rate": 0.9002,
+        "no_top3_return_rate": 0.8771,
+        "max_payout": 870
+      },
+      "pass": false
+    },
+    {
+      "name": "rebound_c0.03_p0.30",
+      "q3": {
+        "tickets": 99,
+        "hits": 22,
+        "return_rate": 1.0424,
+        "no_max_return_rate": 0.9643,
+        "no_top3_return_rate": 0.8333,
+        "max_payout": 870
+      },
+      "q4": {
+        "tickets": 113,
+        "hits": 29,
+        "return_rate": 1.092,
+        "no_max_return_rate": 1.0402,
+        "no_top3_return_rate": 0.9427,
+        "max_payout": 690
+      },
+      "h2": {
+        "tickets": 212,
+        "hits": 51,
+        "return_rate": 1.0689,
+        "no_max_return_rate": 1.0327,
+        "no_top3_return_rate": 0.9708,
+        "max_payout": 870
+      },
+      "pass": false
+    },
+    {
+      "name": "rebound_c0.03_p0.35",
+      "q3": {
+        "tickets": 21,
+        "hits": 5,
+        "return_rate": 1.081,
+        "no_max_return_rate": 0.86,
+        "no_top3_return_rate": 0.4333,
+        "max_payout": 550
+      },
+      "q4": {
+        "tickets": 31,
+        "hits": 5,
+        "return_rate": 0.6065,
+        "no_max_return_rate": 0.48,
+        "no_top3_return_rate": 0.2464,
+        "max_payout": 440
+      },
+      "h2": {
+        "tickets": 52,
+        "hits": 10,
+        "return_rate": 0.7981,
+        "no_max_return_rate": 0.7059,
+        "no_top3_return_rate": 0.5429,
+        "max_payout": 550
+      },
+      "pass": false
+    },
+    {
+      "name": "rebound_c0.1_p0.15",
+      "q3": {
+        "tickets": 745,
+        "hits": 132,
+        "return_rate": 0.8103,
+        "no_max_return_rate": 0.7914,
+        "no_top3_return_rate": 0.7687,
+        "max_payout": 1490
+      },
+      "q4": {
+        "tickets": 716,
+        "hits": 132,
+        "return_rate": 0.8557,
+        "no_max_return_rate": 0.8442,
+        "no_top3_return_rate": 0.8224,
+        "max_payout": 910
+      },
+      "h2": {
+        "tickets": 1461,
+        "hits": 264,
+        "return_rate": 0.8326,
+        "no_max_return_rate": 0.8229,
+        "no_top3_return_rate": 0.8112,
+        "max_payout": 1490
+      },
+      "pass": false
+    },
+    {
+      "name": "rebound_c0.1_p0.20",
+      "q3": {
+        "tickets": 564,
+        "hits": 98,
+        "return_rate": 0.797,
+        "no_max_return_rate": 0.7719,
+        "no_top3_return_rate": 0.7447,
+        "max_payout": 1490
+      },
+      "q4": {
+        "tickets": 576,
+        "hits": 106,
+        "return_rate": 0.8571,
+        "no_max_return_rate": 0.8428,
+        "no_top3_return_rate": 0.8175,
+        "max_payout": 910
+      },
+      "h2": {
+        "tickets": 1140,
+        "hits": 204,
+        "return_rate": 0.8274,
+        "no_max_return_rate": 0.815,
+        "no_top3_return_rate": 0.8008,
+        "max_payout": 1490
+      },
+      "pass": false
+    },
+    {
+      "name": "rebound_c0.1_p0.25",
+      "q3": {
+        "tickets": 299,
+        "hits": 62,
+        "return_rate": 0.9328,
+        "no_max_return_rate": 0.9067,
+        "no_top3_return_rate": 0.8628,
+        "max_payout": 870
+      },
+      "q4": {
+        "tickets": 318,
+        "hits": 62,
+        "return_rate": 0.8645,
+        "no_max_return_rate": 0.8423,
+        "no_top3_return_rate": 0.8051,
+        "max_payout": 790
+      },
+      "h2": {
+        "tickets": 617,
+        "hits": 124,
+        "return_rate": 0.8976,
+        "no_max_return_rate": 0.8849,
+        "no_top3_return_rate": 0.8617,
+        "max_payout": 870
+      },
+      "pass": false
+    },
+    {
+      "name": "rebound_c0.1_p0.30",
+      "q3": {
+        "tickets": 99,
+        "hits": 22,
+        "return_rate": 1.0424,
+        "no_max_return_rate": 0.9643,
+        "no_top3_return_rate": 0.8333,
+        "max_payout": 870
+      },
+      "q4": {
+        "tickets": 112,
+        "hits": 29,
+        "return_rate": 1.1018,
+        "no_max_return_rate": 1.0495,
+        "no_top3_return_rate": 0.9514,
+        "max_payout": 690
+      },
+      "h2": {
+        "tickets": 211,
+        "hits": 51,
+        "return_rate": 1.0739,
+        "no_max_return_rate": 1.0376,
+        "no_top3_return_rate": 0.9755,
+        "max_payout": 870
+      },
+      "pass": false
+    },
+    {
+      "name": "rebound_c0.1_p0.35",
+      "q3": {
+        "tickets": 21,
+        "hits": 5,
+        "return_rate": 1.081,
+        "no_max_return_rate": 0.86,
+        "no_top3_return_rate": 0.4333,
+        "max_payout": 550
+      },
+      "q4": {
+        "tickets": 31,
+        "hits": 5,
+        "return_rate": 0.6065,
+        "no_max_return_rate": 0.48,
+        "no_top3_return_rate": 0.2464,
+        "max_payout": 440
+      },
+      "h2": {
+        "tickets": 52,
+        "hits": 10,
+        "return_rate": 0.7981,
+        "no_max_return_rate": 0.7059,
+        "no_top3_return_rate": 0.5429,
+        "max_payout": 550
+      },
+      "pass": false
+    },
+    {
+      "name": "rebound_c0.3_p0.15",
+      "q3": {
+        "tickets": 745,
+        "hits": 133,
+        "return_rate": 0.8185,
+        "no_max_return_rate": 0.7996,
+        "no_top3_return_rate": 0.777,
+        "max_payout": 1490
+      },
+      "q4": {
+        "tickets": 716,
+        "hits": 132,
+        "return_rate": 0.8557,
+        "no_max_return_rate": 0.8442,
+        "no_top3_return_rate": 0.8224,
+        "max_payout": 910
+      },
+      "h2": {
+        "tickets": 1461,
+        "hits": 265,
+        "return_rate": 0.8368,
+        "no_max_return_rate": 0.8271,
+        "no_top3_return_rate": 0.8154,
+        "max_payout": 1490
+      },
+      "pass": false
+    },
+    {
+      "name": "rebound_c0.3_p0.20",
+      "q3": {
+        "tickets": 562,
+        "hits": 97,
+        "return_rate": 0.7936,
+        "no_max_return_rate": 0.7684,
+        "no_top3_return_rate": 0.7411,
+        "max_payout": 1490
+      },
+      "q4": {
+        "tickets": 576,
+        "hits": 106,
+        "return_rate": 0.8571,
+        "no_max_return_rate": 0.8428,
+        "no_top3_return_rate": 0.8175,
+        "max_payout": 910
+      },
+      "h2": {
+        "tickets": 1138,
+        "hits": 203,
+        "return_rate": 0.8257,
+        "no_max_return_rate": 0.8134,
+        "no_top3_return_rate": 0.7991,
+        "max_payout": 1490
+      },
+      "pass": false
+    },
+    {
+      "name": "rebound_c0.3_p0.25",
+      "q3": {
+        "tickets": 299,
+        "hits": 62,
+        "return_rate": 0.9328,
+        "no_max_return_rate": 0.9067,
+        "no_top3_return_rate": 0.8628,
+        "max_payout": 870
+      },
+      "q4": {
+        "tickets": 318,
+        "hits": 62,
+        "return_rate": 0.8645,
+        "no_max_return_rate": 0.8423,
+        "no_top3_return_rate": 0.8051,
+        "max_payout": 790
+      },
+      "h2": {
+        "tickets": 617,
+        "hits": 124,
+        "return_rate": 0.8976,
+        "no_max_return_rate": 0.8849,
+        "no_top3_return_rate": 0.8617,
+        "max_payout": 870
+      },
+      "pass": false
+    },
+    {
+      "name": "rebound_c0.3_p0.30",
+      "q3": {
+        "tickets": 99,
+        "hits": 22,
+        "return_rate": 1.0424,
+        "no_max_return_rate": 0.9643,
+        "no_top3_return_rate": 0.8333,
+        "max_payout": 870
+      },
+      "q4": {
+        "tickets": 112,
+        "hits": 29,
+        "return_rate": 1.1018,
+        "no_max_return_rate": 1.0495,
+        "no_top3_return_rate": 0.9514,
+        "max_payout": 690
+      },
+      "h2": {
+        "tickets": 211,
+        "hits": 51,
+        "return_rate": 1.0739,
+        "no_max_return_rate": 1.0376,
+        "no_top3_return_rate": 0.9755,
+        "max_payout": 870
+      },
+      "pass": false
+    },
+    {
+      "name": "rebound_c0.3_p0.35",
+      "q3": {
+        "tickets": 21,
+        "hits": 5,
+        "return_rate": 1.081,
+        "no_max_return_rate": 0.86,
+        "no_top3_return_rate": 0.4333,
+        "max_payout": 550
+      },
+      "q4": {
+        "tickets": 31,
+        "hits": 5,
+        "return_rate": 0.6065,
+        "no_max_return_rate": 0.48,
+        "no_top3_return_rate": 0.2464,
+        "max_payout": 440
+      },
+      "h2": {
+        "tickets": 52,
+        "hits": 10,
+        "return_rate": 0.7981,
+        "no_max_return_rate": 0.7059,
+        "no_top3_return_rate": 0.5429,
+        "max_payout": 550
+      },
+      "pass": false
+    },
+    {
+      "name": "rebound_c1_p0.15",
+      "q3": {
+        "tickets": 745,
+        "hits": 134,
+        "return_rate": 0.8238,
+        "no_max_return_rate": 0.8048,
+        "no_top3_return_rate": 0.7822,
+        "max_payout": 1490
+      },
+      "q4": {
+        "tickets": 716,
+        "hits": 132,
+        "return_rate": 0.8557,
+        "no_max_return_rate": 0.8442,
+        "no_top3_return_rate": 0.8224,
+        "max_payout": 910
+      },
+      "h2": {
+        "tickets": 1461,
+        "hits": 266,
+        "return_rate": 0.8394,
+        "no_max_return_rate": 0.8298,
+        "no_top3_return_rate": 0.818,
+        "max_payout": 1490
+      },
+      "pass": false
+    },
+    {
+      "name": "rebound_c1_p0.20",
+      "q3": {
+        "tickets": 562,
+        "hits": 98,
+        "return_rate": 0.8005,
+        "no_max_return_rate": 0.7754,
+        "no_top3_return_rate": 0.7481,
+        "max_payout": 1490
+      },
+      "q4": {
+        "tickets": 576,
+        "hits": 106,
+        "return_rate": 0.8571,
+        "no_max_return_rate": 0.8428,
+        "no_top3_return_rate": 0.8175,
+        "max_payout": 910
+      },
+      "h2": {
+        "tickets": 1138,
+        "hits": 204,
+        "return_rate": 0.8292,
+        "no_max_return_rate": 0.8168,
+        "no_top3_return_rate": 0.8026,
+        "max_payout": 1490
+      },
+      "pass": false
+    },
+    {
+      "name": "rebound_c1_p0.25",
+      "q3": {
+        "tickets": 300,
+        "hits": 62,
+        "return_rate": 0.9297,
+        "no_max_return_rate": 0.9037,
+        "no_top3_return_rate": 0.8599,
+        "max_payout": 870
+      },
+      "q4": {
+        "tickets": 318,
+        "hits": 62,
+        "return_rate": 0.8645,
+        "no_max_return_rate": 0.8423,
+        "no_top3_return_rate": 0.8051,
+        "max_payout": 790
+      },
+      "h2": {
+        "tickets": 618,
+        "hits": 124,
+        "return_rate": 0.8961,
+        "no_max_return_rate": 0.8835,
+        "no_top3_return_rate": 0.8603,
+        "max_payout": 870
+      },
+      "pass": false
+    },
+    {
+      "name": "rebound_c1_p0.30",
+      "q3": {
+        "tickets": 99,
+        "hits": 22,
+        "return_rate": 1.0424,
+        "no_max_return_rate": 0.9643,
+        "no_top3_return_rate": 0.8333,
+        "max_payout": 870
+      },
+      "q4": {
+        "tickets": 112,
+        "hits": 29,
+        "return_rate": 1.1018,
+        "no_max_return_rate": 1.0495,
+        "no_top3_return_rate": 0.9514,
+        "max_payout": 690
+      },
+      "h2": {
+        "tickets": 211,
+        "hits": 51,
+        "return_rate": 1.0739,
+        "no_max_return_rate": 1.0376,
+        "no_top3_return_rate": 0.9755,
+        "max_payout": 870
+      },
+      "pass": false
+    },
+    {
+      "name": "rebound_c1_p0.35",
+      "q3": {
+        "tickets": 21,
+        "hits": 5,
+        "return_rate": 1.081,
+        "no_max_return_rate": 0.86,
+        "no_top3_return_rate": 0.4333,
+        "max_payout": 550
+      },
+      "q4": {
+        "tickets": 31,
+        "hits": 5,
+        "return_rate": 0.6065,
+        "no_max_return_rate": 0.48,
+        "no_top3_return_rate": 0.2464,
+        "max_payout": 440
+      },
+      "h2": {
+        "tickets": 52,
+        "hits": 10,
+        "return_rate": 0.7981,
+        "no_max_return_rate": 0.7059,
+        "no_top3_return_rate": 0.5429,
+        "max_payout": 550
+      },
+      "pass": false
+    }
+  ],
+  "eligible": []
+}

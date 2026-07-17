@@ -1,0 +1,17 @@
+{
+  "theory": "hidden-run-rebound-wide-v1",
+  "policy_status": "frozen_before_external_evaluation",
+  "training_period": "2025-01-01..2025-06-30",
+  "external_period": "2026-01-01..2026-06-30",
+  "C": 0.1,
+  "probability_threshold": 0.3,
+  "metrics": {
+    "tickets": 163,
+    "hits": 32,
+    "return_rate": 0.8098,
+    "no_max_return_rate": 0.7698,
+    "no_top3_return_rate": 0.6956,
+    "max_payout": 730
+  },
+  "pass": false
+}
