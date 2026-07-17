@@ -1,0 +1,104 @@
+{
+  "theory": "catboost_pairwise_ranker_lap_style_v1",
+  "method": "CatBoostRanker YetiRank; race_id group-wise ranking; no odds feature; pre-race history features only; historical lap/style features",
+  "created_at": "2026-07-13T21:57:24.454524+00:00",
+  "dataset": {
+    "races": 7193,
+    "runner_rows": 98939,
+    "race_dates": 223,
+    "date_min": "2024-01-06",
+    "date_max": "2026-07-11",
+    "feature_names": [
+      "distance_scaled",
+      "field_size_scaled",
+      "horse_no_scaled",
+      "frame_no_scaled",
+      "age_scaled",
+      "weight_carried_scaled",
+      "days_since_last_scaled",
+      "horse_has_history",
+      "horse_log_starts",
+      "horse_win_rate",
+      "horse_top3_rate",
+      "horse_finish_strength",
+      "horse_course_log_starts",
+      "horse_course_top3_rate",
+      "horse_surface_log_starts",
+      "horse_surface_top3_rate",
+      "horse_distance_log_starts",
+      "horse_distance_top3_rate",
+      "jockey_log_starts",
+      "jockey_win_rate",
+      "jockey_top3_rate",
+      "trainer_log_starts",
+      "trainer_win_rate",
+      "trainer_top3_rate",
+      "sex_male",
+      "sex_female",
+      "sex_gelding",
+      "surface_turf",
+      "surface_dirt",
+      "is_obstacle",
+      "is_newcomer",
+      "is_maiden",
+      "is_open_or_stakes",
+      "course_sapporo",
+      "course_hakodate",
+      "course_fukushima",
+      "course_niigata",
+      "course_tokyo",
+      "course_nakayama",
+      "course_chukyo",
+      "course_kyoto",
+      "course_hanshin",
+      "course_kokura"
+    ],
+    "source_db_mutated": false,
+    "source_through_date": null,
+    "lap_style": {
+      "feature_names": [
+        "style_log_starts",
+        "style_mean_early_position",
+        "style_last_early_position",
+        "style_mean_closing_strength",
+        "style_last_closing_strength",
+        "style_mean_lap_shape",
+        "field_expected_early_position",
+        "style_vs_field_early_position",
+        "style_pace_interaction",
+        "style_has_position_history",
+        "style_has_closing_history"
+      ],
+      "race_extras": 98800
+    }
+  },
+  "date_ranges": {
+    "train": [
+      "2024-01-06",
+      "2025-10-12"
+    ],
+    "calibration": [
+      "2025-10-13",
+      "2026-01-25"
+    ],
+    "external": [
+      "2026-01-31",
+      "2026-07-11"
+    ]
+  },
+  "metrics": {
+    "calibration": {
+      "races": 984,
+      "top1_win_rate": 0.2764227642276423,
+      "top1_top3_rate": 0.5833333333333334,
+      "mean_actual_rank": 4.230691056910569
+    },
+    "external": {
+      "races": 1111,
+      "top1_win_rate": 0.2376237623762376,
+      "top1_top3_rate": 0.5670567056705671,
+      "mean_actual_rank": 4.154815481548154
+    }
+  },
+  "warning": "This evaluates ranking accuracy, not betting profitability. Hyperparameters were fixed before inspecting external results."
+}

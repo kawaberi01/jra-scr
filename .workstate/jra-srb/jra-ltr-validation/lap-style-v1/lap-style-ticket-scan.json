@@ -1,0 +1,95 @@
+{
+  "theory": "lap_style_ranker_ticket_scan_v1",
+  "protocol": "model rank 1 axis, rank 2-4 partners; six pre-fixed score margins and ten shapes; calibration selects by no_top3_roi, external remains fixed",
+  "chosen": {
+    "margin": 0.5,
+    "shape": "quinella_2",
+    "calibration": {
+      "axis_races": 262,
+      "tickets": 262,
+      "hits": 52,
+      "roi": 1.35,
+      "no_top3_roi": 0.9918918918918919
+    }
+  },
+  "external_chosen": {
+    "axis_races": 313,
+    "tickets": 313,
+    "hits": 45,
+    "roi": 0.7696485623003195,
+    "no_top3_roi": 0.5306451612903226
+  },
+  "external_all_shapes": {
+    "wide_2": {
+      "axis_races": 313,
+      "tickets": 313,
+      "hits": 89,
+      "roi": 0.7488817891373802,
+      "no_top3_roi": 0.6387096774193548
+    },
+    "wide_3": {
+      "axis_races": 313,
+      "tickets": 313,
+      "hits": 69,
+      "roi": 0.7150159744408946,
+      "no_top3_roi": 0.5890322580645161
+    },
+    "wide_4": {
+      "axis_races": 313,
+      "tickets": 313,
+      "hits": 68,
+      "roi": 0.8300319488817891,
+      "no_top3_roi": 0.7574193548387097
+    },
+    "quinella_2": {
+      "axis_races": 313,
+      "tickets": 313,
+      "hits": 45,
+      "roi": 0.7696485623003195,
+      "no_top3_roi": 0.5306451612903226
+    },
+    "quinella_3": {
+      "axis_races": 313,
+      "tickets": 313,
+      "hits": 30,
+      "roi": 0.6447284345047923,
+      "no_top3_roi": 0.4493548387096774
+    },
+    "quinella_4": {
+      "axis_races": 313,
+      "tickets": 313,
+      "hits": 21,
+      "roi": 0.5651757188498403,
+      "no_top3_roi": 0.4064516129032258
+    },
+    "trio_23": {
+      "axis_races": 313,
+      "tickets": 313,
+      "hits": 22,
+      "roi": 0.4246006389776358,
+      "no_top3_roi": 0.2896774193548387
+    },
+    "trio_24": {
+      "axis_races": 313,
+      "tickets": 313,
+      "hits": 16,
+      "roi": 0.5533546325878594,
+      "no_top3_roi": 0.3632258064516129
+    },
+    "trio_34": {
+      "axis_races": 313,
+      "tickets": 313,
+      "hits": 13,
+      "roi": 0.5763578274760384,
+      "no_top3_roi": 0.27
+    },
+    "trio_box": {
+      "axis_races": 313,
+      "tickets": 939,
+      "hits": 51,
+      "roi": 0.5181043663471778,
+      "no_top3_roi": 0.4164529914529915
+    }
+  },
+  "warning": "Exploratory. A result must be confirmed on a further untouched period before use."
+}

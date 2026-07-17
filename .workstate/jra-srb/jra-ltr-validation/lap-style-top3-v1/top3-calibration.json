@@ -1,0 +1,93 @@
+{
+  "theory": "lap_style_top3_calibrated_v1",
+  "method": "CatBoost top3 classifier with isotonic calibration; no odds feature; date-based split",
+  "created_at": "2026-07-13T21:59:36.210521+00:00",
+  "lap_metadata": {
+    "feature_names": [
+      "style_log_starts",
+      "style_mean_early_position",
+      "style_last_early_position",
+      "style_mean_closing_strength",
+      "style_last_closing_strength",
+      "style_mean_lap_shape",
+      "field_expected_early_position",
+      "style_vs_field_early_position",
+      "style_pace_interaction",
+      "style_has_position_history",
+      "style_has_closing_history"
+    ],
+    "race_extras": 98800
+  },
+  "trials": [
+    {
+      "threshold": 0.35,
+      "calibration": {
+        "candidates": 839,
+        "win_rate": 0.28843861740166865,
+        "top3_rate": 0.6066746126340882,
+        "mean_probability": 0.5542914158232508
+      }
+    },
+    {
+      "threshold": 0.4,
+      "calibration": {
+        "candidates": 723,
+        "win_rate": 0.30428769017980634,
+        "top3_rate": 0.632088520055325,
+        "mean_probability": 0.5840063869288029
+      }
+    },
+    {
+      "threshold": 0.45,
+      "calibration": {
+        "candidates": 680,
+        "win_rate": 0.31029411764705883,
+        "top3_rate": 0.6367647058823529,
+        "mean_probability": 0.5944244941366963
+      }
+    },
+    {
+      "threshold": 0.5,
+      "calibration": {
+        "candidates": 489,
+        "win_rate": 0.3476482617586912,
+        "top3_rate": 0.6871165644171779,
+        "mean_probability": 0.6392728285501108
+      }
+    },
+    {
+      "threshold": 0.55,
+      "calibration": {
+        "candidates": 345,
+        "win_rate": 0.3884057971014493,
+        "top3_rate": 0.7304347826086957,
+        "mean_probability": 0.6904208112034199
+      }
+    },
+    {
+      "threshold": 0.6,
+      "calibration": {
+        "candidates": 345,
+        "win_rate": 0.3884057971014493,
+        "top3_rate": 0.7304347826086957,
+        "mean_probability": 0.6904208112034199
+      }
+    }
+  ],
+  "chosen": {
+    "threshold": 0.55,
+    "calibration": {
+      "candidates": 345,
+      "win_rate": 0.3884057971014493,
+      "top3_rate": 0.7304347826086957,
+      "mean_probability": 0.6904208112034199
+    }
+  },
+  "external": {
+    "candidates": 344,
+    "win_rate": 0.32848837209302323,
+    "top3_rate": 0.7122093023255814,
+    "mean_probability": 0.6815870248121042
+  },
+  "warning": "Accuracy-only model. It does not establish positive betting expected value."
+}

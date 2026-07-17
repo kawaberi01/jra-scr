@@ -1,0 +1,232 @@
+{
+  "theory": "recent_form_ranker_v1",
+  "created_at": "2026-07-16T15:20:25.841332+00:00",
+  "dataset": {
+    "races": 7193,
+    "runner_rows": 98939,
+    "race_dates": 223,
+    "date_min": "2024-01-06",
+    "date_max": "2026-07-11",
+    "feature_names": [
+      "distance_scaled",
+      "field_size_scaled",
+      "horse_no_scaled",
+      "frame_no_scaled",
+      "age_scaled",
+      "weight_carried_scaled",
+      "days_since_last_scaled",
+      "horse_has_history",
+      "horse_log_starts",
+      "horse_win_rate",
+      "horse_top3_rate",
+      "horse_finish_strength",
+      "horse_course_log_starts",
+      "horse_course_top3_rate",
+      "horse_surface_log_starts",
+      "horse_surface_top3_rate",
+      "horse_distance_log_starts",
+      "horse_distance_top3_rate",
+      "jockey_log_starts",
+      "jockey_win_rate",
+      "jockey_top3_rate",
+      "trainer_log_starts",
+      "trainer_win_rate",
+      "trainer_top3_rate",
+      "sex_male",
+      "sex_female",
+      "sex_gelding",
+      "surface_turf",
+      "surface_dirt",
+      "is_obstacle",
+      "is_newcomer",
+      "is_maiden",
+      "is_open_or_stakes",
+      "course_sapporo",
+      "course_hakodate",
+      "course_fukushima",
+      "course_niigata",
+      "course_tokyo",
+      "course_nakayama",
+      "course_chukyo",
+      "course_kyoto",
+      "course_hanshin",
+      "course_kokura"
+    ],
+    "source_db_mutated": false,
+    "source_through_date": null
+  },
+  "date_ranges": {
+    "train": [
+      "2024-01-06",
+      "2025-10-12"
+    ],
+    "calibration": [
+      "2025-10-13",
+      "2026-01-25"
+    ],
+    "external": [
+      "2026-01-31",
+      "2026-07-11"
+    ]
+  },
+  "recent_feature_names": [
+    "form_history_count_scaled",
+    "form_last_finish_strength",
+    "form_recent3_finish_strength",
+    "form_recent5_finish_strength",
+    "form_recent3_top3_rate",
+    "form_recent3_vs_career_strength"
+  ],
+  "baseline": {
+    "calibration": {
+      "races": 984,
+      "top1_winner_rate": 0.2611788617886179,
+      "axis_top3_rate": 0.5863821138211383,
+      "predicted_top3_recall": 0.47425474254742533,
+      "mean_axis_actual_rank": 4.078252032520325
+    },
+    "external": {
+      "races": 1111,
+      "top1_winner_rate": 0.24212421242124213,
+      "axis_top3_rate": 0.5535553555355536,
+      "predicted_top3_recall": 0.4686468646864681,
+      "mean_axis_actual_rank": 4.280828082808281
+    }
+  },
+  "enhanced": {
+    "calibration": {
+      "races": 984,
+      "top1_winner_rate": 0.2703252032520325,
+      "axis_top3_rate": 0.592479674796748,
+      "predicted_top3_recall": 0.4861111111111111,
+      "mean_axis_actual_rank": 4.117886178861789
+    },
+    "external": {
+      "races": 1111,
+      "top1_winner_rate": 0.2601260126012601,
+      "axis_top3_rate": 0.5805580558055805,
+      "predicted_top3_recall": 0.48514851485148486,
+      "mean_axis_actual_rank": 4.104410441044104
+    }
+  },
+  "logistic_baseline": {
+    "calibration": {
+      "races": 984,
+      "top1_winner_rate": 0.2459349593495935,
+      "axis_top3_rate": 0.556910569105691,
+      "predicted_top3_recall": 0.45528455284552777,
+      "mean_axis_actual_rank": 4.32520325203252
+    },
+    "external": {
+      "races": 1111,
+      "top1_winner_rate": 0.2223222322232223,
+      "axis_top3_rate": 0.54005400540054,
+      "predicted_top3_recall": 0.4653465346534644,
+      "mean_axis_actual_rank": 4.40954095409541
+    }
+  },
+  "logistic_enhanced": {
+    "calibration": {
+      "races": 984,
+      "top1_winner_rate": 0.2459349593495935,
+      "axis_top3_rate": 0.5609756097560976,
+      "predicted_top3_recall": 0.4701897018970184,
+      "mean_axis_actual_rank": 4.304878048780488
+    },
+    "external": {
+      "races": 1111,
+      "top1_winner_rate": 0.23222322232223222,
+      "axis_top3_rate": 0.5607560756075608,
+      "predicted_top3_recall": 0.471347134713471,
+      "mean_axis_actual_rank": 4.22952295229523
+    }
+  },
+  "external_delta": {
+    "top1_winner_rate": 0.018001800180017985,
+    "axis_top3_rate": 0.027002700270026936,
+    "predicted_top3_recall": 0.016501650165016757,
+    "mean_axis_actual_rank": -0.17641764176417674
+  },
+  "promotion_rule": "Promote only when external winner rate and axis top3 rate do not decline, and at least one improves.",
+  "promoted": true,
+  "logistic_external_delta": {
+    "top1_winner_rate": 0.00990099009900991,
+    "axis_top3_rate": 0.02070207020702075,
+    "predicted_top3_recall": 0.006000600060006578,
+    "mean_axis_actual_rank": -0.18001800180018002
+  },
+  "gate_validation": {
+    "selection_data": "calibration only",
+    "calibration_trials": {
+      "always_enhanced": {
+        "races": 984,
+        "top1_winner_rate": 0.2459349593495935,
+        "axis_top3_rate": 0.5609756097560976,
+        "mean_axis_actual_rank": 4.304878048780488
+      },
+      "axis_starts_1": {
+        "races": 984,
+        "top1_winner_rate": 0.2459349593495935,
+        "axis_top3_rate": 0.5609756097560976,
+        "mean_axis_actual_rank": 4.304878048780488
+      },
+      "axis_starts_2": {
+        "races": 984,
+        "top1_winner_rate": 0.24390243902439024,
+        "axis_top3_rate": 0.5609756097560976,
+        "mean_axis_actual_rank": 4.300813008130081
+      },
+      "axis_starts_3": {
+        "races": 984,
+        "top1_winner_rate": 0.24390243902439024,
+        "axis_top3_rate": 0.5609756097560976,
+        "mean_axis_actual_rank": 4.298780487804878
+      },
+      "axis_starts_5": {
+        "races": 984,
+        "top1_winner_rate": 0.24288617886178862,
+        "axis_top3_rate": 0.5589430894308943,
+        "mean_axis_actual_rank": 4.311991869918699
+      },
+      "field_coverage_50": {
+        "races": 984,
+        "top1_winner_rate": 0.2459349593495935,
+        "axis_top3_rate": 0.5609756097560976,
+        "mean_axis_actual_rank": 4.304878048780488
+      },
+      "field_coverage_75": {
+        "races": 984,
+        "top1_winner_rate": 0.2459349593495935,
+        "axis_top3_rate": 0.5609756097560976,
+        "mean_axis_actual_rank": 4.304878048780488
+      },
+      "axis_recent3_strength_50": {
+        "races": 984,
+        "top1_winner_rate": 0.24796747967479674,
+        "axis_top3_rate": 0.5630081300813008,
+        "mean_axis_actual_rank": 4.2926829268292686
+      },
+      "axis_recent3_strength_60": {
+        "races": 984,
+        "top1_winner_rate": 0.24695121951219512,
+        "axis_top3_rate": 0.5589430894308943,
+        "mean_axis_actual_rank": 4.306910569105691
+      }
+    },
+    "chosen": "axis_recent3_strength_50",
+    "external": {
+      "races": 1111,
+      "top1_winner_rate": 0.23222322232223222,
+      "axis_top3_rate": 0.5589558955895589,
+      "mean_axis_actual_rank": 4.227722772277228
+    },
+    "external_always_enhanced": {
+      "races": 1111,
+      "top1_winner_rate": 0.23222322232223222,
+      "axis_top3_rate": 0.5607560756075608,
+      "mean_axis_actual_rank": 4.22952295229523
+    },
+    "promoted_beyond_v2": false
+  },
+  "warning": "Accuracy-only validation. Betting profitability is not evaluated."
+}

@@ -1,0 +1,126 @@
+{
+  "model_version": "jra-history-logistic-v1",
+  "split": {
+    "method": "race_date_chronological_holdout",
+    "cutoff_date": "2025-12-27",
+    "train_dates": 178,
+    "validation_dates": 45,
+    "train_races": 5794,
+    "validation_races": 1399,
+    "train_runner_rows": 79314,
+    "validation_runner_rows": 19625
+  },
+  "runner_metrics": {
+    "win": {
+      "brier": 0.062379,
+      "log_loss": 0.229769,
+      "roc_auc": 0.755202,
+      "positive_rate": 0.071287
+    },
+    "top3": {
+      "brier": 0.143917,
+      "log_loss": 0.446214,
+      "roc_auc": 0.760562,
+      "positive_rate": 0.214166
+    }
+  },
+  "race_metrics": {
+    "races": 1399,
+    "top1_winner_rate": 0.233024,
+    "axis_top3_rate": 0.54539,
+    "predicted_top3_recall": 0.468906
+  },
+  "hyperparameters": {
+    "algorithm": "LogisticRegression",
+    "solver": "lbfgs",
+    "max_iter": 1000
+  },
+  "odds_used": false,
+  "released_artifact_hash": "698f81fa42fa8cafa35a575547140d90b251f77b64d223d7042cb7dddbdfc9c4",
+  "coefficient_summary": {
+    "win": [
+      {
+        "feature": "horse_finish_strength",
+        "coefficient": 0.52618
+      },
+      {
+        "feature": "jockey_top3_rate",
+        "coefficient": 0.355078
+      },
+      {
+        "feature": "horse_win_rate",
+        "coefficient": -0.187542
+      },
+      {
+        "feature": "age_scaled",
+        "coefficient": -0.182515
+      },
+      {
+        "feature": "horse_surface_top3_rate",
+        "coefficient": 0.181677
+      },
+      {
+        "feature": "field_size_scaled",
+        "coefficient": -0.181021
+      },
+      {
+        "feature": "trainer_top3_rate",
+        "coefficient": 0.125513
+      },
+      {
+        "feature": "horse_top3_rate",
+        "coefficient": -0.105036
+      },
+      {
+        "feature": "is_obstacle",
+        "coefficient": 0.09977
+      },
+      {
+        "feature": "horse_has_history",
+        "coefficient": -0.089209
+      }
+    ],
+    "top3": [
+      {
+        "feature": "horse_finish_strength",
+        "coefficient": 0.554672
+      },
+      {
+        "feature": "jockey_top3_rate",
+        "coefficient": 0.301531
+      },
+      {
+        "feature": "field_size_scaled",
+        "coefficient": -0.273112
+      },
+      {
+        "feature": "horse_win_rate",
+        "coefficient": -0.242361
+      },
+      {
+        "feature": "horse_surface_top3_rate",
+        "coefficient": 0.191485
+      },
+      {
+        "feature": "age_scaled",
+        "coefficient": -0.171289
+      },
+      {
+        "feature": "days_since_last_scaled",
+        "coefficient": -0.142871
+      },
+      {
+        "feature": "trainer_top3_rate",
+        "coefficient": 0.138044
+      },
+      {
+        "feature": "horse_log_starts",
+        "coefficient": -0.127777
+      },
+      {
+        "feature": "horse_has_history",
+        "coefficient": -0.124184
+      }
+    ]
+  }
+}
