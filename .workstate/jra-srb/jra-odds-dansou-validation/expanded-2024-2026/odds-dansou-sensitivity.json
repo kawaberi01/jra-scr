@@ -1,0 +1,30 @@
+{
+  "status": "historical_proxy_only",
+  "rule": "original GPTs top6 adjacent odds gap >=2.0; select directly above max gap; candidate odds 3.0..10.9",
+  "uncertainty_model": {
+    "per_horse_absolute_odds_delta": 0.5,
+    "scenarios": 64,
+    "robust_definition": "same selected horse under every top6 ±delta corner; seventh horse cannot enter top6"
+  },
+  "races_with_odds": 6452,
+  "central_final_odds": {
+    "selections": 2044,
+    "hits": 320,
+    "roi": 0.8019569471624266,
+    "no_max_roi": 0.7970141948115517,
+    "no_top3_roi": 0.7872611464968153
+  },
+  "robust_under_delta": {
+    "selections": 323,
+    "hits": 38,
+    "roi": 0.7634674922600619,
+    "no_max_roi": 0.7338509316770186,
+    "no_top3_roi": 0.67625
+  },
+  "skipped": {
+    "central_rule_not_selected": 4408,
+    "top6_corner_scenarios_change_decision": 1461,
+    "seventh_can_enter_top6": 260
+  },
+  "warning": "The ±0.5 assumption is a sensitivity model, not observed pre-race odds history. Results cannot alone promote a live betting rule."
+}

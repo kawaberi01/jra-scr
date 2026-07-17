@@ -1,0 +1,22 @@
+{
+  "status": "historical_screen_only",
+  "rule": "top6 adjacent odds gap >=2.0; select directly above max gap; win odds 3.0..10.9",
+  "races_with_odds": 4792,
+  "selections": 1500,
+  "hits": 233,
+  "roi": 0.806,
+  "no_max_roi": 0.7992661774516344,
+  "no_top3_roi": 0.7859719438877756,
+  "patterns": {
+    "p3": 871,
+    "p4": 384,
+    "p2": 244,
+    "p1": 1
+  },
+  "skipped": {
+    "no_gap": 1853,
+    "candidate_outside_win_band": 1424,
+    "fewer_than_six_odds": 15
+  },
+  "warning": "final odds are used; this does not validate pre-race odds movement or promote a betting rule."
+}
