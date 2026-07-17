@@ -1,0 +1,1172 @@
+{
+  "theory": "market-price-overlay-win-v1",
+  "principle": "odds are excluded from the win-probability model; buy only the largest model/market probability ratio per race",
+  "market_probability": "0.80 / final win odds",
+  "win_odds_band": [
+    3.0,
+    30.0
+  ],
+  "splits": {
+    "train_end": "2025-06-30",
+    "dev_end": "2025-09-30"
+  },
+  "rows": {
+    "train": 24372,
+    "dev": 11408,
+    "holdout": 14168
+  },
+  "candidate_count": 50,
+  "candidates": [
+    {
+      "name": "win_overlay_c0.01_t1.00",
+      "C": 0.01,
+      "overlay_threshold": 1.0,
+      "dev": {
+        "tickets": 868,
+        "hits": 45,
+        "return_rate": 0.7933,
+        "no_max_return_rate": 0.7607,
+        "no_top3_return_rate": 0.6957,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 733,
+        "hits": 38,
+        "return_rate": 0.9456,
+        "no_max_return_rate": 0.9064,
+        "no_top3_return_rate": 0.8288,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.01_t1.05",
+      "C": 0.01,
+      "overlay_threshold": 1.05,
+      "dev": {
+        "tickets": 861,
+        "hits": 45,
+        "return_rate": 0.7998,
+        "no_max_return_rate": 0.7669,
+        "no_top3_return_rate": 0.7014,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 725,
+        "hits": 37,
+        "return_rate": 0.927,
+        "no_max_return_rate": 0.8874,
+        "no_top3_return_rate": 0.8089,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.01_t1.10",
+      "C": 0.01,
+      "overlay_threshold": 1.1,
+      "dev": {
+        "tickets": 849,
+        "hits": 44,
+        "return_rate": 0.8025,
+        "no_max_return_rate": 0.7691,
+        "no_top3_return_rate": 0.7027,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 710,
+        "hits": 36,
+        "return_rate": 0.9394,
+        "no_max_return_rate": 0.899,
+        "no_top3_return_rate": 0.8188,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.01_t1.15",
+      "C": 0.01,
+      "overlay_threshold": 1.15,
+      "dev": {
+        "tickets": 843,
+        "hits": 44,
+        "return_rate": 0.8082,
+        "no_max_return_rate": 0.7746,
+        "no_top3_return_rate": 0.7077,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 697,
+        "hits": 35,
+        "return_rate": 0.9231,
+        "no_max_return_rate": 0.8819,
+        "no_top3_return_rate": 0.8001,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.01_t1.20",
+      "C": 0.01,
+      "overlay_threshold": 1.2,
+      "dev": {
+        "tickets": 831,
+        "hits": 44,
+        "return_rate": 0.8199,
+        "no_max_return_rate": 0.7858,
+        "no_top3_return_rate": 0.718,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 678,
+        "hits": 35,
+        "return_rate": 0.949,
+        "no_max_return_rate": 0.9066,
+        "no_top3_return_rate": 0.8227,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.01_t1.25",
+      "C": 0.01,
+      "overlay_threshold": 1.25,
+      "dev": {
+        "tickets": 821,
+        "hits": 44,
+        "return_rate": 0.8298,
+        "no_max_return_rate": 0.7954,
+        "no_top3_return_rate": 0.7268,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 667,
+        "hits": 35,
+        "return_rate": 0.9646,
+        "no_max_return_rate": 0.9216,
+        "no_top3_return_rate": 0.8363,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.01_t1.30",
+      "C": 0.01,
+      "overlay_threshold": 1.3,
+      "dev": {
+        "tickets": 808,
+        "hits": 43,
+        "return_rate": 0.8342,
+        "no_max_return_rate": 0.7991,
+        "no_top3_return_rate": 0.7294,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 658,
+        "hits": 35,
+        "return_rate": 0.9778,
+        "no_max_return_rate": 0.9342,
+        "no_top3_return_rate": 0.8478,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.01_t1.35",
+      "C": 0.01,
+      "overlay_threshold": 1.35,
+      "dev": {
+        "tickets": 792,
+        "hits": 42,
+        "return_rate": 0.8302,
+        "no_max_return_rate": 0.7944,
+        "no_top3_return_rate": 0.7233,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 643,
+        "hits": 32,
+        "return_rate": 0.9652,
+        "no_max_return_rate": 0.9206,
+        "no_top3_return_rate": 0.832,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.01_t1.40",
+      "C": 0.01,
+      "overlay_threshold": 1.4,
+      "dev": {
+        "tickets": 773,
+        "hits": 40,
+        "return_rate": 0.8032,
+        "no_max_return_rate": 0.7666,
+        "no_top3_return_rate": 0.6936,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 634,
+        "hits": 31,
+        "return_rate": 0.962,
+        "no_max_return_rate": 0.9167,
+        "no_top3_return_rate": 0.8269,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.01_t1.45",
+      "C": 0.01,
+      "overlay_threshold": 1.45,
+      "dev": {
+        "tickets": 747,
+        "hits": 37,
+        "return_rate": 0.7494,
+        "no_max_return_rate": 0.7114,
+        "no_top3_return_rate": 0.6358,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 620,
+        "hits": 31,
+        "return_rate": 0.9837,
+        "no_max_return_rate": 0.9375,
+        "no_top3_return_rate": 0.8457,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.03_t1.00",
+      "C": 0.03,
+      "overlay_threshold": 1.0,
+      "dev": {
+        "tickets": 866,
+        "hits": 46,
+        "return_rate": 0.8064,
+        "no_max_return_rate": 0.7736,
+        "no_top3_return_rate": 0.7086,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 732,
+        "hits": 37,
+        "return_rate": 0.9182,
+        "no_max_return_rate": 0.8789,
+        "no_top3_return_rate": 0.8011,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.03_t1.05",
+      "C": 0.03,
+      "overlay_threshold": 1.05,
+      "dev": {
+        "tickets": 862,
+        "hits": 46,
+        "return_rate": 0.8101,
+        "no_max_return_rate": 0.7772,
+        "no_top3_return_rate": 0.7119,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 719,
+        "hits": 37,
+        "return_rate": 0.9348,
+        "no_max_return_rate": 0.8948,
+        "no_top3_return_rate": 0.8156,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.03_t1.10",
+      "C": 0.03,
+      "overlay_threshold": 1.1,
+      "dev": {
+        "tickets": 852,
+        "hits": 45,
+        "return_rate": 0.811,
+        "no_max_return_rate": 0.7778,
+        "no_top3_return_rate": 0.7117,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 708,
+        "hits": 37,
+        "return_rate": 0.9493,
+        "no_max_return_rate": 0.9088,
+        "no_top3_return_rate": 0.8284,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.03_t1.15",
+      "C": 0.03,
+      "overlay_threshold": 1.15,
+      "dev": {
+        "tickets": 843,
+        "hits": 45,
+        "return_rate": 0.8197,
+        "no_max_return_rate": 0.7861,
+        "no_top3_return_rate": 0.7193,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 694,
+        "hits": 35,
+        "return_rate": 0.9271,
+        "no_max_return_rate": 0.8857,
+        "no_top3_return_rate": 0.8036,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.03_t1.20",
+      "C": 0.03,
+      "overlay_threshold": 1.2,
+      "dev": {
+        "tickets": 835,
+        "hits": 45,
+        "return_rate": 0.8275,
+        "no_max_return_rate": 0.7936,
+        "no_top3_return_rate": 0.7262,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 676,
+        "hits": 35,
+        "return_rate": 0.9518,
+        "no_max_return_rate": 0.9093,
+        "no_top3_return_rate": 0.8251,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.03_t1.25",
+      "C": 0.03,
+      "overlay_threshold": 1.25,
+      "dev": {
+        "tickets": 822,
+        "hits": 44,
+        "return_rate": 0.8318,
+        "no_max_return_rate": 0.7973,
+        "no_top3_return_rate": 0.7288,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 668,
+        "hits": 35,
+        "return_rate": 0.9632,
+        "no_max_return_rate": 0.9202,
+        "no_top3_return_rate": 0.835,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.03_t1.30",
+      "C": 0.03,
+      "overlay_threshold": 1.3,
+      "dev": {
+        "tickets": 807,
+        "hits": 44,
+        "return_rate": 0.8472,
+        "no_max_return_rate": 0.8122,
+        "no_top3_return_rate": 0.7424,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 655,
+        "hits": 35,
+        "return_rate": 0.9823,
+        "no_max_return_rate": 0.9385,
+        "no_top3_return_rate": 0.8517,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.03_t1.35",
+      "C": 0.03,
+      "overlay_threshold": 1.35,
+      "dev": {
+        "tickets": 793,
+        "hits": 43,
+        "return_rate": 0.829,
+        "no_max_return_rate": 0.7933,
+        "no_top3_return_rate": 0.7223,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 644,
+        "hits": 33,
+        "return_rate": 0.9649,
+        "no_max_return_rate": 0.9204,
+        "no_top3_return_rate": 0.832,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.03_t1.40",
+      "C": 0.03,
+      "overlay_threshold": 1.4,
+      "dev": {
+        "tickets": 774,
+        "hits": 42,
+        "return_rate": 0.8301,
+        "no_max_return_rate": 0.7935,
+        "no_top3_return_rate": 0.7208,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 632,
+        "hits": 31,
+        "return_rate": 0.965,
+        "no_max_return_rate": 0.9197,
+        "no_top3_return_rate": 0.8296,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.03_t1.45",
+      "C": 0.03,
+      "overlay_threshold": 1.45,
+      "dev": {
+        "tickets": 751,
+        "hits": 40,
+        "return_rate": 0.8092,
+        "no_max_return_rate": 0.7715,
+        "no_top3_return_rate": 0.6964,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 619,
+        "hits": 31,
+        "return_rate": 0.9853,
+        "no_max_return_rate": 0.939,
+        "no_top3_return_rate": 0.8471,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.1_t1.00",
+      "C": 0.1,
+      "overlay_threshold": 1.0,
+      "dev": {
+        "tickets": 866,
+        "hits": 45,
+        "return_rate": 0.7764,
+        "no_max_return_rate": 0.7437,
+        "no_top3_return_rate": 0.6786,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 731,
+        "hits": 38,
+        "return_rate": 0.9453,
+        "no_max_return_rate": 0.906,
+        "no_top3_return_rate": 0.8282,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.1_t1.05",
+      "C": 0.1,
+      "overlay_threshold": 1.05,
+      "dev": {
+        "tickets": 863,
+        "hits": 45,
+        "return_rate": 0.7791,
+        "no_max_return_rate": 0.7463,
+        "no_top3_return_rate": 0.6809,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 720,
+        "hits": 38,
+        "return_rate": 0.9597,
+        "no_max_return_rate": 0.9199,
+        "no_top3_return_rate": 0.8409,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.1_t1.10",
+      "C": 0.1,
+      "overlay_threshold": 1.1,
+      "dev": {
+        "tickets": 854,
+        "hits": 44,
+        "return_rate": 0.7788,
+        "no_max_return_rate": 0.7456,
+        "no_top3_return_rate": 0.6796,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 703,
+        "hits": 37,
+        "return_rate": 0.9494,
+        "no_max_return_rate": 0.9085,
+        "no_top3_return_rate": 0.8276,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.1_t1.15",
+      "C": 0.1,
+      "overlay_threshold": 1.15,
+      "dev": {
+        "tickets": 844,
+        "hits": 44,
+        "return_rate": 0.788,
+        "no_max_return_rate": 0.7544,
+        "no_top3_return_rate": 0.6876,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 693,
+        "hits": 36,
+        "return_rate": 0.9557,
+        "no_max_return_rate": 0.9143,
+        "no_top3_return_rate": 0.8322,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.1_t1.20",
+      "C": 0.1,
+      "overlay_threshold": 1.2,
+      "dev": {
+        "tickets": 835,
+        "hits": 44,
+        "return_rate": 0.7965,
+        "no_max_return_rate": 0.7626,
+        "no_top3_return_rate": 0.6951,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 678,
+        "hits": 36,
+        "return_rate": 0.9768,
+        "no_max_return_rate": 0.9346,
+        "no_top3_return_rate": 0.8507,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.1_t1.25",
+      "C": 0.1,
+      "overlay_threshold": 1.25,
+      "dev": {
+        "tickets": 826,
+        "hits": 44,
+        "return_rate": 0.8052,
+        "no_max_return_rate": 0.7709,
+        "no_top3_return_rate": 0.7027,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 667,
+        "hits": 36,
+        "return_rate": 0.993,
+        "no_max_return_rate": 0.95,
+        "no_top3_return_rate": 0.8648,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.1_t1.30",
+      "C": 0.1,
+      "overlay_threshold": 1.3,
+      "dev": {
+        "tickets": 807,
+        "hits": 42,
+        "return_rate": 0.7825,
+        "no_max_return_rate": 0.7474,
+        "no_top3_return_rate": 0.6775,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 654,
+        "hits": 36,
+        "return_rate": 1.0127,
+        "no_max_return_rate": 0.9689,
+        "no_top3_return_rate": 0.882,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.1_t1.35",
+      "C": 0.1,
+      "overlay_threshold": 1.35,
+      "dev": {
+        "tickets": 794,
+        "hits": 42,
+        "return_rate": 0.7953,
+        "no_max_return_rate": 0.7596,
+        "no_top3_return_rate": 0.6886,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 645,
+        "hits": 34,
+        "return_rate": 0.9927,
+        "no_max_return_rate": 0.9483,
+        "no_top3_return_rate": 0.8601,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.1_t1.40",
+      "C": 0.1,
+      "overlay_threshold": 1.4,
+      "dev": {
+        "tickets": 771,
+        "hits": 40,
+        "return_rate": 0.7696,
+        "no_max_return_rate": 0.7329,
+        "no_top3_return_rate": 0.6596,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 635,
+        "hits": 32,
+        "return_rate": 0.9902,
+        "no_max_return_rate": 0.9451,
+        "no_top3_return_rate": 0.8555,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.1_t1.45",
+      "C": 0.1,
+      "overlay_threshold": 1.45,
+      "dev": {
+        "tickets": 750,
+        "hits": 39,
+        "return_rate": 0.7757,
+        "no_max_return_rate": 0.7379,
+        "no_top3_return_rate": 0.6627,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 620,
+        "hits": 32,
+        "return_rate": 1.0142,
+        "no_max_return_rate": 0.968,
+        "no_top3_return_rate": 0.8763,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.3_t1.00",
+      "C": 0.3,
+      "overlay_threshold": 1.0,
+      "dev": {
+        "tickets": 865,
+        "hits": 47,
+        "return_rate": 0.7953,
+        "no_max_return_rate": 0.7625,
+        "no_top3_return_rate": 0.6973,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 729,
+        "hits": 38,
+        "return_rate": 0.9479,
+        "no_max_return_rate": 0.9085,
+        "no_top3_return_rate": 0.8304,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.3_t1.05",
+      "C": 0.3,
+      "overlay_threshold": 1.05,
+      "dev": {
+        "tickets": 863,
+        "hits": 47,
+        "return_rate": 0.7971,
+        "no_max_return_rate": 0.7643,
+        "no_top3_return_rate": 0.699,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 720,
+        "hits": 38,
+        "return_rate": 0.9597,
+        "no_max_return_rate": 0.9199,
+        "no_top3_return_rate": 0.8409,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.3_t1.10",
+      "C": 0.3,
+      "overlay_threshold": 1.1,
+      "dev": {
+        "tickets": 855,
+        "hits": 46,
+        "return_rate": 0.796,
+        "no_max_return_rate": 0.7629,
+        "no_top3_return_rate": 0.6969,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 703,
+        "hits": 37,
+        "return_rate": 0.9494,
+        "no_max_return_rate": 0.9085,
+        "no_top3_return_rate": 0.8276,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.3_t1.15",
+      "C": 0.3,
+      "overlay_threshold": 1.15,
+      "dev": {
+        "tickets": 844,
+        "hits": 46,
+        "return_rate": 0.8064,
+        "no_max_return_rate": 0.7728,
+        "no_top3_return_rate": 0.7061,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 693,
+        "hits": 36,
+        "return_rate": 0.9557,
+        "no_max_return_rate": 0.9143,
+        "no_top3_return_rate": 0.8322,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.3_t1.20",
+      "C": 0.3,
+      "overlay_threshold": 1.2,
+      "dev": {
+        "tickets": 836,
+        "hits": 46,
+        "return_rate": 0.8141,
+        "no_max_return_rate": 0.7802,
+        "no_top3_return_rate": 0.7128,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 676,
+        "hits": 36,
+        "return_rate": 0.9797,
+        "no_max_return_rate": 0.9373,
+        "no_top3_return_rate": 0.8532,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.3_t1.25",
+      "C": 0.3,
+      "overlay_threshold": 1.25,
+      "dev": {
+        "tickets": 825,
+        "hits": 45,
+        "return_rate": 0.7931,
+        "no_max_return_rate": 0.7587,
+        "no_top3_return_rate": 0.6904,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 667,
+        "hits": 36,
+        "return_rate": 0.993,
+        "no_max_return_rate": 0.95,
+        "no_top3_return_rate": 0.8648,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.3_t1.30",
+      "C": 0.3,
+      "overlay_threshold": 1.3,
+      "dev": {
+        "tickets": 806,
+        "hits": 44,
+        "return_rate": 0.8027,
+        "no_max_return_rate": 0.7676,
+        "no_top3_return_rate": 0.6976,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 654,
+        "hits": 36,
+        "return_rate": 1.0127,
+        "no_max_return_rate": 0.9689,
+        "no_top3_return_rate": 0.882,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.3_t1.35",
+      "C": 0.3,
+      "overlay_threshold": 1.35,
+      "dev": {
+        "tickets": 795,
+        "hits": 44,
+        "return_rate": 0.8138,
+        "no_max_return_rate": 0.7782,
+        "no_top3_return_rate": 0.7073,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 645,
+        "hits": 34,
+        "return_rate": 0.9927,
+        "no_max_return_rate": 0.9483,
+        "no_top3_return_rate": 0.8601,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.3_t1.40",
+      "C": 0.3,
+      "overlay_threshold": 1.4,
+      "dev": {
+        "tickets": 771,
+        "hits": 42,
+        "return_rate": 0.7898,
+        "no_max_return_rate": 0.753,
+        "no_top3_return_rate": 0.6798,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 635,
+        "hits": 33,
+        "return_rate": 1.0016,
+        "no_max_return_rate": 0.9565,
+        "no_top3_return_rate": 0.8669,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c0.3_t1.45",
+      "C": 0.3,
+      "overlay_threshold": 1.45,
+      "dev": {
+        "tickets": 752,
+        "hits": 41,
+        "return_rate": 0.7943,
+        "no_max_return_rate": 0.7566,
+        "no_top3_return_rate": 0.6816,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 619,
+        "hits": 32,
+        "return_rate": 1.0158,
+        "no_max_return_rate": 0.9696,
+        "no_top3_return_rate": 0.8778,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c1_t1.00",
+      "C": 1.0,
+      "overlay_threshold": 1.0,
+      "dev": {
+        "tickets": 866,
+        "hits": 48,
+        "return_rate": 0.804,
+        "no_max_return_rate": 0.7713,
+        "no_top3_return_rate": 0.7063,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 729,
+        "hits": 38,
+        "return_rate": 0.9479,
+        "no_max_return_rate": 0.9085,
+        "no_top3_return_rate": 0.8304,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c1_t1.05",
+      "C": 1.0,
+      "overlay_threshold": 1.05,
+      "dev": {
+        "tickets": 863,
+        "hits": 48,
+        "return_rate": 0.8068,
+        "no_max_return_rate": 0.774,
+        "no_top3_return_rate": 0.7087,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 720,
+        "hits": 38,
+        "return_rate": 0.9597,
+        "no_max_return_rate": 0.9199,
+        "no_top3_return_rate": 0.8409,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c1_t1.10",
+      "C": 1.0,
+      "overlay_threshold": 1.1,
+      "dev": {
+        "tickets": 855,
+        "hits": 47,
+        "return_rate": 0.8058,
+        "no_max_return_rate": 0.7727,
+        "no_top3_return_rate": 0.7068,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 703,
+        "hits": 37,
+        "return_rate": 0.9494,
+        "no_max_return_rate": 0.9085,
+        "no_top3_return_rate": 0.8276,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c1_t1.15",
+      "C": 1.0,
+      "overlay_threshold": 1.15,
+      "dev": {
+        "tickets": 844,
+        "hits": 47,
+        "return_rate": 0.8164,
+        "no_max_return_rate": 0.7828,
+        "no_top3_return_rate": 0.7161,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 692,
+        "hits": 36,
+        "return_rate": 0.9571,
+        "no_max_return_rate": 0.9156,
+        "no_top3_return_rate": 0.8334,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c1_t1.20",
+      "C": 1.0,
+      "overlay_threshold": 1.2,
+      "dev": {
+        "tickets": 836,
+        "hits": 47,
+        "return_rate": 0.8242,
+        "no_max_return_rate": 0.7903,
+        "no_top3_return_rate": 0.7229,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 677,
+        "hits": 36,
+        "return_rate": 0.9783,
+        "no_max_return_rate": 0.9359,
+        "no_top3_return_rate": 0.8519,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c1_t1.25",
+      "C": 1.0,
+      "overlay_threshold": 1.25,
+      "dev": {
+        "tickets": 826,
+        "hits": 46,
+        "return_rate": 0.8023,
+        "no_max_return_rate": 0.768,
+        "no_top3_return_rate": 0.6998,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 668,
+        "hits": 36,
+        "return_rate": 0.9915,
+        "no_max_return_rate": 0.9486,
+        "no_top3_return_rate": 0.8635,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c1_t1.30",
+      "C": 1.0,
+      "overlay_threshold": 1.3,
+      "dev": {
+        "tickets": 806,
+        "hits": 45,
+        "return_rate": 0.8132,
+        "no_max_return_rate": 0.778,
+        "no_top3_return_rate": 0.7081,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 654,
+        "hits": 36,
+        "return_rate": 1.0127,
+        "no_max_return_rate": 0.9689,
+        "no_top3_return_rate": 0.882,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c1_t1.35",
+      "C": 1.0,
+      "overlay_threshold": 1.35,
+      "dev": {
+        "tickets": 794,
+        "hits": 45,
+        "return_rate": 0.8254,
+        "no_max_return_rate": 0.7898,
+        "no_top3_return_rate": 0.7188,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 645,
+        "hits": 34,
+        "return_rate": 0.9927,
+        "no_max_return_rate": 0.9483,
+        "no_top3_return_rate": 0.8601,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c1_t1.40",
+      "C": 1.0,
+      "overlay_threshold": 1.4,
+      "dev": {
+        "tickets": 771,
+        "hits": 43,
+        "return_rate": 0.8006,
+        "no_max_return_rate": 0.7639,
+        "no_top3_return_rate": 0.6908,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 635,
+        "hits": 33,
+        "return_rate": 1.0016,
+        "no_max_return_rate": 0.9565,
+        "no_top3_return_rate": 0.8669,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    },
+    {
+      "name": "win_overlay_c1_t1.45",
+      "C": 1.0,
+      "overlay_threshold": 1.45,
+      "dev": {
+        "tickets": 752,
+        "hits": 42,
+        "return_rate": 0.8055,
+        "no_max_return_rate": 0.7678,
+        "no_top3_return_rate": 0.6928,
+        "max_payout": 2910
+      },
+      "holdout": {
+        "tickets": 619,
+        "hits": 32,
+        "return_rate": 1.0158,
+        "no_max_return_rate": 0.9696,
+        "no_top3_return_rate": 0.8778,
+        "max_payout": 2960
+      },
+      "dev_pass": false,
+      "holdout_pass": false
+    }
+  ],
+  "eligible": []
+}
