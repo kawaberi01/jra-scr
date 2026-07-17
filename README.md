@@ -11,6 +11,7 @@ JRA のレース情報を取得するための Python SDK 兼ローカル HTTP A
 - [必要環境](#必要環境)
 - [セットアップ](#セットアップ)
 - [API サーバーの起動](#api-サーバーの起動)
+- [MCP 利用ガイド](#mcp-利用ガイド)
 - [代表的な API](#代表的な-api)
 - [レスポンスで扱う主なデータ](#レスポンスで扱う主なデータ)
 - [Tiny HITL デモアプリ](#tiny-hitl-デモアプリ)
@@ -71,6 +72,62 @@ uv run uvicorn jra_srb.app:app --reload
 | Swagger UI | `http://127.0.0.1:8000/docs` |
 | OpenAPI JSON | `http://127.0.0.1:8000/openapi.json` |
 | MCP HTTP endpoint | `http://127.0.0.1:8000/mcp` |
+
+## MCP 利用ガイド
+
+MCP 利用側へ配布する正式な導入・運用資料は [JRA Race MCP 利用者導入ガイド](docs/jra/28_MCP利用者導入ガイド.md) です。
+
+MCP クライアントは接続後に、サーバー情報、公開ツール名、各ツールの用途、引数説明、入力スキーマを自動取得できます。
+一方、接続 URL、起動方法、推奨利用順、認証や運用上の注意は接続前には取得できないため、このガイドを利用側へ共有してください。
+
+### 接続
+
+API サーバーを起動し、Streamable HTTP 対応の MCP クライアントから次の URL へ接続します。
+
+```text
+http://127.0.0.1:8000/mcp
+```
+
+一般的な MCP クライアント設定の例です。設定ファイルの場所や形式は利用するクライアントの説明に従ってください。
+
+```json
+{
+  "mcpServers": {
+    "jra": {
+      "url": "http://127.0.0.1:8000/mcp"
+    }
+  }
+}
+```
+
+### 公開ツール
+
+MCP には、外部データの取得と計算だけを行う次の読み取り専用ツールを公開します。予想や結果の保存、購入記録、精算、収集ジョブ作成は公開しません。
+
+| ツール | 用途 |
+| --- | --- |
+| `normalize_race_input` | 日本語の開催場・レース番号・券種を API 用コードへ変換 |
+| `search_jra_races` | 開催日などから対象レースを検索 |
+| `get_jra_meeting` | 指定開催のレース一覧を取得 |
+| `get_jra_race_card` | 出馬表を取得 |
+| `get_jra_race_odds` | 指定券種のオッズを取得 |
+| `get_jra_race_result` | 確定した着順と払戻を取得 |
+| `get_jra_prediction_bundle` | 予想に必要な当日材料をまとめて取得 |
+| `get_jra_odds_summary` | オッズを券種別に要約して取得 |
+| `compare_jra_prediction_models` | 公開材料・履歴モデル・V理論を比較 |
+| `get_jra_betting_decision` | 推定勝率と単勝オッズから購入候補・見送りを判定 |
+
+### 推奨利用順
+
+1. 自然な日本語入力を受け取った場合は `normalize_race_input` で開催場コードなどを確認する。
+2. 対象レースが不明な場合は `search_jra_races` または `get_jra_meeting` で特定する。
+3. 基本情報には `get_jra_race_card`、直前情報には `get_jra_race_odds` を使用する。
+4. 詳細予想には `get_jra_prediction_bundle`、モデル評価には `compare_jra_prediction_models` を使用する。
+5. 購入判断が必要な場合だけ `get_jra_betting_decision` を使用する。
+
+通常は `refresh=false` を指定し、キャッシュを利用してください。`refresh=true` は外部サイトから明示的に再取得する場合だけ使用します。
+
+現在の構成には MCP 認証がないため、ローカルの `127.0.0.1` での利用を前提とします。LAN やインターネットへ公開する場合は、HTTPS と認証を追加するまで公開しないでください。
 
 ヘルスチェック:
 

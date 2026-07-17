@@ -32,6 +32,7 @@ from .models import (
     EvaluationRecord,
     EvaluationRecordPage,
     EvaluationSummary,
+    JraDayRaceScoutResult,
     JraPredictionBundle,
     NarCalendarPage, 
     NankankeibaPatternBundle, 
@@ -63,11 +64,11 @@ from .nankankeiba_pattern_provider import NankankeibaPatternHttpProvider
 from .nankankeiba_pattern_service import NankankeibaPatternCacheTtls, NankankeibaPatternService 
 from .nankan_prediction_service import NankanPredictionService
 from .jra_prediction_service import JraPredictionService
+from .jra_day_race_scout import JraDayRaceScout
 from .jra_prediction_engine import build_prediction_record
-from .jra_history_dataset import build_live_feature_records
-from .jra_history_model import load_model_artifact, score_live_records
+from .jra_history_model import build_artifact_live_records, load_model_artifact, score_live_records
 from .jra_v_theory import build_three_way_consensus, build_v_theory_prediction
-from .jra_betting_decision import build_win_ev_decision
+from .jra_betting_decision import build_win_betting_decision, is_newcomer_race
 from .prediction_trace import (
     build_prediction_trace_logger,
     reset_current_request_trace_id,
@@ -88,8 +89,22 @@ logger = logging.getLogger(__name__)
 RaceIdPath = Annotated[str, Path(pattern=r"^\d{12}$", description="12桁のrace_id")]
 NankanRaceIdPath = Annotated[str, Path(pattern=r"^\d{16}$", description="16桁の南関東race_id")]
 RaceNoPath = Annotated[int, Path(ge=1, le=12, description="1から12までのレース番号")]
+RaceDatePath = Annotated[date, Path(description="開催日。YYYY-MM-DD形式。例: 2026-07-17")]
+CourseCodePath = Annotated[CourseCode, Path(description="JRA開催場コード。例: tokyo, nakayama, hanshin")]
 DEFAULT_PAGE_LIMIT = 100
 MAX_PAGE_LIMIT = 500
+MCP_OPERATION_IDS = [
+    "normalize_race_input",
+    "search_jra_races",
+    "get_jra_meeting",
+    "get_jra_race_card",
+    "get_jra_race_odds",
+    "get_jra_race_result",
+    "get_jra_prediction_bundle",
+    "get_jra_odds_summary",
+    "compare_jra_prediction_models",
+    "get_jra_betting_decision",
+]
 prediction_trace_logger = build_prediction_trace_logger(os.environ.get("JRA_SRB_PREDICTION_TRACE_PATH"))
 
 app = FastAPI(
@@ -120,7 +135,7 @@ def _default_analysis_db_path() -> str:
 
 
 def _default_history_model_path() -> FilePath:
-    return FilePath(os.environ.get("JRA_SRB_HISTORY_MODEL_PATH", "data/models/jra_history_v1/model.json"))
+    return FilePath(os.environ.get("JRA_SRB_HISTORY_MODEL_PATH", "data/models/jra_history_recent_form_v2/model.json"))
 
 
 def build_service() -> JraService:
@@ -314,6 +329,16 @@ def get_jra_prediction_service() -> JraPredictionService:
     return jra_prediction_service
 
 
+def get_jra_day_race_scout() -> JraDayRaceScout:
+    return JraDayRaceScout(
+        jra_service=service,
+        prediction_service=jra_prediction_service,
+        store=AnalysisSQLiteStore(_default_analysis_db_path()),
+        analysis_db_path=_default_analysis_db_path(),
+        history_model_path=_default_history_model_path(),
+    )
+
+
 def get_result_collection_job_registry() -> ResultCollectionJobRegistry:
     return result_collection_jobs
 
@@ -427,8 +452,13 @@ async def health_upstream(svc: JraService = Depends(get_service)) -> dict[str, s
 @app.get(
     "/normalize",
     tags=["races"],
+    operation_id="normalize_race_input",
     summary="日本語入力を API 用コードへ正規化",
-    description="例: course=中山, race=11R, bet_type=3連単 を course=nakayama, race_no=11, bet_type=trifecta に変換します。",
+    description=(
+        "日本語や自然な表記を、後続のJRAツールで使う開催場コード、レース番号、券種コードへ変換します。"
+        " 例: course=中山, race=11R, bet_type=3連単 を"
+        " course=nakayama, race_no=11, bet_type=trifecta に変換します。"
+    ),
 )
 async def normalize_input(
     course: str = Query(description="開催場名またはコード。例: 中山, nakayama"),
@@ -464,8 +494,12 @@ async def get_races(
 @app.get(
     "/search/races",
     tags=["search"],
+    operation_id="search_jra_races",
     summary="開催日からレースを検索",
-    description="開催日、開催場、キーワードから race_id を探します。",
+    description=(
+        "開催日、開催場、キーワードからJRAレースを検索します。"
+        " race_idやレース番号が不明な場合に、最初にこのツールを使用します。"
+    ),
     response_model=RaceSearchPage,
 )
 async def search_races(
@@ -501,12 +535,13 @@ async def search_races(
 @app.get(
     "/meetings/{date_}/{course}",
     tags=["meetings"],
+    operation_id="get_jra_meeting",
     summary="開催一覧を取得",
     description="開催日と開催地を指定して、その開催の 1R から 12R の一覧を取得します。",
 )
 async def get_meeting(
-    date_: date,
-    course: CourseCode,
+    date_: RaceDatePath,
+    course: CourseCodePath,
     svc: JraService = Depends(get_service),
 ):
     return await svc.get_meeting(date_, str(course))
@@ -525,12 +560,16 @@ async def get_race_card(race_id: RaceIdPath, svc: JraService = Depends(get_servi
 @app.get(
     "/meetings/{date_}/{course}/races/{race_no}/card",
     tags=["meetings"],
+    operation_id="get_jra_race_card",
     summary="開催日・開催地・レース番号で出馬表を取得",
-    description="開催日、開催地、レース番号を指定して、そのレースの出馬表を取得します。",
+    description=(
+        "開催日、開催地、レース番号を指定して出馬表を取得します。"
+        " 馬番、馬名、枠番、騎手、斤量など、レース予想の基本情報を確認するために使用します。"
+    ),
 )
 async def get_race_card_by_number(
-    date_: date,
-    course: CourseCode,
+    date_: RaceDatePath,
+    course: CourseCodePath,
     race_no: RaceNoPath,
     svc: JraService = Depends(get_service),
 ):
@@ -583,6 +622,7 @@ async def get_race_odds(
 @app.get(
     "/meetings/{date_}/{course}/races/{race_no}/odds",
     tags=["meetings"],
+    operation_id="get_jra_race_odds",
     summary="開催日・開催地・レース番号でオッズを取得",
     description=(
         "開催日、開催地、レース番号からオッズを取得します。"
@@ -590,8 +630,8 @@ async def get_race_odds(
     ),
 )
 async def get_race_odds_by_number(
-    date_: date,
-    course: CourseCode,
+    date_: RaceDatePath,
+    course: CourseCodePath,
     race_no: RaceNoPath,
     bet_type: BetType = Query(
         description="券種コード。例: win, quinella, exacta, wide, trio, trifecta",
@@ -625,12 +665,16 @@ async def get_race_result(race_id: RaceIdPath, svc: JraService = Depends(get_ser
 @app.get(
     "/meetings/{date_}/{course}/races/{race_no}/result",
     tags=["meetings"],
+    operation_id="get_jra_race_result",
     summary="開催日・開催地・レース番号で結果を取得",
-    description="開催日、開催地、レース番号から結果と払戻を取得します。",
+    description=(
+        "開催日、開催地、レース番号から確定した着順と払戻を取得します。"
+        " レース確定前は結果が揃っていない場合があります。"
+    ),
 )
 async def get_race_result_by_number(
-    date_: date,
-    course: CourseCode,
+    date_: RaceDatePath,
+    course: CourseCodePath,
     race_no: RaceNoPath,
     svc: JraService = Depends(get_service),
 ):
@@ -1132,21 +1176,53 @@ async def get_nankankeiba_pattern(
     )
 
 
+@app.post(
+    "/jra/days/{date_}/race-scout",
+    tags=["jra-analysis"],
+    summary="JRA当日全レースから詳細予想候補を抽出",
+    response_model=JraDayRaceScoutResult,
+)
+async def create_jra_day_race_scout(
+    date_: date,
+    max_candidates: int = Query(default=5, ge=1, le=10),
+    refresh: bool = Query(default=False),
+    max_concurrency: int = Query(default=3, ge=1, le=5),
+    scout: JraDayRaceScout = Depends(get_jra_day_race_scout),
+):
+    return await scout.run(
+        date_, max_candidates=max_candidates, refresh=refresh, max_concurrency=max_concurrency,
+    )
+
+
 @app.get(
     "/jra/meetings/{date_}/{course}/races/{race_no}/prediction-bundle",
     tags=["jra-analysis"],
+    operation_id="get_jra_prediction_bundle",
     summary="JRA予想向け当日材料をまとめて取得",
+    description=(
+        "出馬表、オッズ、公開分析、傾向など、JRAレース予想に必要な当日材料をまとめて取得します。"
+        " 通常はrefresh=falseで利用し、明示的に最新情報が必要な場合だけ再取得してください。"
+    ),
     response_model=JraPredictionBundle,
 )
 async def get_jra_prediction_bundle(
-    date_: date,
-    course: CourseCode,
+    date_: RaceDatePath,
+    course: CourseCodePath,
     race_no: RaceNoPath,
-    meeting_no: int = Query(ge=1, le=99, description="開催回"),
-    meeting_day: int = Query(ge=1, le=99, description="開催日"),
-    sources: str | None = Query(default=None, description="netkeiba,keibalab,umanity"),
-    bet_types: str | None = Query(default=None, description="win,wide,quinella"),
-    refresh: bool = Query(default=False),
+    meeting_no: int = Query(ge=1, le=99, description="開催回。例: 第2回開催なら2"),
+    meeting_day: int = Query(ge=1, le=99, description="開催日数。例: 4日目なら4"),
+    sources: str | None = Query(
+        default=None,
+        description="取得元をカンマ区切りで指定。例: netkeiba,keibalab",
+    ),
+    bet_types: str | None = Query(
+        default=None,
+        description="取得するオッズ券種をカンマ区切りで指定。例: win,wide,quinella",
+    ),
+    refresh: bool = Query(
+        default=False,
+        description="trueの場合はキャッシュを使わず外部サイトから再取得します。通常はfalseを指定します。",
+    ),
     svc: JraPredictionService = Depends(get_jra_prediction_service),
 ):
     return await svc.get_prediction_bundle(
@@ -1225,10 +1301,28 @@ async def get_jra_style_profile_lite(
     return await _jra_lite("style-profile-lite", date_, course, race_no, meeting_no, meeting_day, refresh, svc)
 
 
-@app.get("/jra/meetings/{date_}/{course}/races/{race_no}/odds-summary", tags=["jra-analysis"])
+@app.get(
+    "/jra/meetings/{date_}/{course}/races/{race_no}/odds-summary",
+    tags=["jra-analysis"],
+    operation_id="get_jra_odds_summary",
+    summary="JRAオッズを券種別に要約",
+    description=(
+        "指定レースのオッズを、予想で扱いやすい券種別の要約形式で取得します。"
+        " 必要な券種だけをbet_typesで指定すると取得量を抑えられます。"
+    ),
+)
 async def get_jra_odds_summary(
-    date_: date, course: CourseCode, race_no: RaceNoPath,
-    bet_types: str | None = Query(default=None), refresh: bool = Query(default=False),
+    date_: RaceDatePath,
+    course: CourseCodePath,
+    race_no: RaceNoPath,
+    bet_types: str | None = Query(
+        default=None,
+        description="券種をカンマ区切りで指定。例: win,wide,quinella",
+    ),
+    refresh: bool = Query(
+        default=False,
+        description="trueの場合はキャッシュを使わず再取得します。通常はfalseを指定します。",
+    ),
     svc: JraPredictionService = Depends(get_jra_prediction_service),
 ):
     return await svc.get_odds_summary(date_, str(course), race_no, _parse_query_csv(bet_types), refresh)
@@ -1237,15 +1331,23 @@ async def get_jra_odds_summary(
 @app.get(
     "/jra/meetings/{date_}/{course}/races/{race_no}/model-comparison",
     tags=["jra-analysis"],
+    operation_id="compare_jra_prediction_models",
     summary="公開材料モデルと履歴学習モデルを比較",
+    description=(
+        "公開材料モデル、履歴学習モデル、V理論の順位を比較し、一致度と総合評価を返します。"
+        " モデルファイルが利用できない場合は、その構成要素をunavailableとして返します。"
+    ),
 )
 async def get_jra_model_comparison(
-    date_: date,
-    course: CourseCode,
+    date_: RaceDatePath,
+    course: CourseCodePath,
     race_no: RaceNoPath,
-    meeting_no: int = Query(ge=1, le=99),
-    meeting_day: int = Query(ge=1, le=99),
-    refresh: bool = Query(default=False),
+    meeting_no: int = Query(ge=1, le=99, description="開催回。例: 第2回開催なら2"),
+    meeting_day: int = Query(ge=1, le=99, description="開催日数。例: 4日目なら4"),
+    refresh: bool = Query(
+        default=False,
+        description="trueの場合はキャッシュを使わず再取得します。通常はfalseを指定します。",
+    ),
     svc: JraPredictionService = Depends(get_jra_prediction_service),
 ):
     bundle = await svc.get_prediction_bundle(
@@ -1260,8 +1362,8 @@ async def get_jra_model_comparison(
             raise BadRequestError(
                 "history model training horizon is not before target date; retrain only with earlier data"
             )
-        history_records = build_live_feature_records(
-            _default_analysis_db_path(), target_date=date_, course=str(course), card=bundle.card,
+        history_records = build_artifact_live_records(
+            artifact, _default_analysis_db_path(), target_date=date_, course=str(course), card=bundle.card,
         )
         history_ranking = score_live_records(artifact, history_records)
         history = {
@@ -1312,21 +1414,34 @@ async def get_jra_model_comparison(
 @app.get(
     "/jra/meetings/{date_}/{course}/races/{race_no}/betting-decision",
     tags=["jra-analysis"],
+    operation_id="get_jra_betting_decision",
     summary="履歴勝率と単勝オッズから期待値を判定",
+    description=(
+        "履歴モデルの推定勝率と単勝オッズを比較し、指定予算内の購入候補と見送り判断を返します。"
+        " 実際の投票や購入記録の保存は行わない読み取り専用ツールです。"
+    ),
 )
 async def get_jra_betting_decision(
-    date_: date,
-    course: CourseCode,
+    date_: RaceDatePath,
+    course: CourseCodePath,
     race_no: RaceNoPath,
-    meeting_no: int = Query(ge=1, le=99),
-    meeting_day: int = Query(ge=1, le=99),
-    budget: int = Query(default=1000, ge=100),
-    refresh: bool = Query(default=False),
+    meeting_no: int = Query(ge=1, le=99, description="開催回。例: 第2回開催なら2"),
+    meeting_day: int = Query(ge=1, le=99, description="開催日数。例: 4日目なら4"),
+    budget: int = Query(default=1000, ge=100, description="購入判断に使用する予算額。100円以上。"),
+    refresh: bool = Query(
+        default=False,
+        description="trueの場合はキャッシュを使わず再取得します。通常はfalseを指定します。",
+    ),
     svc: JraPredictionService = Depends(get_jra_prediction_service),
 ):
     bundle = await svc.get_prediction_bundle(
         date_, str(course), race_no, meeting_no, meeting_day,
         sources=["netkeiba", "keibalab"], odds_bet_types=["win"], refresh=refresh,
+    )
+    materials_ranking = (
+        build_prediction_record(bundle)["prediction_json"]["predicted_ranking"]
+        if is_newcomer_race(bundle.card.race_name)
+        else []
     )
     try:
         artifact = load_model_artifact(_default_history_model_path())
@@ -1334,11 +1449,17 @@ async def get_jra_betting_decision(
             raise BadRequestError(
                 "history model training horizon is not before target date; retrain only with earlier data"
             )
-        records = build_live_feature_records(
-            _default_analysis_db_path(), target_date=date_, course=str(course), card=bundle.card,
+        records = build_artifact_live_records(
+            artifact, _default_analysis_db_path(), target_date=date_, course=str(course), card=bundle.card,
         )
         ranking = score_live_records(artifact, records)
-        decision = build_win_ev_decision(ranking, bundle.odds_summary, budget=budget)
+        decision = build_win_betting_decision(
+            bundle.card.race_name,
+            ranking,
+            materials_ranking,
+            bundle.odds_summary,
+            budget=budget,
+        )
         model = {
             "status": "available",
             "model_version": artifact["model_version"],
@@ -1774,5 +1895,14 @@ def custom_openapi():
 app.openapi = custom_openapi
 
 
-mcp = FastApiMCP(app)
+mcp = FastApiMCP(
+    app,
+    name="JRA Race MCP",
+    description=(
+        "JRAの開催、出馬表、オッズ、結果、予想材料を取得する読み取り専用MCPサーバーです。"
+        " 日本語の開催場名や券種は、最初にnormalize_race_inputでAPI用コードへ変換してください。"
+        " 外部サイトへの負荷を抑えるため、通常はrefresh=falseを使用してください。"
+    ),
+    include_operations=MCP_OPERATION_IDS,
+)
 mcp.mount_http(mount_path="/mcp")

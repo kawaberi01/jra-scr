@@ -1,6 +1,6 @@
 # jra-srb ドキュメント案内
 
-`jra-srb` の API / CLI 説明は、このディレクトリ内の次の 3 文書を正本とします。
+`jra-srb` の API / CLI / MCP 説明は、このディレクトリ内の次の 4 文書を正本とします。
 
 ## 正本
 
@@ -10,6 +10,8 @@
   - 現在の HTTP API 一覧と主要パラメータ
 - [06_CLI仕様.md](/D:/develop/jra-scr/docs/jra/06_CLI仕様.md)
   - 現在の CLI コマンド一覧と主要オプション
+- [28_MCP利用者導入ガイド.md](/D:/develop/jra-scr/docs/jra/28_MCP利用者導入ガイド.md)
+  - MCP 利用側の接続、公開ツール、運用ルール、セキュリティ、受け入れ確認
 
 ## 土台資料
 
@@ -46,5 +48,6 @@
 
 - API を追加したら、まず [05_API仕様.md](/D:/develop/jra-scr/docs/jra/05_API仕様.md) を更新する
 - CLI を追加したら、まず [06_CLI仕様.md](/D:/develop/jra-scr/docs/jra/06_CLI仕様.md) を更新する
+- MCP の接続方法、公開ツール、入力契約を変更したら、まず [28_MCP利用者導入ガイド.md](/D:/develop/jra-scr/docs/jra/28_MCP利用者導入ガイド.md) を更新する
 - 具体的な使い方が必要なら [04_利用ガイド.md](/D:/develop/jra-scr/docs/jra/04_利用ガイド.md) に追記する
 - 個別の実験メモや修正依頼文は正本へ混ぜず、補助資料として分離する

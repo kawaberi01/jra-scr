@@ -766,10 +766,89 @@ def test_get_nankan_prediction_summary_endpoint_requires_meeting_parameters():
     assert response.status_code == 422
 
 
-def test_mcp_endpoint_is_mounted():
-    client = TestClient(app)
-    response = client.get("/mcp")
-    assert response.status_code != 404
+def test_mcp_exposes_only_documented_read_only_tools():
+    expected_tools = [
+        "normalize_race_input",
+        "search_jra_races",
+        "get_jra_meeting",
+        "get_jra_race_card",
+        "get_jra_race_odds",
+        "get_jra_race_result",
+        "get_jra_prediction_bundle",
+        "get_jra_odds_summary",
+        "compare_jra_prediction_models",
+        "get_jra_betting_decision",
+    ]
+    headers = {"accept": "application/json, text/event-stream"}
+
+    with TestClient(app) as client:
+        initialize_response = client.post(
+            "/mcp",
+            headers=headers,
+            json={
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2025-03-26",
+                    "capabilities": {},
+                    "clientInfo": {"name": "pytest", "version": "1.0"},
+                },
+            },
+        )
+        assert initialize_response.status_code == 200
+        assert initialize_response.json()["result"]["serverInfo"]["name"] == "JRA Race MCP"
+
+        headers["mcp-session-id"] = initialize_response.headers["mcp-session-id"]
+        initialized_response = client.post(
+            "/mcp",
+            headers=headers,
+            json={"jsonrpc": "2.0", "method": "notifications/initialized"},
+        )
+        assert initialized_response.status_code == 202
+
+        tools_response = client.post(
+            "/mcp",
+            headers=headers,
+            json={"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}},
+        )
+        assert tools_response.status_code == 200
+        tools = tools_response.json()["result"]["tools"]
+        assert [tool["name"] for tool in tools] == expected_tools
+
+        normalize_tool = tools[0]
+        assert "日本語や自然な表記" in normalize_tool["description"]
+        assert normalize_tool["inputSchema"]["properties"]["course"]["description"] == (
+            "開催場名またはコード。例: 中山, nakayama"
+        )
+
+        call_response = client.post(
+            "/mcp",
+            headers=headers,
+            json={
+                "jsonrpc": "2.0",
+                "id": 3,
+                "method": "tools/call",
+                "params": {
+                    "name": "normalize_race_input",
+                    "arguments": {
+                        "course": "中山",
+                        "race": "11R",
+                        "bet_type": "3連単",
+                        "combination": "1,2,3",
+                    },
+                },
+            },
+        )
+        assert call_response.status_code == 200
+        result = call_response.json()["result"]
+        assert result["isError"] is False
+        assert json.loads(result["content"][0]["text"]) == {
+            "course": "nakayama",
+            "race_no": 11,
+            "bet_type": "trifecta",
+            "combination": ["1", "2", "3"],
+        }
 
 
 def test_normalize_endpoint_returns_canonical_values():
