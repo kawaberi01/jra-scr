@@ -1,0 +1,162 @@
+[
+  {
+    "hypothesis": "consensus",
+    "calibration": {
+      "candidates": 257,
+      "roi": 0.7863813229571984,
+      "no_max_roi": 0.755078125,
+      "no_top3_roi": 0.697244094488189
+    },
+    "external": {
+      "candidates": 212,
+      "roi": 0.5867924528301887,
+      "no_max_roi": 0.5526066350710901,
+      "no_top3_roi": 0.48899521531100476
+    },
+    "passed": false
+  },
+  {
+    "hypothesis": "market2_3_model1",
+    "calibration": {
+      "candidates": 117,
+      "roi": 0.8145299145299145,
+      "no_max_roi": 0.7543103448275862,
+      "no_top3_roi": 0.65
+    },
+    "external": {
+      "candidates": 91,
+      "roi": 0.6791208791208792,
+      "no_max_roi": 0.6144444444444445,
+      "no_top3_roi": 0.48295454545454547
+    },
+    "passed": false
+  },
+  {
+    "hypothesis": "market3_5_model2",
+    "calibration": {
+      "candidates": 202,
+      "roi": 0.7658415841584159,
+      "no_max_roi": 0.7024875621890547,
+      "no_top3_roi": 0.6256281407035176
+    },
+    "external": {
+      "candidates": 179,
+      "roi": 0.9659217877094972,
+      "no_max_roi": 0.8904494382022472,
+      "no_top3_roi": 0.7585227272727273
+    },
+    "passed": false
+  },
+  {
+    "hypothesis": "market4_6_model1",
+    "calibration": {
+      "candidates": 69,
+      "roi": 0.8492753623188406,
+      "no_max_roi": 0.7382352941176471,
+      "no_top3_roi": 0.5121212121212121
+    },
+    "external": {
+      "candidates": 68,
+      "roi": 0.7955882352941176,
+      "no_max_roi": 0.6776119402985075,
+      "no_top3_roi": 0.45076923076923076
+    },
+    "passed": false
+  },
+  {
+    "hypothesis": "market2_4_residual",
+    "calibration": {
+      "candidates": 222,
+      "roi": 0.8018018018018018,
+      "no_max_roi": 0.7674208144796381,
+      "no_top3_roi": 0.6990867579908676
+    },
+    "external": {
+      "candidates": 176,
+      "roi": 0.6801136363636363,
+      "no_max_roi": 0.6377142857142857,
+      "no_top3_roi": 0.553757225433526
+    },
+    "passed": false
+  },
+  {
+    "hypothesis": "market3_6_mid",
+    "calibration": {
+      "candidates": 306,
+      "roi": 0.6284313725490196,
+      "no_max_roi": 0.5842622950819673,
+      "no_top3_roi": 0.504950495049505
+    },
+    "external": {
+      "candidates": 282,
+      "roi": 0.7219858156028369,
+      "no_max_roi": 0.6572953736654804,
+      "no_top3_roi": 0.560573476702509
+    },
+    "passed": false
+  },
+  {
+    "hypothesis": "market4_6_safe",
+    "calibration": {
+      "candidates": 185,
+      "roi": 0.8891891891891892,
+      "no_max_roi": 0.8304347826086956,
+      "no_top3_roi": 0.7164835164835165
+    },
+    "external": {
+      "candidates": 178,
+      "roi": 0.8106741573033708,
+      "no_max_roi": 0.7519774011299435,
+      "no_top3_roi": 0.6348571428571429
+    },
+    "passed": false
+  },
+  {
+    "hypothesis": "market1_3_history",
+    "calibration": {
+      "candidates": 181,
+      "roi": 0.7325966850828729,
+      "no_max_roi": 0.69,
+      "no_top3_roi": 0.6134831460674157
+    },
+    "external": {
+      "candidates": 134,
+      "roi": 0.6873134328358209,
+      "no_max_roi": 0.6338345864661654,
+      "no_top3_roi": 0.533587786259542
+    },
+    "passed": false
+  },
+  {
+    "hypothesis": "market3_4_exact",
+    "calibration": {
+      "candidates": 137,
+      "roi": 0.8094890510948906,
+      "no_max_roi": 0.7536764705882353,
+      "no_top3_roi": 0.6417910447761194
+    },
+    "external": {
+      "candidates": 118,
+      "roi": 0.6686440677966101,
+      "no_max_roi": 0.6051282051282051,
+      "no_top3_roi": 0.4782608695652174
+    },
+    "passed": false
+  },
+  {
+    "hypothesis": "market5_6_leap",
+    "calibration": {
+      "candidates": 39,
+      "roi": 0.38974358974358975,
+      "no_max_roi": 0.18421052631578946,
+      "no_top3_roi": 0.0
+    },
+    "external": {
+      "candidates": 37,
+      "roi": 0.44594594594594594,
+      "no_max_roi": 0.21666666666666667,
+      "no_top3_roi": 0.0
+    },
+    "passed": false
+  }
+]

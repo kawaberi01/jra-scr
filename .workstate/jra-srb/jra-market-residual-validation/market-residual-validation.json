@@ -1,0 +1,434 @@
+{
+  "hypothesis": "市場4〜6番手だが履歴モデル上位の馬にだけ、市場に未反映の過去適性が残る",
+  "status": "external_evaluated",
+  "selected": {
+    "config": {
+      "max_model_rank": 3,
+      "max_win_odds": 15.0,
+      "min_residual": 0.01
+    },
+    "metrics": {
+      "candidates": 233,
+      "hits": 20,
+      "roi": 0.8154506437768241,
+      "no_max_roi": 0.7581896551724138,
+      "no_top3_roi": 0.6530434782608696,
+      "over_30_rate": 0.0
+    }
+  },
+  "external": {
+    "candidates": 223,
+    "hits": 20,
+    "roi": 0.8910313901345291,
+    "no_max_roi": 0.8301801801801801,
+    "no_top3_roi": 0.7118181818181818,
+    "over_30_rate": 0.0
+  },
+  "comparisons": [
+    {
+      "config": {
+        "max_model_rank": 1,
+        "max_win_odds": 10.0,
+        "min_residual": 0.01
+      },
+      "metrics": {
+        "candidates": 43,
+        "hits": 8,
+        "roi": 1.3627906976744186,
+        "no_max_roi": 1.1952380952380952,
+        "no_top3_roi": 0.845,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 1,
+        "max_win_odds": 10.0,
+        "min_residual": 0.02
+      },
+      "metrics": {
+        "candidates": 38,
+        "hits": 6,
+        "roi": 1.2157894736842105,
+        "no_max_roi": 1.0216216216216216,
+        "no_top3_roi": 0.6114285714285714,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 1,
+        "max_win_odds": 10.0,
+        "min_residual": 0.03
+      },
+      "metrics": {
+        "candidates": 38,
+        "hits": 6,
+        "roi": 1.2157894736842105,
+        "no_max_roi": 1.0216216216216216,
+        "no_top3_roi": 0.6114285714285714,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 1,
+        "max_win_odds": 15.0,
+        "min_residual": 0.01
+      },
+      "metrics": {
+        "candidates": 63,
+        "hits": 8,
+        "roi": 0.9301587301587302,
+        "no_max_roi": 0.8096774193548387,
+        "no_top3_roi": 0.5633333333333334,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 1,
+        "max_win_odds": 15.0,
+        "min_residual": 0.02
+      },
+      "metrics": {
+        "candidates": 58,
+        "hits": 6,
+        "roi": 0.7965517241379311,
+        "no_max_roi": 0.6631578947368421,
+        "no_top3_roi": 0.3890909090909091,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 1,
+        "max_win_odds": 15.0,
+        "min_residual": 0.03
+      },
+      "metrics": {
+        "candidates": 56,
+        "hits": 6,
+        "roi": 0.825,
+        "no_max_roi": 0.6872727272727273,
+        "no_top3_roi": 0.4037735849056604,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 1,
+        "max_win_odds": 20.0,
+        "min_residual": 0.01
+      },
+      "metrics": {
+        "candidates": 69,
+        "hits": 8,
+        "roi": 0.8492753623188406,
+        "no_max_roi": 0.7382352941176471,
+        "no_top3_roi": 0.5121212121212121,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 1,
+        "max_win_odds": 20.0,
+        "min_residual": 0.02
+      },
+      "metrics": {
+        "candidates": 64,
+        "hits": 6,
+        "roi": 0.721875,
+        "no_max_roi": 0.6,
+        "no_top3_roi": 0.35081967213114756,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 1,
+        "max_win_odds": 20.0,
+        "min_residual": 0.03
+      },
+      "metrics": {
+        "candidates": 62,
+        "hits": 6,
+        "roi": 0.7451612903225806,
+        "no_max_roi": 0.6196721311475409,
+        "no_top3_roi": 0.36271186440677966,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 2,
+        "max_win_odds": 10.0,
+        "min_residual": 0.01
+      },
+      "metrics": {
+        "candidates": 95,
+        "hits": 12,
+        "roi": 0.9210526315789473,
+        "no_max_roi": 0.8414893617021276,
+        "no_top3_roi": 0.6804347826086956,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 2,
+        "max_win_odds": 10.0,
+        "min_residual": 0.02
+      },
+      "metrics": {
+        "candidates": 88,
+        "hits": 10,
+        "roi": 0.8534090909090909,
+        "no_max_roi": 0.7666666666666667,
+        "no_top3_roi": 0.5905882352941176,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 2,
+        "max_win_odds": 10.0,
+        "min_residual": 0.03
+      },
+      "metrics": {
+        "candidates": 82,
+        "hits": 9,
+        "roi": 0.8341463414634146,
+        "no_max_roi": 0.7407407407407407,
+        "no_top3_roi": 0.5506329113924051,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 2,
+        "max_win_odds": 15.0,
+        "min_residual": 0.01
+      },
+      "metrics": {
+        "candidates": 144,
+        "hits": 15,
+        "roi": 0.8569444444444444,
+        "no_max_roi": 0.7685314685314686,
+        "no_top3_roi": 0.6205673758865248,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 2,
+        "max_win_odds": 15.0,
+        "min_residual": 0.02
+      },
+      "metrics": {
+        "candidates": 134,
+        "hits": 13,
+        "roi": 0.8283582089552238,
+        "no_max_roi": 0.7330827067669173,
+        "no_top3_roi": 0.5732824427480916,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 2,
+        "max_win_odds": 15.0,
+        "min_residual": 0.03
+      },
+      "metrics": {
+        "candidates": 124,
+        "hits": 11,
+        "roi": 0.7467741935483871,
+        "no_max_roi": 0.6430894308943089,
+        "no_top3_roi": 0.49586776859504134,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 2,
+        "max_win_odds": 20.0,
+        "min_residual": 0.01
+      },
+      "metrics": {
+        "candidates": 166,
+        "hits": 14,
+        "roi": 0.7054216867469879,
+        "no_max_roi": 0.6278787878787879,
+        "no_top3_roi": 0.498159509202454,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 2,
+        "max_win_odds": 20.0,
+        "min_residual": 0.02
+      },
+      "metrics": {
+        "candidates": 155,
+        "hits": 12,
+        "roi": 0.675483870967742,
+        "no_max_roi": 0.5922077922077922,
+        "no_top3_roi": 0.45263157894736844,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 2,
+        "max_win_odds": 20.0,
+        "min_residual": 0.03
+      },
+      "metrics": {
+        "candidates": 145,
+        "hits": 10,
+        "roi": 0.5951724137931035,
+        "no_max_roi": 0.5055555555555555,
+        "no_top3_roi": 0.37816901408450704,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 3,
+        "max_win_odds": 10.0,
+        "min_residual": 0.01
+      },
+      "metrics": {
+        "candidates": 133,
+        "hits": 12,
+        "roi": 0.6578947368421053,
+        "no_max_roi": 0.5992424242424242,
+        "no_top3_roi": 0.4815384615384615,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 3,
+        "max_win_odds": 10.0,
+        "min_residual": 0.02
+      },
+      "metrics": {
+        "candidates": 122,
+        "hits": 10,
+        "roi": 0.6155737704918033,
+        "no_max_roi": 0.5512396694214876,
+        "no_top3_roi": 0.4218487394957983,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 3,
+        "max_win_odds": 10.0,
+        "min_residual": 0.03
+      },
+      "metrics": {
+        "candidates": 109,
+        "hits": 9,
+        "roi": 0.6275229357798165,
+        "no_max_roi": 0.5555555555555556,
+        "no_top3_roi": 0.41037735849056606,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 3,
+        "max_win_odds": 15.0,
+        "min_residual": 0.01
+      },
+      "metrics": {
+        "candidates": 233,
+        "hits": 20,
+        "roi": 0.8154506437768241,
+        "no_max_roi": 0.7581896551724138,
+        "no_top3_roi": 0.6530434782608696,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 3,
+        "max_win_odds": 15.0,
+        "min_residual": 0.02
+      },
+      "metrics": {
+        "candidates": 215,
+        "hits": 18,
+        "roi": 0.8027906976744186,
+        "no_max_roi": 0.7406542056074766,
+        "no_top3_roi": 0.6264150943396226,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 3,
+        "max_win_odds": 15.0,
+        "min_residual": 0.03
+      },
+      "metrics": {
+        "candidates": 187,
+        "hits": 15,
+        "roi": 0.7593582887700535,
+        "no_max_roi": 0.6876344086021505,
+        "no_top3_roi": 0.5608695652173913,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 3,
+        "max_win_odds": 20.0,
+        "min_residual": 0.01
+      },
+      "metrics": {
+        "candidates": 276,
+        "hits": 18,
+        "roi": 0.625,
+        "no_max_roi": 0.576,
+        "no_top3_roi": 0.4860805860805861,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 3,
+        "max_win_odds": 20.0,
+        "min_residual": 0.02
+      },
+      "metrics": {
+        "candidates": 254,
+        "hits": 17,
+        "roi": 0.6547244094488189,
+        "no_max_roi": 0.6015810276679842,
+        "no_top3_roi": 0.5039840637450199,
+        "over_30_rate": 0.0
+      }
+    },
+    {
+      "config": {
+        "max_model_rank": 3,
+        "max_win_odds": 20.0,
+        "min_residual": 0.03
+      },
+      "metrics": {
+        "candidates": 225,
+        "hits": 14,
+        "roi": 0.6031111111111112,
+        "no_max_roi": 0.5428571428571428,
+        "no_top3_roi": 0.43648648648648647,
+        "over_30_rate": 0.0
+      }
+    }
+  ]
+}
