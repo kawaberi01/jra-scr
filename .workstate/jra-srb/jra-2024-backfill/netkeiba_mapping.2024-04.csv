@@ -1,0 +1,289 @@
+jra_race_id,netkeiba_race_id,race_date,course,race_no,mapping_status,mapping_note
+202404060301,202403010101,2024-04-06,fukushima,1,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404060302,202403010102,2024-04-06,fukushima,2,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404060303,202403010103,2024-04-06,fukushima,3,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404060304,202403010104,2024-04-06,fukushima,4,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404060305,202403010105,2024-04-06,fukushima,5,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404060306,202403010106,2024-04-06,fukushima,6,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404060307,202403010107,2024-04-06,fukushima,7,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404060308,202403010108,2024-04-06,fukushima,8,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404060309,202403010109,2024-04-06,fukushima,9,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404060310,202403010110,2024-04-06,fukushima,10,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404060311,202403010111,2024-04-06,fukushima,11,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404060312,202403010112,2024-04-06,fukushima,12,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404060901,202409020501,2024-04-06,hanshin,1,mapped,calendar course=hanshin meeting=2 day=5
+202404060902,202409020502,2024-04-06,hanshin,2,mapped,calendar course=hanshin meeting=2 day=5
+202404060903,202409020503,2024-04-06,hanshin,3,mapped,calendar course=hanshin meeting=2 day=5
+202404060904,202409020504,2024-04-06,hanshin,4,mapped,calendar course=hanshin meeting=2 day=5
+202404060905,202409020505,2024-04-06,hanshin,5,mapped,calendar course=hanshin meeting=2 day=5
+202404060906,202409020506,2024-04-06,hanshin,6,mapped,calendar course=hanshin meeting=2 day=5
+202404060907,202409020507,2024-04-06,hanshin,7,mapped,calendar course=hanshin meeting=2 day=5
+202404060908,202409020508,2024-04-06,hanshin,8,mapped,calendar course=hanshin meeting=2 day=5
+202404060909,202409020509,2024-04-06,hanshin,9,mapped,calendar course=hanshin meeting=2 day=5
+202404060910,202409020510,2024-04-06,hanshin,10,mapped,calendar course=hanshin meeting=2 day=5
+202404060911,202409020511,2024-04-06,hanshin,11,mapped,calendar course=hanshin meeting=2 day=5
+202404060912,202409020512,2024-04-06,hanshin,12,mapped,calendar course=hanshin meeting=2 day=5
+202404060601,202406030501,2024-04-06,nakayama,1,mapped,calendar course=nakayama meeting=3 day=5
+202404060602,202406030502,2024-04-06,nakayama,2,mapped,calendar course=nakayama meeting=3 day=5
+202404060603,202406030503,2024-04-06,nakayama,3,mapped,calendar course=nakayama meeting=3 day=5
+202404060604,202406030504,2024-04-06,nakayama,4,mapped,calendar course=nakayama meeting=3 day=5
+202404060605,202406030505,2024-04-06,nakayama,5,mapped,calendar course=nakayama meeting=3 day=5
+202404060606,202406030506,2024-04-06,nakayama,6,mapped,calendar course=nakayama meeting=3 day=5
+202404060607,202406030507,2024-04-06,nakayama,7,mapped,calendar course=nakayama meeting=3 day=5
+202404060608,202406030508,2024-04-06,nakayama,8,mapped,calendar course=nakayama meeting=3 day=5
+202404060609,202406030509,2024-04-06,nakayama,9,mapped,calendar course=nakayama meeting=3 day=5
+202404060610,202406030510,2024-04-06,nakayama,10,mapped,calendar course=nakayama meeting=3 day=5
+202404060611,202406030511,2024-04-06,nakayama,11,mapped,calendar course=nakayama meeting=3 day=5
+202404060612,202406030512,2024-04-06,nakayama,12,mapped,calendar course=nakayama meeting=3 day=5
+202404070301,202403010201,2024-04-07,fukushima,1,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404070302,202403010202,2024-04-07,fukushima,2,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404070303,202403010203,2024-04-07,fukushima,3,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404070304,202403010204,2024-04-07,fukushima,4,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404070305,202403010205,2024-04-07,fukushima,5,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404070306,202403010206,2024-04-07,fukushima,6,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404070307,202403010207,2024-04-07,fukushima,7,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404070308,202403010208,2024-04-07,fukushima,8,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404070309,202403010209,2024-04-07,fukushima,9,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404070310,202403010210,2024-04-07,fukushima,10,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404070311,202403010211,2024-04-07,fukushima,11,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404070312,202403010212,2024-04-07,fukushima,12,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404070901,202409020601,2024-04-07,hanshin,1,mapped,calendar course=hanshin meeting=2 day=6
+202404070902,202409020602,2024-04-07,hanshin,2,mapped,calendar course=hanshin meeting=2 day=6
+202404070903,202409020603,2024-04-07,hanshin,3,mapped,calendar course=hanshin meeting=2 day=6
+202404070904,202409020604,2024-04-07,hanshin,4,mapped,calendar course=hanshin meeting=2 day=6
+202404070905,202409020605,2024-04-07,hanshin,5,mapped,calendar course=hanshin meeting=2 day=6
+202404070906,202409020606,2024-04-07,hanshin,6,mapped,calendar course=hanshin meeting=2 day=6
+202404070907,202409020607,2024-04-07,hanshin,7,mapped,calendar course=hanshin meeting=2 day=6
+202404070908,202409020608,2024-04-07,hanshin,8,mapped,calendar course=hanshin meeting=2 day=6
+202404070909,202409020609,2024-04-07,hanshin,9,mapped,calendar course=hanshin meeting=2 day=6
+202404070910,202409020610,2024-04-07,hanshin,10,mapped,calendar course=hanshin meeting=2 day=6
+202404070911,202409020611,2024-04-07,hanshin,11,mapped,calendar course=hanshin meeting=2 day=6
+202404070912,202409020612,2024-04-07,hanshin,12,mapped,calendar course=hanshin meeting=2 day=6
+202404070601,202406030601,2024-04-07,nakayama,1,mapped,calendar course=nakayama meeting=3 day=6
+202404070602,202406030602,2024-04-07,nakayama,2,mapped,calendar course=nakayama meeting=3 day=6
+202404070603,202406030603,2024-04-07,nakayama,3,mapped,calendar course=nakayama meeting=3 day=6
+202404070604,202406030604,2024-04-07,nakayama,4,mapped,calendar course=nakayama meeting=3 day=6
+202404070605,202406030605,2024-04-07,nakayama,5,mapped,calendar course=nakayama meeting=3 day=6
+202404070606,202406030606,2024-04-07,nakayama,6,mapped,calendar course=nakayama meeting=3 day=6
+202404070607,202406030607,2024-04-07,nakayama,7,mapped,calendar course=nakayama meeting=3 day=6
+202404070608,202406030608,2024-04-07,nakayama,8,mapped,calendar course=nakayama meeting=3 day=6
+202404070609,202406030609,2024-04-07,nakayama,9,mapped,calendar course=nakayama meeting=3 day=6
+202404070610,202406030610,2024-04-07,nakayama,10,mapped,calendar course=nakayama meeting=3 day=6
+202404070611,202406030611,2024-04-07,nakayama,11,mapped,calendar course=nakayama meeting=3 day=6
+202404070612,202406030612,2024-04-07,nakayama,12,mapped,calendar course=nakayama meeting=3 day=6
+202404130301,202403010301,2024-04-13,fukushima,1,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404130302,202403010302,2024-04-13,fukushima,2,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404130303,202403010303,2024-04-13,fukushima,3,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404130304,202403010304,2024-04-13,fukushima,4,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404130305,202403010305,2024-04-13,fukushima,5,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404130306,202403010306,2024-04-13,fukushima,6,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404130307,202403010307,2024-04-13,fukushima,7,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404130308,202403010308,2024-04-13,fukushima,8,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404130309,202403010309,2024-04-13,fukushima,9,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404130310,202403010310,2024-04-13,fukushima,10,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404130311,202403010311,2024-04-13,fukushima,11,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404130312,202403010312,2024-04-13,fukushima,12,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404130901,202409020701,2024-04-13,hanshin,1,mapped,calendar course=hanshin meeting=2 day=7
+202404130902,202409020702,2024-04-13,hanshin,2,mapped,calendar course=hanshin meeting=2 day=7
+202404130903,202409020703,2024-04-13,hanshin,3,mapped,calendar course=hanshin meeting=2 day=7
+202404130904,202409020704,2024-04-13,hanshin,4,mapped,calendar course=hanshin meeting=2 day=7
+202404130905,202409020705,2024-04-13,hanshin,5,mapped,calendar course=hanshin meeting=2 day=7
+202404130906,202409020706,2024-04-13,hanshin,6,mapped,calendar course=hanshin meeting=2 day=7
+202404130907,202409020707,2024-04-13,hanshin,7,mapped,calendar course=hanshin meeting=2 day=7
+202404130908,202409020708,2024-04-13,hanshin,8,mapped,calendar course=hanshin meeting=2 day=7
+202404130909,202409020709,2024-04-13,hanshin,9,mapped,calendar course=hanshin meeting=2 day=7
+202404130910,202409020710,2024-04-13,hanshin,10,mapped,calendar course=hanshin meeting=2 day=7
+202404130911,202409020711,2024-04-13,hanshin,11,mapped,calendar course=hanshin meeting=2 day=7
+202404130912,202409020712,2024-04-13,hanshin,12,mapped,calendar course=hanshin meeting=2 day=7
+202404130601,202406030701,2024-04-13,nakayama,1,mapped,calendar course=nakayama meeting=3 day=7
+202404130602,202406030702,2024-04-13,nakayama,2,mapped,calendar course=nakayama meeting=3 day=7
+202404130603,202406030703,2024-04-13,nakayama,3,mapped,calendar course=nakayama meeting=3 day=7
+202404130604,202406030704,2024-04-13,nakayama,4,mapped,calendar course=nakayama meeting=3 day=7
+202404130605,202406030705,2024-04-13,nakayama,5,mapped,calendar course=nakayama meeting=3 day=7
+202404130606,202406030706,2024-04-13,nakayama,6,mapped,calendar course=nakayama meeting=3 day=7
+202404130607,202406030707,2024-04-13,nakayama,7,mapped,calendar course=nakayama meeting=3 day=7
+202404130608,202406030708,2024-04-13,nakayama,8,mapped,calendar course=nakayama meeting=3 day=7
+202404130609,202406030709,2024-04-13,nakayama,9,mapped,calendar course=nakayama meeting=3 day=7
+202404130610,202406030710,2024-04-13,nakayama,10,mapped,calendar course=nakayama meeting=3 day=7
+202404130611,202406030711,2024-04-13,nakayama,11,mapped,calendar course=nakayama meeting=3 day=7
+202404130612,202406030712,2024-04-13,nakayama,12,mapped,calendar course=nakayama meeting=3 day=7
+202404140301,202403010401,2024-04-14,fukushima,1,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404140302,202403010402,2024-04-14,fukushima,2,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404140303,202403010403,2024-04-14,fukushima,3,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404140304,202403010404,2024-04-14,fukushima,4,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404140305,202403010405,2024-04-14,fukushima,5,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404140306,202403010406,2024-04-14,fukushima,6,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404140307,202403010407,2024-04-14,fukushima,7,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404140308,202403010408,2024-04-14,fukushima,8,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404140309,202403010409,2024-04-14,fukushima,9,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404140310,202403010410,2024-04-14,fukushima,10,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404140311,202403010411,2024-04-14,fukushima,11,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404140312,202403010412,2024-04-14,fukushima,12,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404140901,202409020801,2024-04-14,hanshin,1,mapped,calendar course=hanshin meeting=2 day=8
+202404140902,202409020802,2024-04-14,hanshin,2,mapped,calendar course=hanshin meeting=2 day=8
+202404140903,202409020803,2024-04-14,hanshin,3,mapped,calendar course=hanshin meeting=2 day=8
+202404140904,202409020804,2024-04-14,hanshin,4,mapped,calendar course=hanshin meeting=2 day=8
+202404140905,202409020805,2024-04-14,hanshin,5,mapped,calendar course=hanshin meeting=2 day=8
+202404140906,202409020806,2024-04-14,hanshin,6,mapped,calendar course=hanshin meeting=2 day=8
+202404140907,202409020807,2024-04-14,hanshin,7,mapped,calendar course=hanshin meeting=2 day=8
+202404140908,202409020808,2024-04-14,hanshin,8,mapped,calendar course=hanshin meeting=2 day=8
+202404140909,202409020809,2024-04-14,hanshin,9,mapped,calendar course=hanshin meeting=2 day=8
+202404140910,202409020810,2024-04-14,hanshin,10,mapped,calendar course=hanshin meeting=2 day=8
+202404140911,202409020811,2024-04-14,hanshin,11,mapped,calendar course=hanshin meeting=2 day=8
+202404140912,202409020812,2024-04-14,hanshin,12,mapped,calendar course=hanshin meeting=2 day=8
+202404140601,202406030801,2024-04-14,nakayama,1,mapped,calendar course=nakayama meeting=3 day=8
+202404140602,202406030802,2024-04-14,nakayama,2,mapped,calendar course=nakayama meeting=3 day=8
+202404140603,202406030803,2024-04-14,nakayama,3,mapped,calendar course=nakayama meeting=3 day=8
+202404140604,202406030804,2024-04-14,nakayama,4,mapped,calendar course=nakayama meeting=3 day=8
+202404140605,202406030805,2024-04-14,nakayama,5,mapped,calendar course=nakayama meeting=3 day=8
+202404140606,202406030806,2024-04-14,nakayama,6,mapped,calendar course=nakayama meeting=3 day=8
+202404140607,202406030807,2024-04-14,nakayama,7,mapped,calendar course=nakayama meeting=3 day=8
+202404140608,202406030808,2024-04-14,nakayama,8,mapped,calendar course=nakayama meeting=3 day=8
+202404140609,202406030809,2024-04-14,nakayama,9,mapped,calendar course=nakayama meeting=3 day=8
+202404140610,202406030810,2024-04-14,nakayama,10,mapped,calendar course=nakayama meeting=3 day=8
+202404140611,202406030811,2024-04-14,nakayama,11,mapped,calendar course=nakayama meeting=3 day=8
+202404140612,202406030812,2024-04-14,nakayama,12,mapped,calendar course=nakayama meeting=3 day=8
+202404200301,202403010501,2024-04-20,fukushima,1,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404200302,202403010502,2024-04-20,fukushima,2,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404200303,202403010503,2024-04-20,fukushima,3,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404200304,202403010504,2024-04-20,fukushima,4,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404200305,202403010505,2024-04-20,fukushima,5,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404200306,202403010506,2024-04-20,fukushima,6,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404200307,202403010507,2024-04-20,fukushima,7,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404200308,202403010508,2024-04-20,fukushima,8,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404200309,202403010509,2024-04-20,fukushima,9,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404200310,202403010510,2024-04-20,fukushima,10,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404200311,202403010511,2024-04-20,fukushima,11,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404200312,202403010512,2024-04-20,fukushima,12,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404200801,202408030101,2024-04-20,kyoto,1,mapped,calendar course=kyoto meeting=3 day=1
+202404200802,202408030102,2024-04-20,kyoto,2,mapped,calendar course=kyoto meeting=3 day=1
+202404200803,202408030103,2024-04-20,kyoto,3,mapped,calendar course=kyoto meeting=3 day=1
+202404200804,202408030104,2024-04-20,kyoto,4,mapped,calendar course=kyoto meeting=3 day=1
+202404200805,202408030105,2024-04-20,kyoto,5,mapped,calendar course=kyoto meeting=3 day=1
+202404200806,202408030106,2024-04-20,kyoto,6,mapped,calendar course=kyoto meeting=3 day=1
+202404200807,202408030107,2024-04-20,kyoto,7,mapped,calendar course=kyoto meeting=3 day=1
+202404200808,202408030108,2024-04-20,kyoto,8,mapped,calendar course=kyoto meeting=3 day=1
+202404200809,202408030109,2024-04-20,kyoto,9,mapped,calendar course=kyoto meeting=3 day=1
+202404200810,202408030110,2024-04-20,kyoto,10,mapped,calendar course=kyoto meeting=3 day=1
+202404200811,202408030111,2024-04-20,kyoto,11,mapped,calendar course=kyoto meeting=3 day=1
+202404200812,202408030112,2024-04-20,kyoto,12,mapped,calendar course=kyoto meeting=3 day=1
+202404200501,202405020101,2024-04-20,tokyo,1,mapped,calendar course=tokyo meeting=2 day=1
+202404200502,202405020102,2024-04-20,tokyo,2,mapped,calendar course=tokyo meeting=2 day=1
+202404200503,202405020103,2024-04-20,tokyo,3,mapped,calendar course=tokyo meeting=2 day=1
+202404200504,202405020104,2024-04-20,tokyo,4,mapped,calendar course=tokyo meeting=2 day=1
+202404200505,202405020105,2024-04-20,tokyo,5,mapped,calendar course=tokyo meeting=2 day=1
+202404200506,202405020106,2024-04-20,tokyo,6,mapped,calendar course=tokyo meeting=2 day=1
+202404200507,202405020107,2024-04-20,tokyo,7,mapped,calendar course=tokyo meeting=2 day=1
+202404200508,202405020108,2024-04-20,tokyo,8,mapped,calendar course=tokyo meeting=2 day=1
+202404200509,202405020109,2024-04-20,tokyo,9,mapped,calendar course=tokyo meeting=2 day=1
+202404200510,202405020110,2024-04-20,tokyo,10,mapped,calendar course=tokyo meeting=2 day=1
+202404200511,202405020111,2024-04-20,tokyo,11,mapped,calendar course=tokyo meeting=2 day=1
+202404200512,202405020112,2024-04-20,tokyo,12,mapped,calendar course=tokyo meeting=2 day=1
+202404210301,202403010601,2024-04-21,fukushima,1,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404210302,202403010602,2024-04-21,fukushima,2,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404210303,202403010603,2024-04-21,fukushima,3,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404210304,202403010604,2024-04-21,fukushima,4,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404210305,202403010605,2024-04-21,fukushima,5,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404210306,202403010606,2024-04-21,fukushima,6,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404210307,202403010607,2024-04-21,fukushima,7,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404210308,202403010608,2024-04-21,fukushima,8,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404210309,202403010609,2024-04-21,fukushima,9,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404210310,202403010610,2024-04-21,fukushima,10,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404210311,202403010611,2024-04-21,fukushima,11,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404210312,202403010612,2024-04-21,fukushima,12,mapped_estimated,estimated with meeting_no=1 because no meeting calendar CSV was provided
+202404210801,202408030201,2024-04-21,kyoto,1,mapped,calendar course=kyoto meeting=3 day=2
+202404210802,202408030202,2024-04-21,kyoto,2,mapped,calendar course=kyoto meeting=3 day=2
+202404210803,202408030203,2024-04-21,kyoto,3,mapped,calendar course=kyoto meeting=3 day=2
+202404210804,202408030204,2024-04-21,kyoto,4,mapped,calendar course=kyoto meeting=3 day=2
+202404210805,202408030205,2024-04-21,kyoto,5,mapped,calendar course=kyoto meeting=3 day=2
+202404210806,202408030206,2024-04-21,kyoto,6,mapped,calendar course=kyoto meeting=3 day=2
+202404210807,202408030207,2024-04-21,kyoto,7,mapped,calendar course=kyoto meeting=3 day=2
+202404210808,202408030208,2024-04-21,kyoto,8,mapped,calendar course=kyoto meeting=3 day=2
+202404210809,202408030209,2024-04-21,kyoto,9,mapped,calendar course=kyoto meeting=3 day=2
+202404210810,202408030210,2024-04-21,kyoto,10,mapped,calendar course=kyoto meeting=3 day=2
+202404210811,202408030211,2024-04-21,kyoto,11,mapped,calendar course=kyoto meeting=3 day=2
+202404210812,202408030212,2024-04-21,kyoto,12,mapped,calendar course=kyoto meeting=3 day=2
+202404210501,202405020201,2024-04-21,tokyo,1,mapped,calendar course=tokyo meeting=2 day=2
+202404210502,202405020202,2024-04-21,tokyo,2,mapped,calendar course=tokyo meeting=2 day=2
+202404210503,202405020203,2024-04-21,tokyo,3,mapped,calendar course=tokyo meeting=2 day=2
+202404210504,202405020204,2024-04-21,tokyo,4,mapped,calendar course=tokyo meeting=2 day=2
+202404210505,202405020205,2024-04-21,tokyo,5,mapped,calendar course=tokyo meeting=2 day=2
+202404210506,202405020206,2024-04-21,tokyo,6,mapped,calendar course=tokyo meeting=2 day=2
+202404210507,202405020207,2024-04-21,tokyo,7,mapped,calendar course=tokyo meeting=2 day=2
+202404210508,202405020208,2024-04-21,tokyo,8,mapped,calendar course=tokyo meeting=2 day=2
+202404210509,202405020209,2024-04-21,tokyo,9,mapped,calendar course=tokyo meeting=2 day=2
+202404210510,202405020210,2024-04-21,tokyo,10,mapped,calendar course=tokyo meeting=2 day=2
+202404210511,202405020211,2024-04-21,tokyo,11,mapped,calendar course=tokyo meeting=2 day=2
+202404210512,202405020212,2024-04-21,tokyo,12,mapped,calendar course=tokyo meeting=2 day=2
+202404270801,202408030301,2024-04-27,kyoto,1,mapped,calendar course=kyoto meeting=3 day=3
+202404270802,202408030302,2024-04-27,kyoto,2,mapped,calendar course=kyoto meeting=3 day=3
+202404270803,202408030303,2024-04-27,kyoto,3,mapped,calendar course=kyoto meeting=3 day=3
+202404270804,202408030304,2024-04-27,kyoto,4,mapped,calendar course=kyoto meeting=3 day=3
+202404270805,202408030305,2024-04-27,kyoto,5,mapped,calendar course=kyoto meeting=3 day=3
+202404270806,202408030306,2024-04-27,kyoto,6,mapped,calendar course=kyoto meeting=3 day=3
+202404270807,202408030307,2024-04-27,kyoto,7,mapped,calendar course=kyoto meeting=3 day=3
+202404270808,202408030308,2024-04-27,kyoto,8,mapped,calendar course=kyoto meeting=3 day=3
+202404270809,202408030309,2024-04-27,kyoto,9,mapped,calendar course=kyoto meeting=3 day=3
+202404270810,202408030310,2024-04-27,kyoto,10,mapped,calendar course=kyoto meeting=3 day=3
+202404270811,202408030311,2024-04-27,kyoto,11,mapped,calendar course=kyoto meeting=3 day=3
+202404270812,202408030312,2024-04-27,kyoto,12,mapped,calendar course=kyoto meeting=3 day=3
+202404270401,202404010101,2024-04-27,niigata,1,mapped,calendar course=niigata meeting=1 day=1
+202404270402,202404010102,2024-04-27,niigata,2,mapped,calendar course=niigata meeting=1 day=1
+202404270403,202404010103,2024-04-27,niigata,3,mapped,calendar course=niigata meeting=1 day=1
+202404270404,202404010104,2024-04-27,niigata,4,mapped,calendar course=niigata meeting=1 day=1
+202404270405,202404010105,2024-04-27,niigata,5,mapped,calendar course=niigata meeting=1 day=1
+202404270406,202404010106,2024-04-27,niigata,6,mapped,calendar course=niigata meeting=1 day=1
+202404270407,202404010107,2024-04-27,niigata,7,mapped,calendar course=niigata meeting=1 day=1
+202404270408,202404010108,2024-04-27,niigata,8,mapped,calendar course=niigata meeting=1 day=1
+202404270409,202404010109,2024-04-27,niigata,9,mapped,calendar course=niigata meeting=1 day=1
+202404270410,202404010110,2024-04-27,niigata,10,mapped,calendar course=niigata meeting=1 day=1
+202404270411,202404010111,2024-04-27,niigata,11,mapped,calendar course=niigata meeting=1 day=1
+202404270412,202404010112,2024-04-27,niigata,12,mapped,calendar course=niigata meeting=1 day=1
+202404270501,202405020301,2024-04-27,tokyo,1,mapped,calendar course=tokyo meeting=2 day=3
+202404270502,202405020302,2024-04-27,tokyo,2,mapped,calendar course=tokyo meeting=2 day=3
+202404270503,202405020303,2024-04-27,tokyo,3,mapped,calendar course=tokyo meeting=2 day=3
+202404270504,202405020304,2024-04-27,tokyo,4,mapped,calendar course=tokyo meeting=2 day=3
+202404270505,202405020305,2024-04-27,tokyo,5,mapped,calendar course=tokyo meeting=2 day=3
+202404270506,202405020306,2024-04-27,tokyo,6,mapped,calendar course=tokyo meeting=2 day=3
+202404270507,202405020307,2024-04-27,tokyo,7,mapped,calendar course=tokyo meeting=2 day=3
+202404270508,202405020308,2024-04-27,tokyo,8,mapped,calendar course=tokyo meeting=2 day=3
+202404270509,202405020309,2024-04-27,tokyo,9,mapped,calendar course=tokyo meeting=2 day=3
+202404270510,202405020310,2024-04-27,tokyo,10,mapped,calendar course=tokyo meeting=2 day=3
+202404270511,202405020311,2024-04-27,tokyo,11,mapped,calendar course=tokyo meeting=2 day=3
+202404270512,202405020312,2024-04-27,tokyo,12,mapped,calendar course=tokyo meeting=2 day=3
+202404280801,202408030401,2024-04-28,kyoto,1,mapped,calendar course=kyoto meeting=3 day=4
+202404280802,202408030402,2024-04-28,kyoto,2,mapped,calendar course=kyoto meeting=3 day=4
+202404280803,202408030403,2024-04-28,kyoto,3,mapped,calendar course=kyoto meeting=3 day=4
+202404280804,202408030404,2024-04-28,kyoto,4,mapped,calendar course=kyoto meeting=3 day=4
+202404280805,202408030405,2024-04-28,kyoto,5,mapped,calendar course=kyoto meeting=3 day=4
+202404280806,202408030406,2024-04-28,kyoto,6,mapped,calendar course=kyoto meeting=3 day=4
+202404280807,202408030407,2024-04-28,kyoto,7,mapped,calendar course=kyoto meeting=3 day=4
+202404280808,202408030408,2024-04-28,kyoto,8,mapped,calendar course=kyoto meeting=3 day=4
+202404280809,202408030409,2024-04-28,kyoto,9,mapped,calendar course=kyoto meeting=3 day=4
+202404280810,202408030410,2024-04-28,kyoto,10,mapped,calendar course=kyoto meeting=3 day=4
+202404280811,202408030411,2024-04-28,kyoto,11,mapped,calendar course=kyoto meeting=3 day=4
+202404280812,202408030412,2024-04-28,kyoto,12,mapped,calendar course=kyoto meeting=3 day=4
+202404280401,202404010201,2024-04-28,niigata,1,mapped,calendar course=niigata meeting=1 day=2
+202404280402,202404010202,2024-04-28,niigata,2,mapped,calendar course=niigata meeting=1 day=2
+202404280403,202404010203,2024-04-28,niigata,3,mapped,calendar course=niigata meeting=1 day=2
+202404280404,202404010204,2024-04-28,niigata,4,mapped,calendar course=niigata meeting=1 day=2
+202404280405,202404010205,2024-04-28,niigata,5,mapped,calendar course=niigata meeting=1 day=2
+202404280406,202404010206,2024-04-28,niigata,6,mapped,calendar course=niigata meeting=1 day=2
+202404280407,202404010207,2024-04-28,niigata,7,mapped,calendar course=niigata meeting=1 day=2
+202404280408,202404010208,2024-04-28,niigata,8,mapped,calendar course=niigata meeting=1 day=2
+202404280409,202404010209,2024-04-28,niigata,9,mapped,calendar course=niigata meeting=1 day=2
+202404280410,202404010210,2024-04-28,niigata,10,mapped,calendar course=niigata meeting=1 day=2
+202404280411,202404010211,2024-04-28,niigata,11,mapped,calendar course=niigata meeting=1 day=2
+202404280412,202404010212,2024-04-28,niigata,12,mapped,calendar course=niigata meeting=1 day=2
+202404280501,202405020401,2024-04-28,tokyo,1,mapped,calendar course=tokyo meeting=2 day=4
+202404280502,202405020402,2024-04-28,tokyo,2,mapped,calendar course=tokyo meeting=2 day=4
+202404280503,202405020403,2024-04-28,tokyo,3,mapped,calendar course=tokyo meeting=2 day=4
+202404280504,202405020404,2024-04-28,tokyo,4,mapped,calendar course=tokyo meeting=2 day=4
+202404280505,202405020405,2024-04-28,tokyo,5,mapped,calendar course=tokyo meeting=2 day=4
+202404280506,202405020406,2024-04-28,tokyo,6,mapped,calendar course=tokyo meeting=2 day=4
+202404280507,202405020407,2024-04-28,tokyo,7,mapped,calendar course=tokyo meeting=2 day=4
+202404280508,202405020408,2024-04-28,tokyo,8,mapped,calendar course=tokyo meeting=2 day=4
+202404280509,202405020409,2024-04-28,tokyo,9,mapped,calendar course=tokyo meeting=2 day=4
+202404280510,202405020410,2024-04-28,tokyo,10,mapped,calendar course=tokyo meeting=2 day=4
+202404280511,202405020411,2024-04-28,tokyo,11,mapped,calendar course=tokyo meeting=2 day=4
+202404280512,202405020412,2024-04-28,tokyo,12,mapped,calendar course=tokyo meeting=2 day=4
