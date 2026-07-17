@@ -22,6 +22,7 @@ from .analysis_maintenance import (
 from .analysis_store import AnalysisSQLiteStore 
 from .batch import JsonlRaceResultStorage, PastResultCollector, ResultStorage, SQLiteRaceResultStorage 
 from .daily_prediction_log_importer import import_daily_prediction_log 
+from .jra_odds_timeline import JraOddsTimelineCollector
 from .netkeiba_analysis_collector import NetkeibaAnalysisCollector, NetkeibaResultCollectionOptions 
 from .netkeiba_mapping import generate_netkeiba_mapping_csv 
 from .netkeiba_service import NetkeibaService 
@@ -46,6 +47,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             parser.error("--from-date must be earlier than or equal to --to-date")
         asyncio.run(collect_analysis(args))
         return 0
+    if args.command == "collect-jra-odds-timeline":
+        summary = asyncio.run(collect_jra_odds_timeline(args))
+        print(
+            f"scheduled={summary.scheduled} saved={summary.saved} "
+            f"skipped_existing={summary.skipped_existing} skipped_late={summary.skipped_late} "
+            f"failed={summary.failed} live_requests={summary.live_requests}"
+        )
+        return 1 if summary.failed else 0
     if args.command == "collect-netkeiba-results":
         if args.from_date > args.to_date:
             parser.error("--from-date must be earlier than or equal to --to-date")
@@ -134,6 +143,21 @@ def build_parser() -> argparse.ArgumentParser:
     analysis.add_argument("--min-interval-seconds", type=float, default=0.0)
     analysis.add_argument("--max-live-requests", type=int)
     analysis.add_argument("--skip-existing", action="store_true")
+
+    timeline = subparsers.add_parser(
+        "collect-jra-odds-timeline",
+        help="Save JRA odds at fixed minutes before each race without polling every race.",
+    )
+    timeline.add_argument("--date", dest="target_date", type=date.fromisoformat, required=True)
+    timeline.add_argument("--courses", default="all", help="'all' or comma-separated JRA course names.")
+    timeline.add_argument("--db", type=Path, default=Path(os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/db/analysis.sqlite")))
+    timeline.add_argument("--bet-types", default="win,wide")
+    timeline.add_argument("--offset-minutes", default="30,10,2")
+    timeline.add_argument("--poll-seconds", type=float, default=20.0)
+    timeline.add_argument("--min-interval-seconds", type=float, default=1.0)
+    timeline.add_argument("--max-lateness-seconds", type=float, default=90.0)
+    timeline.add_argument("--max-live-requests", type=int)
+    timeline.add_argument("--dry-run", action="store_true")
 
     netkeiba_results = subparsers.add_parser(
         "collect-netkeiba-results",
@@ -295,6 +319,32 @@ async def collect_analysis(
             max_live_requests=getattr(args, "max_live_requests", None),
             skip_existing=getattr(args, "skip_existing", False),
         )
+    )
+
+
+async def collect_jra_odds_timeline(args: argparse.Namespace):
+    courses = set() if args.courses.strip().lower() in AnalysisCollector.AUTO_COURSE_TOKENS else set(parse_course_list(args.courses))
+    bet_types = [item.strip() for item in args.bet_types.split(",") if item.strip()]
+    unsupported = sorted(set(bet_types) - set(SUPPORTED_JRA_BET_TYPES))
+    if unsupported:
+        raise ValueError(f"unsupported JRA bet types: {','.join(unsupported)}")
+    offsets = sorted(
+        {int(item.strip()) for item in args.offset_minutes.split(",") if item.strip()},
+        reverse=True,
+    )
+    if not offsets or any(offset < 0 for offset in offsets):
+        raise ValueError("--offset-minutes must contain non-negative integers")
+    collector = JraOddsTimelineCollector(JraService(), AnalysisSQLiteStore(args.db))
+    return await collector.collect(
+        target_date=args.target_date,
+        courses=courses,
+        offsets=offsets,
+        bet_types=bet_types,
+        poll_seconds=args.poll_seconds,
+        min_interval_seconds=args.min_interval_seconds,
+        max_lateness_seconds=args.max_lateness_seconds,
+        max_live_requests=args.max_live_requests,
+        dry_run=args.dry_run,
     )
 
 
