@@ -3,13 +3,12 @@ from __future__ import annotations
 import argparse
 import asyncio
 from collections import defaultdict
-from dataclasses import dataclass
-from datetime import date
+from dataclasses import dataclass, replace
 import json
 from pathlib import Path
 import re
 import sqlite3
-from statistics import mean
+from statistics import mean, pstdev
 from types import SimpleNamespace
 from typing import Any
 
@@ -119,6 +118,21 @@ class TheoryConfig:
     abs_weight_diff_1to4_bonus: float = 0.0
     abs_weight_diff_5to8_penalty: float = 0.0
     abs_weight_diff_9plus_penalty: float = 0.0
+    pair_selection: bool = False
+    pair_axis_score_weight: float = 1.0
+    pair_middle_score_weight: float = 1.0
+    pair_odds_ratio_weight: float = 0.0
+    pair_max_odds_ratio: float | None = None
+    pair_min_axis_score_gap: float | None = None
+    axis_front_style_bonus: float = 0.0
+    axis_closer_style_bonus: float = 0.0
+    middle_front_style_bonus: float = 0.0
+    middle_closer_style_bonus: float = 0.0
+    fast_pace_closer_bonus: float = 0.0
+    slow_pace_front_bonus: float = 0.0
+    fast_pace_top3_bonus: float = 0.0
+    fast_final3f_score_bonus: float = 0.0
+    recent_rank_consistency_bonus: float = 0.0
 
 
 THEORIES: dict[str, TheoryConfig] = {
@@ -2948,7 +2962,240 @@ THEORIES: dict[str, TheoryConfig] = {
         axis_field_size_ge_14_bonus=1.0,
         axis_field_size_le_10_penalty=2.0,
     ),
-} 
+}
+
+# Summer-circuit candidates are derived from the frozen v86 rule and are
+# evaluated only in the fixed 2025 train/validation periods.
+THEORIES["v90"] = replace(
+    THEORIES["v86"],
+    version="v90",
+    score_note="v86 summer-circuit baseline: Sapporo/Hakodate/Fukushima/Niigata/Kokura only",
+    allowed_course_codes=("01", "02", "03", "04", "10"),
+)
+THEORIES["v91"] = replace(
+    THEORIES["v90"],
+    version="v91",
+    score_note="v90 plus conservative middle odds ceiling of 15.0",
+    middle_odds_max=15.0,
+)
+THEORIES["v92"] = replace(
+    THEORIES["v91"],
+    version="v92",
+    score_note="v91 plus favorite-only axis popularity bucket",
+    ticket_allowed_axis_popularity_buckets=("1",),
+)
+THEORIES["v93"] = replace(
+    THEORIES["v90"],
+    version="v93",
+    score_note="v90 plus minimum 25% same-distance top-3 rate for middle candidates",
+    middle_min_same_dist_top3_rate=0.25,
+)
+THEORIES["v94"] = replace(
+    THEORIES["v93"],
+    version="v94",
+    score_note="v93 plus minimum 25% same-course top-3 rate for middle candidates",
+    middle_min_same_course_top3_rate=0.25,
+)
+THEORIES["v95"] = replace(
+    THEORIES["v94"],
+    version="v95",
+    score_note="v94 plus minimum 25% recent jockey top-3 rate for middle candidates",
+    middle_min_jockey_recent_top3_rate=0.25,
+)
+THEORIES["v96"] = replace(
+    THEORIES["v90"],
+    version="v96",
+    score_note="v90 plus minimum 15% same-distance top-3 rate for middle candidates",
+    middle_min_same_dist_top3_rate=0.15,
+)
+THEORIES["v97"] = replace(
+    THEORIES["v90"],
+    version="v97",
+    score_note="v90 plus minimum 10% same-distance top-3 rate for middle candidates",
+    middle_min_same_dist_top3_rate=0.10,
+)
+THEORIES["v98"] = replace(
+    THEORIES["v90"],
+    version="v98",
+    score_note="v90 plus minimum 15% recent jockey top-3 rate for middle candidates",
+    middle_min_jockey_recent_top3_rate=0.15,
+)
+THEORIES["v99"] = replace(
+    THEORIES["v90"],
+    version="v99",
+    score_note="v90 plus minimum 15% recent trainer top-3 rate for middle candidates",
+    middle_min_trainer_recent_top3_rate=0.15,
+)
+THEORIES["v100"] = replace(
+    THEORIES["v90"],
+    version="v100",
+    score_note="v90 plus minimum 15% same-course top-3 rate for middle candidates",
+    middle_min_same_course_top3_rate=0.15,
+)
+THEORIES["v101"] = replace(
+    THEORIES["v90"],
+    version="v101",
+    score_note="v90 plus minimum 10% same-distance and 15% recent jockey top-3 rates for middle candidates",
+    middle_min_same_dist_top3_rate=0.10,
+    middle_min_jockey_recent_top3_rate=0.15,
+)
+THEORIES["v102"] = replace(
+    THEORIES["v90"],
+    version="v102",
+    score_note="v90 plus minimum 10% same-distance and 15% recent trainer top-3 rates for middle candidates",
+    middle_min_same_dist_top3_rate=0.10,
+    middle_min_trainer_recent_top3_rate=0.15,
+)
+THEORIES["v103"] = replace(
+    THEORIES["v90"], version="v103", score_note="v90 restricted to fields of 11 or more", min_field_size_to_bet=11
+)
+THEORIES["v104"] = replace(
+    THEORIES["v90"], version="v104", score_note="v90 restricted to fields of 14 or more", min_field_size_to_bet=14
+)
+THEORIES["v105"] = replace(
+    THEORIES["v90"], version="v105", score_note="v90 restricted to fields of 12 or fewer", max_field_size_to_bet=12
+)
+THEORIES["v106"] = replace(
+    THEORIES["v90"], version="v106", score_note="v90 restricted to turf races", surface_to_bet="芝"
+)
+THEORIES["v107"] = replace(
+    THEORIES["v90"], version="v107", score_note="v90 restricted to dirt races", surface_to_bet="ダート"
+)
+THEORIES["v108"] = replace(
+    THEORIES["v90"], version="v108", score_note="v90 with middle odds floor of 10.0", middle_odds_min=10.0
+)
+THEORIES["v109"] = replace(
+    THEORIES["v90"], version="v109", score_note="v90 with middle odds floor of 12.0", middle_odds_min=12.0
+)
+THEORIES["v110"] = replace(
+    THEORIES["v90"], version="v110", score_note="v90 with middle odds ceiling of 15.0", middle_odds_max=15.0
+)
+THEORIES["v111"] = replace(
+    THEORIES["v90"], version="v111", score_note="v90 with first- or second-favorite axis only", ticket_allowed_axis_popularity_buckets=("1", "2")
+)
+THEORIES["v112"] = replace(
+    THEORIES["v90"],
+    version="v112",
+    score_note="v90 with first- or second-favorite axis and fourth- or fifth-favorite middle only",
+    ticket_allowed_axis_popularity_buckets=("1", "2"),
+    ticket_allowed_middle_popularity_buckets=("4", "5"),
+)
+THEORIES["v113"] = replace(
+    THEORIES["v90"], version="v113", score_note="v90 restricted to races 7 through 12", min_race_no_to_bet=7
+)
+THEORIES["v114"] = replace(
+    THEORIES["v90"], version="v114", score_note="v90 restricted to races 1 through 6", max_race_no_to_bet=6
+)
+THEORIES["v115"] = replace(
+    THEORIES["v90"],
+    version="v115",
+    score_note="v90 with a 15.0 middle odds ceiling in fields of 14 or more",
+    large_field_middle_odds_max=15.0,
+)
+THEORIES["v116"] = replace(
+    THEORIES["v90"],
+    version="v116",
+    score_note="v90 with a 12.0 middle odds ceiling in fields of 14 or more",
+    large_field_middle_odds_max=12.0,
+)
+THEORIES["v117"] = replace(
+    THEORIES["v90"], version="v117", score_note="v90 with one middle candidate per race", max_middles=1
+)
+THEORIES["v118"] = replace(THEORIES["v90"], version="v118", score_note="v90 with axis odds at most 2.5", ticket_allowed_axis_odds_buckets=("le_2_5",))
+THEORIES["v119"] = replace(THEORIES["v90"], version="v119", score_note="v90 with axis odds from 2.5 to 4.0", ticket_allowed_axis_odds_buckets=("2_5_4",))
+THEORIES["v120"] = replace(THEORIES["v90"], version="v120", score_note="v90 with axis odds over 6.0", ticket_allowed_axis_odds_buckets=("gt_6",))
+THEORIES["v121"] = replace(THEORIES["v90"], version="v121", score_note="v90 with axis odds at most 4.0", ticket_allowed_axis_odds_buckets=("le_2_5", "2_5_4"))
+THEORIES["v122"] = replace(THEORIES["v90"], version="v122", score_note="v90 with all axis odds buckets", ticket_allowed_axis_odds_buckets=("le_2_5", "2_5_4", "4_6", "gt_6"))
+THEORIES["v123"] = replace(THEORIES["v90"], version="v123", score_note="v90 with first-middle score gap over 0", first_middle_min_axis_score_gap=0.0)
+THEORIES["v124"] = replace(THEORIES["v90"], version="v124", score_note="v90 with first-middle score gap over 2.5", first_middle_min_axis_score_gap=2.5)
+THEORIES["v125"] = replace(THEORIES["v90"], version="v125", score_note="v90 with first-middle score gap over 5.0", first_middle_min_axis_score_gap=5.0)
+THEORIES["v126"] = replace(THEORIES["v90"], version="v126", score_note="v90 with first-middle score gap over 7.5", first_middle_min_axis_score_gap=7.5)
+THEORIES["v127"] = replace(THEORIES["v90"], version="v127", score_note="v90 with first-middle score gap over 10.0", first_middle_min_axis_score_gap=10.0)
+THEORIES["v128"] = replace(THEORIES["v90"], version="v128", score_note="v90 with middle weight change at most 0kg", middle_max_abs_weight_diff=0)
+THEORIES["v129"] = replace(THEORIES["v90"], version="v129", score_note="v90 with middle weight change at most 2kg", middle_max_abs_weight_diff=2)
+THEORIES["v130"] = replace(THEORIES["v90"], version="v130", score_note="v90 with middle weight change at most 4kg", middle_max_abs_weight_diff=4)
+THEORIES["v131"] = replace(THEORIES["v90"], version="v131", score_note="v90 with middle weight change at most 6kg", middle_max_abs_weight_diff=6)
+THEORIES["v132"] = replace(THEORIES["v90"], version="v132", score_note="v90 without a middle weight-change restriction", middle_max_abs_weight_diff=None)
+THEORIES["v133"] = replace(THEORIES["v90"], version="v133", score_note="v90 restricted to 14-15 runner fields", max_field_size_to_bet=15)
+THEORIES["v134"] = replace(THEORIES["v90"], version="v134", score_note="v90 restricted to fields of 16 or more", min_field_size_to_bet=16)
+THEORIES["v135"] = replace(THEORIES["v90"], version="v135", score_note="v90 restricted to 14-16 runner fields", max_field_size_to_bet=16)
+THEORIES["v136"] = replace(THEORIES["v90"], version="v136", score_note="v90 restricted to fields of 17 or more", min_field_size_to_bet=17)
+THEORIES["v137"] = replace(THEORIES["v90"], version="v137", score_note="v90 restricted to 14-17 runner fields", max_field_size_to_bet=17)
+THEORIES["v138"] = replace(THEORIES["v90"], version="v138", score_note="v90 with no low same-distance middle bonus", middle_same_dist_lt_0_15_bonus=0.0)
+THEORIES["v139"] = replace(THEORIES["v90"], version="v139", score_note="v90 with 4-point low same-distance middle bonus", middle_same_dist_lt_0_15_bonus=4.0)
+THEORIES["v140"] = replace(THEORIES["v90"], version="v140", score_note="v90 with 8-point low same-distance middle bonus", middle_same_dist_lt_0_15_bonus=8.0)
+THEORIES["v141"] = replace(THEORIES["v90"], version="v141", score_note="v90 with 12-point low same-distance middle bonus", middle_same_dist_lt_0_15_bonus=12.0)
+THEORIES["v142"] = replace(THEORIES["v90"], version="v142", score_note="v90 with 16-point low same-distance middle bonus", middle_same_dist_lt_0_15_bonus=16.0)
+THEORIES["v143"] = replace(
+    THEORIES["v90"],
+    version="v143",
+    score_note="general JRA baseline: all courses, one middle allowed, no race-number ceiling",
+    allowed_course_codes=None,
+    min_middles_to_bet=1,
+    max_race_no_to_bet=None,
+)
+THEORIES["v144"] = replace(
+    THEORIES["v143"],
+    version="v144",
+    score_note="v143 with races 1 through 8 only to target 30-50 development tickets",
+    max_race_no_to_bet=8,
+)
+THEORIES["v145"] = replace(THEORIES["v143"], version="v145", score_note="pair-direct: equal axis and middle scores", pair_selection=True)
+THEORIES["v146"] = replace(THEORIES["v145"], version="v146", score_note="pair-direct: axis score weight 1.2", pair_axis_score_weight=1.2)
+THEORIES["v147"] = replace(THEORIES["v145"], version="v147", score_note="pair-direct: middle score weight 1.2", pair_middle_score_weight=1.2)
+THEORIES["v148"] = replace(THEORIES["v145"], version="v148", score_note="pair-direct: penalize odds ratio by 1", pair_odds_ratio_weight=-1.0)
+THEORIES["v149"] = replace(THEORIES["v145"], version="v149", score_note="pair-direct: penalize odds ratio by 2", pair_odds_ratio_weight=-2.0)
+THEORIES["v150"] = replace(THEORIES["v145"], version="v150", score_note="pair-direct: reward odds ratio by 1", pair_odds_ratio_weight=1.0)
+THEORIES["v151"] = replace(THEORIES["v145"], version="v151", score_note="pair-direct: odds ratio at most 5", pair_max_odds_ratio=5.0)
+THEORIES["v152"] = replace(THEORIES["v145"], version="v152", score_note="pair-direct: odds ratio at most 3", pair_max_odds_ratio=3.0)
+THEORIES["v153"] = replace(THEORIES["v145"], version="v153", score_note="pair-direct: axis score gap at least 5", pair_min_axis_score_gap=5.0)
+THEORIES["v154"] = replace(THEORIES["v145"], version="v154", score_note="pair-direct: axis score gap at least 10", pair_min_axis_score_gap=10.0)
+for version, gap in zip(range(155, 165), range(0, 20, 2), strict=True):
+    THEORIES[f"v{version}"] = replace(
+        THEORIES["v145"], version=f"v{version}", score_note=f"pair-direct: axis score gap at least {gap}", pair_min_axis_score_gap=float(gap)
+    )
+for version, ratio in zip(range(165, 175), range(2, 12), strict=True):
+    THEORIES[f"v{version}"] = replace(
+        THEORIES["v145"], version=f"v{version}", score_note=f"pair-direct: odds ratio at most {ratio}", pair_max_odds_ratio=float(ratio)
+    )
+for version, odds_floor in zip(range(175, 185), range(8, 18), strict=True):
+    THEORIES[f"v{version}"] = replace(
+        THEORIES["v145"], version=f"v{version}", score_note=f"pair-direct: middle odds floor {odds_floor}", middle_odds_min=float(odds_floor)
+    )
+for version, field_size in zip(range(185, 190), range(14, 19), strict=True):
+    THEORIES[f"v{version}"] = replace(
+        THEORIES["v145"], version=f"v{version}", score_note=f"pair-direct: field size at least {field_size}", min_field_size_to_bet=field_size
+    )
+for version, weight_diff in zip(range(190, 195), range(0, 5), strict=True):
+    THEORIES[f"v{version}"] = replace(
+        THEORIES["v145"], version=f"v{version}", score_note=f"pair-direct: middle weight change at most {weight_diff}", middle_max_abs_weight_diff=weight_diff
+    )
+for version, value in zip(range(195, 205), range(15, 65, 5), strict=True):
+    THEORIES[f"v{version}"] = replace(THEORIES["v145"], version=f"v{version}", score_note=f"causal form {value}", recent_top3_weight=float(value))
+for version, value in zip(range(205, 215), range(0, 50, 5), strict=True):
+    THEORIES[f"v{version}"] = replace(THEORIES["v145"], version=f"v{version}", score_note=f"causal suitability {value}", same_dist_weight=float(value), same_surface_weight=float(value))
+for version, value in zip(range(215, 225), range(0, 30, 3), strict=True):
+    THEORIES[f"v{version}"] = replace(THEORIES["v145"], version=f"v{version}", score_note=f"causal connections {value}", jockey_recent_top3_weight=float(value), trainer_recent_top3_weight=float(value))
+for version, value in zip(range(225, 235), range(5, 25, 2), strict=True):
+    THEORIES[f"v{version}"] = replace(THEORIES["v145"], version=f"v{version}", score_note=f"causal consistency {value}", recent_avg_rank_penalty=float(value) / 10, starts_bonus_weight=float(value) / 10)
+for version, value in zip(range(235, 245), range(0, 20, 2), strict=True):
+    THEORIES[f"v{version}"] = replace(THEORIES["v145"], version=f"v{version}", score_note=f"causal market weight {value}", popularity_top3_bonus=float(value), abs_weight_diff_1to4_bonus=float(value) / 2)
+THEORIES["v245"] = replace(THEORIES["v145"], version="v245", score_note="style balance: front-running axis and closing middle", axis_front_style_bonus=3.0, middle_closer_style_bonus=3.0)
+THEORIES["v246"] = replace(THEORIES["v145"], version="v246", score_note="style balance: strong front-running axis and closing middle", axis_front_style_bonus=5.0, middle_closer_style_bonus=5.0)
+THEORIES["v247"] = replace(THEORIES["v145"], version="v247", score_note="style reversal: closing axis and front-running middle", axis_closer_style_bonus=3.0, middle_front_style_bonus=3.0)
+THEORIES["v248"] = replace(THEORIES["v145"], version="v248", score_note="style front bias: front-running axis and middle", axis_front_style_bonus=4.0, middle_front_style_bonus=2.0)
+THEORIES["v249"] = replace(THEORIES["v145"], version="v249", score_note="style closing bias: closing axis and middle", axis_closer_style_bonus=4.0, middle_closer_style_bonus=2.0)
+THEORIES["v250"] = replace(THEORIES["v145"], version="v250", score_note="pace-aware: 3+ front runners favors closers", fast_pace_closer_bonus=2.0, slow_pace_front_bonus=2.0)
+THEORIES["v251"] = replace(THEORIES["v250"], version="v251", score_note="pace-aware: moderate bonus", fast_pace_closer_bonus=4.0, slow_pace_front_bonus=4.0)
+THEORIES["v252"] = replace(THEORIES["v250"], version="v252", score_note="pace-aware: strong bonus", fast_pace_closer_bonus=6.0, slow_pace_front_bonus=6.0)
+THEORIES["v253"] = replace(THEORIES["v250"], version="v253", score_note="pace-aware: fast-pace closers only", fast_pace_closer_bonus=5.0, slow_pace_front_bonus=0.0)
+THEORIES["v254"] = replace(THEORIES["v250"], version="v254", score_note="pace-aware: slow-pace front runners only", fast_pace_closer_bonus=0.0, slow_pace_front_bonus=5.0)
+for version, bonus in zip(range(265, 270), (2.0, 4.0, 6.0, 8.0, 10.0), strict=True):
+    THEORIES[f"v{version}"] = replace(THEORIES["v145"], version=f"v{version}", score_note=f"fast-pace top3 suitability bonus {bonus}", fast_pace_top3_bonus=bonus)
+for version, bonus in zip(range(260, 265), (2.0, 4.0, 6.0, 8.0, 10.0), strict=True):
+    THEORIES[f"v{version}"] = replace(THEORIES["v145"], version=f"v{version}", score_note=f"rank consistency bonus {bonus}", recent_rank_consistency_bonus=bonus)
+for version, bonus in zip(range(255, 260), (2.0, 4.0, 6.0, 8.0, 10.0), strict=True):
+    THEORIES[f"v{version}"] = replace(THEORIES["v145"], version=f"v{version}", score_note=f"distance-normalized closing speed bonus {bonus}", fast_final3f_score_bonus=bonus)
 
 # netkeiba uses YYYY + course_code + meeting_no + day_no + race_no.
 # This table covers central JRA validation days in 2025-10-01..2025-12-31.
@@ -3127,10 +3374,12 @@ def load_rows(db_path: Path) -> dict[str, list[dict[str, Any]]]:
             """
             select r.race_id, r.race_date, r.race_no, r.race_name, r.course, r.surface, r.distance,
                    ru.horse_no, ru.horse_name, ru.jockey, ru.trainer, ru.weight_carried,
-                   re.rank
+                   re.rank, ne.corner_order, ne.final_3f, nr.race_laps_json
             from races r
             join runners ru on ru.race_id = r.race_id
             left join result_entries re on re.race_id = ru.race_id and re.horse_no = ru.horse_no
+            left join netkeiba_result_entries ne on ne.jra_race_id = r.race_id and ne.horse_no = ru.horse_no
+            left join netkeiba_race_results nr on nr.jra_race_id = r.race_id
             where re.rank is not null
             order by r.race_date, r.race_id, cast(ru.horse_no as integer), ru.horse_no
             """
@@ -3328,14 +3577,28 @@ def hist_features(
     history: HistoryBundle,
 ) -> dict[str, Any]:
     starts = len(hist)
+    corner_ratios = []
+    closing_times = []
+    for item in hist[-5:]:
+        corner = str(item.get("corner_order") or "").split("-")
+        if corner and corner[-1].isdigit() and item.get("field_size"):
+            corner_ratios.append(int(corner[-1]) / int(item["field_size"]))
+        if item.get("final_3f") is not None:
+            closing_times.append(float(item["final_3f"]))
     ranks = [int(item["rank"]) for item in hist if item["rank"]]
     top3 = sum(1 for rank in ranks if rank <= 3)
     recent = hist[-5:]
     recent_ranks = [int(item["rank"]) for item in recent if item["rank"]]
+    recent_rank_std = pstdev(recent_ranks) if len(recent_ranks) >= 2 else None
     recent_top3 = sum(1 for rank in recent_ranks if rank <= 3)
     surface = race.get("surface")
     course = race.get("course")
     same_surface = [item for item in hist if surface and item.get("surface") == surface]
+    same_surface_corner_ratios = []
+    for item in same_surface[-5:]:
+        corner = str(item.get("corner_order") or "").split("-")
+        if corner and corner[-1].isdigit() and item.get("field_size"):
+            same_surface_corner_ratios.append(int(corner[-1]) / int(item["field_size"]))
     same_course = [item for item in hist if course and item.get("course") == course]
     same_surface_top3 = sum(1 for item in same_surface if int(item["rank"]) <= 3)
     same_course_top3 = sum(1 for item in same_course if int(item["rank"]) <= 3)
@@ -3347,6 +3610,16 @@ def hist_features(
             if past_dist and abs(past_dist - dist) <= 200:
                 same_dist.append(item)
     same_dist_top3 = sum(1 for item in same_dist if int(item["rank"]) <= 3)
+    fast_pace = []
+    for item in hist:
+        try:
+            laps = [float(x) for x in json.loads(item.get("race_laps_json") or "[]")]
+        except (TypeError, ValueError):
+            laps = []
+        if len(laps) >= 4 and mean(laps[: len(laps) // 2]) - mean(laps[len(laps) // 2 :]) <= -0.3:
+            fast_pace.append(item)
+    fast_pace_top3 = sum(1 for item in fast_pace if int(item["rank"]) <= 3)
+    same_dist_final3f = [float(item["final_3f"]) for item in same_dist if item.get("final_3f") is not None]
     jockey_recent: list[dict[str, Any]] = []
     trainer_recent: list[dict[str, Any]] = []
     jockey_recent_same_surface: list[dict[str, Any]] = []
@@ -3379,6 +3652,12 @@ def hist_features(
         "same_surface_top3_rate": same_surface_top3 / len(same_surface) if same_surface else None,
         "same_course_top3_rate": same_course_top3 / len(same_course) if same_course else None,
         "same_dist_top3_rate": same_dist_top3 / len(same_dist) if same_dist else None,
+        "recent_corner_ratio": mean(corner_ratios) if corner_ratios else None,
+        "recent_final_3f": mean(closing_times) if closing_times else None,
+        "same_dist_final_3f": mean(same_dist_final3f[-5:]) if same_dist_final3f else None,
+        "recent_rank_std": recent_rank_std,
+        "fast_pace_top3_rate": fast_pace_top3 / len(fast_pace) if fast_pace else None,
+        "same_surface_corner_ratio": mean(same_surface_corner_ratios) if same_surface_corner_ratios else None,
         "jockey_recent_top3_rate": jockey_recent_top3 / len(jockey_recent) if jockey_recent else None,
         "trainer_recent_top3_rate": trainer_recent_top3 / len(trainer_recent) if trainer_recent else None,
         "jockey_recent_same_surface_top3_rate": (
@@ -3508,6 +3787,9 @@ def middle_context_score_adjustment(
             out -= theory.middle_large_field_odds_over_10_penalty
     elif size_bucket == "le_10":
         out -= theory.middle_field_size_le_10_penalty
+    corner_ratio = features.get("same_surface_corner_ratio") or features.get("recent_corner_ratio")
+    if corner_ratio is not None:
+        out += theory.middle_front_style_bonus if float(corner_ratio) <= 0.30 else theory.middle_closer_style_bonus if float(corner_ratio) >= 0.70 else 0.0
     return out
 
 
@@ -3544,6 +3826,9 @@ def axis_context_score_adjustment(features: dict[str, Any], theory: TheoryConfig
         out += theory.axis_field_size_ge_14_bonus
     elif size_bucket == "le_10":
         out -= theory.axis_field_size_le_10_penalty
+    corner_ratio = features.get("same_surface_corner_ratio") or features.get("recent_corner_ratio")
+    if corner_ratio is not None:
+        out += theory.axis_front_style_bonus if float(corner_ratio) <= 0.30 else theory.axis_closer_style_bonus if float(corner_ratio) >= 0.70 else 0.0
     return out
 
 
@@ -3704,74 +3989,162 @@ async def evaluate_race(
         return RaceEvaluation(**base, status="excluded", reason=f"low_name_match:{matched}/{len(result.results)}")
     if len(candidates) < theory.min_candidates:
         return RaceEvaluation(**base, status="excluded", reason=f"few_candidates:{len(candidates)}")
+    closing_values = sorted(
+        float(candidate["features"]["same_dist_final_3f"])
+        for candidate in candidates
+        if candidate["features"].get("same_dist_final_3f") is not None
+    )
+    if closing_values and theory.fast_final3f_score_bonus:
+        cutoff = closing_values[max(0, (len(closing_values) - 1) // 4)]
+        for candidate in candidates:
+            value = candidate["features"].get("same_dist_final_3f")
+            if value is not None and float(value) <= cutoff:
+                candidate["score"] += theory.fast_final3f_score_bonus
+    if theory.recent_rank_consistency_bonus:
+        for candidate in candidates:
+            std = candidate["features"].get("recent_rank_std")
+            if std is not None and float(std) <= 2.0:
+                candidate["score"] += theory.recent_rank_consistency_bonus
     ranked = sorted(candidates, key=lambda item: item["score"], reverse=True)
     for candidate in ranked:
         candidate["axis_score"] = candidate["score"] + axis_context_score_adjustment(candidate["features"], theory)
-    axis_ranked = sorted(ranked, key=lambda item: item.get("axis_score", item["score"]), reverse=True)
-    if theory.axis_odds_max is None:
-        axis = axis_ranked[0]
-    else:
-        axis = next(
-            (
-                candidate
-                for candidate in axis_ranked
-                if (odds := odds_to_float(candidate["nk"].win_odds)) is not None
-                and odds <= theory.axis_odds_max
-                and (
-                    theory.axis_popularity_max is None
-                    or (
-                        (popularity := int_or_none(candidate["nk"].popularity)) is not None
-                        and popularity <= theory.axis_popularity_max
-                    )
-                )
-                and (
-                    theory.axis_max_abs_weight_diff is None
-                    or (
-                        (weight_diff := int_or_none(candidate["nk"].horse_weight_diff)) is not None
-                        and abs(weight_diff) <= theory.axis_max_abs_weight_diff
-                    )
-                )
-            ),
-            axis_ranked[0],
-        )
-    middles = []
-    axis_odds = odds_to_float(axis["nk"].win_odds)
-    for candidate in ranked:
-        if candidate is axis:
-            continue
-        odds = odds_to_float(candidate["nk"].win_odds)
-        candidate["middle_score"] = candidate["score"] + middle_context_score_adjustment(
-            candidate["features"], theory, odds, axis_odds
-        )
-    middle_ranked = sorted(
-        (candidate for candidate in ranked if candidate is not axis),
-        key=lambda item: item.get("middle_score", item["score"]),
-        reverse=True,
+    front_count = sum(
+        1
+        for candidate in ranked
+        if (ratio := candidate["features"].get("recent_corner_ratio")) is not None and float(ratio) <= 0.30
     )
-    for candidate in middle_ranked:
-        odds = odds_to_float(candidate["nk"].win_odds)
-        if odds is not None and theory.middle_odds_min <= odds <= theory.middle_odds_max:
-            if not middle_context_allowed(candidate["features"], theory, odds):
+    if front_count >= 3 or front_count <= 1:
+        for candidate in ranked:
+            ratio = candidate["features"].get("recent_corner_ratio")
+            if ratio is None:
                 continue
-            if theory.middle_max_abs_weight_diff is not None:
-                weight_diff = int_or_none(candidate["nk"].horse_weight_diff)
-                if weight_diff is None or abs(weight_diff) > theory.middle_max_abs_weight_diff:
+            if front_count >= 3 and float(ratio) >= 0.70:
+                candidate["axis_score"] += theory.fast_pace_closer_bonus
+            elif front_count <= 1 and float(ratio) <= 0.30:
+                candidate["axis_score"] += theory.slow_pace_front_bonus
+            if front_count >= 3 and (rate := candidate["features"].get("fast_pace_top3_rate")) is not None and float(rate) >= 0.35:
+                candidate["axis_score"] += theory.fast_pace_top3_bonus
+    axis_ranked = sorted(ranked, key=lambda item: item.get("axis_score", item["score"]), reverse=True)
+    if theory.pair_selection:
+        pair_options = []
+        for possible_axis in axis_ranked:
+            axis_odds = odds_to_float(possible_axis["nk"].win_odds)
+            axis_popularity = int_or_none(possible_axis["nk"].popularity)
+            axis_weight_diff = int_or_none(possible_axis["nk"].horse_weight_diff)
+            if axis_odds is None or (theory.axis_odds_max is not None and axis_odds > theory.axis_odds_max):
+                continue
+            if theory.axis_popularity_max is not None and (axis_popularity is None or axis_popularity > theory.axis_popularity_max):
+                continue
+            if theory.axis_max_abs_weight_diff is not None and (
+                axis_weight_diff is None or abs(axis_weight_diff) > theory.axis_max_abs_weight_diff
+            ):
+                continue
+            for middle in ranked:
+                if middle is possible_axis:
                     continue
-            if (
-                not middles
-                and theory.first_middle_min_axis_score_gap is not None
-                and axis["score"] - candidate["score"] <= theory.first_middle_min_axis_score_gap
-            ):
+                middle_odds = odds_to_float(middle["nk"].win_odds)
+                if middle_odds is None or not (theory.middle_odds_min <= middle_odds <= theory.middle_odds_max):
+                    continue
+                if not middle_context_allowed(middle["features"], theory, middle_odds):
+                    continue
+                middle_weight_diff = int_or_none(middle["nk"].horse_weight_diff)
+                if theory.middle_max_abs_weight_diff is not None and (
+                    middle_weight_diff is None or abs(middle_weight_diff) > theory.middle_max_abs_weight_diff
+                ):
+                    continue
+                odds_ratio = middle_odds / axis_odds if axis_odds else None
+                if odds_ratio is None or (theory.pair_max_odds_ratio is not None and odds_ratio > theory.pair_max_odds_ratio):
+                    continue
+                if theory.pair_min_axis_score_gap is not None and (
+                    possible_axis["score"] - middle["score"] < theory.pair_min_axis_score_gap
+                ):
+                    continue
+                if not ticket_middle_allowed(
+                    middle,
+                    theory,
+                    str(axis_popularity or "missing"),
+                    axis_odds_bucket(axis_odds),
+                    "missing",
+                ):
+                    continue
+                middle_score = middle["score"] + middle_context_score_adjustment(
+                    middle["features"], theory, middle_odds, axis_odds
+                )
+                pair_score = (
+                    theory.pair_axis_score_weight * possible_axis["axis_score"]
+                    + theory.pair_middle_score_weight * middle_score
+                    + theory.pair_odds_ratio_weight * odds_ratio
+                )
+                pair_options.append((pair_score, possible_axis, middle))
+        if not pair_options:
+            return RaceEvaluation(**base, status="evaluated", reason="no_eligible_pair", tickets=[], hit_tickets=[], payouts=[])
+        _, axis, selected_middle = max(pair_options, key=lambda item: item[0])
+        middles = [selected_middle]
+    else:
+        if theory.axis_odds_max is None:
+            axis = axis_ranked[0]
+        else:
+            axis = next(
+                (
+                    candidate
+                    for candidate in axis_ranked
+                    if (odds := odds_to_float(candidate["nk"].win_odds)) is not None
+                    and odds <= theory.axis_odds_max
+                    and (
+                        theory.axis_popularity_max is None
+                        or (
+                            (popularity := int_or_none(candidate["nk"].popularity)) is not None
+                            and popularity <= theory.axis_popularity_max
+                        )
+                    )
+                    and (
+                        theory.axis_max_abs_weight_diff is None
+                        or (
+                            (weight_diff := int_or_none(candidate["nk"].horse_weight_diff)) is not None
+                            and abs(weight_diff) <= theory.axis_max_abs_weight_diff
+                        )
+                    )
+                ),
+                axis_ranked[0],
+            )
+        middles = []
+        axis_odds = odds_to_float(axis["nk"].win_odds)
+        for candidate in ranked:
+            if candidate is axis:
                 continue
-            if (
-                middles
-                and theory.second_middle_min_axis_score_gap is not None
-                and axis["score"] - candidate["score"] <= theory.second_middle_min_axis_score_gap
-            ):
-                continue
-            middles.append(candidate)
-        if len(middles) >= theory.max_middles:
-            break
+            odds = odds_to_float(candidate["nk"].win_odds)
+            candidate["middle_score"] = candidate["score"] + middle_context_score_adjustment(
+                candidate["features"], theory, odds, axis_odds
+            )
+        middle_ranked = sorted(
+            (candidate for candidate in ranked if candidate is not axis),
+            key=lambda item: item.get("middle_score", item["score"]),
+            reverse=True,
+        )
+        for candidate in middle_ranked:
+            odds = odds_to_float(candidate["nk"].win_odds)
+            if odds is not None and theory.middle_odds_min <= odds <= theory.middle_odds_max:
+                if not middle_context_allowed(candidate["features"], theory, odds):
+                    continue
+                if theory.middle_max_abs_weight_diff is not None:
+                    weight_diff = int_or_none(candidate["nk"].horse_weight_diff)
+                    if weight_diff is None or abs(weight_diff) > theory.middle_max_abs_weight_diff:
+                        continue
+                if (
+                    not middles
+                    and theory.first_middle_min_axis_score_gap is not None
+                    and axis["score"] - candidate["score"] <= theory.first_middle_min_axis_score_gap
+                ):
+                    continue
+                if (
+                    middles
+                    and theory.second_middle_min_axis_score_gap is not None
+                    and axis["score"] - candidate["score"] <= theory.second_middle_min_axis_score_gap
+                ):
+                    continue
+                middles.append(candidate)
+            if len(middles) >= theory.max_middles:
+                break
     single_middle_override = False
     if len(middles) < theory.min_middles_to_bet:
         if (
