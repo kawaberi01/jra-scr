@@ -199,6 +199,24 @@ def test_cli_parser_accepts_analysis_maintenance_commands(tmp_path):
     assert verify.sample_size == 3
 
 
+def test_cli_parser_accepts_refresh_existing_for_jra_odds_timeline(tmp_path):
+    parser = build_parser()
+
+    args = parser.parse_args(
+        [
+            "collect-jra-odds-timeline",
+            "--date",
+            "2026-07-18",
+            "--db",
+            str(tmp_path / "analysis.sqlite"),
+            "--refresh-existing",
+        ]
+    )
+
+    assert args.command == "collect-jra-odds-timeline"
+    assert args.refresh_existing is True
+
+
 def test_cli_parser_accepts_fetch_nankankeiba_pattern(tmp_path):
     parser = build_parser()
 

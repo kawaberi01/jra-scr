@@ -158,6 +158,11 @@ def build_parser() -> argparse.ArgumentParser:
     timeline.add_argument("--max-lateness-seconds", type=float, default=90.0)
     timeline.add_argument("--max-live-requests", type=int)
     timeline.add_argument("--dry-run", action="store_true")
+    timeline.add_argument(
+        "--refresh-existing",
+        action="store_true",
+        help="Fetch and append a new generation even when the timing label already exists.",
+    )
 
     netkeiba_results = subparsers.add_parser(
         "collect-netkeiba-results",
@@ -345,6 +350,7 @@ async def collect_jra_odds_timeline(args: argparse.Namespace):
         max_lateness_seconds=args.max_lateness_seconds,
         max_live_requests=args.max_live_requests,
         dry_run=args.dry_run,
+        refresh_existing=args.refresh_existing,
     )
 
 

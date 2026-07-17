@@ -387,6 +387,47 @@ def test_analysis_store_reads_odds_timeline_with_combination_normalization(tmp_p
     assert exacta_reverse.snapshots[0].entries == []
 
 
+def test_analysis_store_appends_same_timing_and_snapshot_returns_latest_generation(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    race_id = _write_pre_race_timeline_fixture(store)
+    store.write_odds(
+        RaceOdds(
+            race_id=race_id,
+            bet_type="wide",
+            entries=[
+                OddsEntry(
+                    bet_type="wide",
+                    combination=["4", "10"],
+                    odds="8.2",
+                    popularity="2",
+                )
+            ],
+            fetched_at=datetime.fromisoformat("2026-07-18T15:26:03+09:00"),
+            source="jra-refresh",
+        ),
+        bet_type="wide",
+        odds_timing="t_minus_10m",
+    )
+
+    timeline = store.get_odds_timeline(race_id, "wide")
+    snapshot = store.get_pre_race_snapshot(
+        race_id,
+        odds_timing="t_minus_10m",
+    )
+    selected_wide = [item for item in snapshot.odds if item.bet_type == "wide"]
+
+    assert timeline.total == 4
+    assert [item.odds_timing for item in timeline.snapshots] == [
+        "t_minus_30m",
+        "t_minus_10m",
+        "t_minus_10m",
+        "t_minus_2m",
+    ]
+    assert len(selected_wide) == 1
+    assert selected_wide[0].source == "jra-refresh"
+    assert selected_wide[0].entries[0].odds == 8.2
+
+
 def test_analysis_store_odds_timeline_handles_empty_not_found_and_invalid_combination(tmp_path):
     store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
     race_id = _write_pre_race_timeline_fixture(store)
@@ -473,7 +514,7 @@ def test_analysis_store_live_shadow_observations_reject_unknown_race(tmp_path):
         store.list_jra_live_shadow_observations("202607180299")
 
 
-def test_analysis_store_upserts_card_and_odds_without_duplicates(tmp_path):
+def test_analysis_store_upserts_card_and_appends_odds_snapshots(tmp_path):
     store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
     card = RaceCard(
         race_id="202603220611",
@@ -497,8 +538,75 @@ def test_analysis_store_upserts_card_and_odds_without_duplicates(tmp_path):
     store.write_odds(odds, bet_type="wide")
 
     assert store.count_rows("runners") == 1
-    assert store.count_rows("odds_snapshots") == 1
-    assert store.count_rows("odds_entries") == 1
+    assert store.count_rows("odds_snapshots") == 2
+    assert store.count_rows("odds_entries") == 2
+
+
+def test_analysis_store_migrates_legacy_odds_snapshot_unique_constraint(tmp_path):
+    path = tmp_path / "analysis.sqlite"
+    with sqlite3.connect(path) as conn:
+        conn.executescript(
+            """
+            create table odds_snapshots (
+                snapshot_id text primary key,
+                race_id text not null,
+                bet_type text not null,
+                odds_timing text not null,
+                fetched_at text not null,
+                source text not null,
+                unique (race_id, bet_type, odds_timing)
+            );
+            create table odds_entries (
+                snapshot_id text not null,
+                race_id text not null,
+                bet_type text not null,
+                combination text not null,
+                combination_json text not null,
+                odds real,
+                odds_min real,
+                odds_max real,
+                popularity integer
+            );
+            insert into odds_snapshots
+            values ('legacy-id', '202603220611', 'wide', 't_minus_10m',
+                    '2026-03-22T15:20:00+00:00', 'legacy');
+            insert into odds_entries
+            values ('legacy-id', '202603220611', 'wide', '1-2', '["1", "2"]',
+                    16.1, null, null, 8);
+            """
+        )
+
+    store = AnalysisSQLiteStore(path)
+    store.write_odds(
+        RaceOdds(
+            race_id="202603220611",
+            bet_type="wide",
+            entries=[OddsEntry(combination=["1", "2"], odds="15.8", popularity="7")],
+            fetched_at=datetime(2026, 3, 22, 15, 21, tzinfo=UTC),
+            source="refresh",
+        ),
+        bet_type="wide",
+        odds_timing="t_minus_10m",
+    )
+    AnalysisSQLiteStore(path)
+
+    with sqlite3.connect(path) as conn:
+        snapshot_ids = [
+            row[0]
+            for row in conn.execute(
+                "select snapshot_id from odds_snapshots order by fetched_at"
+            ).fetchall()
+        ]
+        unique_indexes = [
+            row
+            for row in conn.execute("pragma index_list(odds_snapshots)").fetchall()
+            if row[2]
+        ]
+
+    assert snapshot_ids[0] == "legacy-id"
+    assert len(snapshot_ids) == 2
+    assert store.count_rows("odds_entries") == 2
+    assert all(index[1].startswith("sqlite_autoindex") for index in unique_indexes)
 
 
 def test_analysis_store_extracts_meeting_fields_from_16_digit_race_id(tmp_path):

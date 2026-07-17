@@ -104,8 +104,7 @@ class AnalysisSQLiteStore:
                     bet_type text not null,
                     odds_timing text not null,
                     fetched_at text not null,
-                    source text not null,
-                    unique (race_id, bet_type, odds_timing)
+                    source text not null
                 );
 
                 create table if not exists odds_entries (
@@ -444,6 +443,13 @@ class AnalysisSQLiteStore:
                 on jra_live_shadow_observations (race_id, observed_at desc);
                 """
             )
+            _migrate_odds_snapshots_to_append_only(conn)
+            conn.execute(
+                """
+                create index if not exists idx_odds_snapshots_lookup
+                on odds_snapshots (race_id, bet_type, odds_timing, fetched_at)
+                """
+            )
             _ensure_column(conn, "races", "meeting_no", "integer")
             _ensure_column(conn, "races", "meeting_day", "integer")
             _ensure_column(conn, "netkeiba_race_results", "race_laps_json", "text")
@@ -733,15 +739,14 @@ class AnalysisSQLiteStore:
         entries_by_type = _odds_entries_by_type(odds, bet_type)
         with self._connect() as conn:
             for current_bet_type, entries in entries_by_type.items():
-                snapshot_id = f"{odds.race_id}:{current_bet_type}:{odds_timing}"
+                snapshot_id = (
+                    f"{odds.race_id}:{current_bet_type}:{odds_timing}:{uuid4().hex}"
+                )
                 conn.execute(
                     """
                     insert into odds_snapshots
                     (snapshot_id, race_id, bet_type, odds_timing, fetched_at, source)
                     values (?, ?, ?, ?, ?, ?)
-                    on conflict(race_id, bet_type, odds_timing) do update set
-                        fetched_at = excluded.fetched_at,
-                        source = excluded.source
                     """,
                     (
                         snapshot_id,
@@ -752,7 +757,6 @@ class AnalysisSQLiteStore:
                         odds.source,
                     ),
                 )
-                conn.execute("delete from odds_entries where snapshot_id = ?", (snapshot_id,))
                 for entry in entries:
                     combination = "-".join(entry.combination)
                     conn.execute(
@@ -2090,32 +2094,26 @@ class AnalysisSQLiteStore:
                     (race_id,),
                 ).fetchall()
                 available_odds_timings = [row["odds_timing"] for row in timing_rows]
+                timing_filter = ""
+                timing_params: tuple[object, ...] = (race_id,)
                 if odds_timing is not None:
-                    snapshots = conn.execute(
-                        """
-                        select *
-                        from odds_snapshots
-                        where race_id = ? and odds_timing = ?
-                        order by bet_type, fetched_at desc, snapshot_id desc
-                        """,
-                        (race_id, odds_timing),
-                    ).fetchall()
-                else:
-                    candidate_snapshots = conn.execute(
-                        """
-                        select *
-                        from odds_snapshots
-                        where race_id = ?
-                        order by bet_type, fetched_at desc, snapshot_id desc
-                        """,
-                        (race_id,),
-                    ).fetchall()
-                    seen_bet_types: set[str] = set()
-                    for snapshot in candidate_snapshots:
-                        if snapshot["bet_type"] in seen_bet_types:
-                            continue
-                        seen_bet_types.add(snapshot["bet_type"])
-                        snapshots.append(snapshot)
+                    timing_filter = " and odds_timing = ?"
+                    timing_params = (race_id, odds_timing)
+                candidate_snapshots = conn.execute(
+                    f"""
+                    select *
+                    from odds_snapshots
+                    where race_id = ?{timing_filter}
+                    order by bet_type, fetched_at desc, snapshot_id desc
+                    """,
+                    timing_params,
+                ).fetchall()
+                seen_bet_types: set[str] = set()
+                for snapshot in candidate_snapshots:
+                    if snapshot["bet_type"] in seen_bet_types:
+                        continue
+                    seen_bet_types.add(snapshot["bet_type"])
+                    snapshots.append(snapshot)
 
             odds: list[StoredOddsSnapshot] = []
             for snapshot in snapshots:
@@ -3009,6 +3007,47 @@ def _ensure_column(conn: sqlite3.Connection, table: str, column: str, column_typ
     existing = {row["name"] for row in conn.execute(f"pragma table_info({table})").fetchall()}
     if column not in existing:
         conn.execute(f"alter table {table} add column {column} {column_type}")
+
+
+def _migrate_odds_snapshots_to_append_only(conn: sqlite3.Connection) -> None:
+    legacy_unique_columns = ["race_id", "bet_type", "odds_timing"]
+    has_legacy_unique = False
+    for index in conn.execute("pragma index_list(odds_snapshots)").fetchall():
+        if not bool(index["unique"]):
+            continue
+        index_name = str(index["name"]).replace('"', '""')
+        columns = [
+            row["name"]
+            for row in conn.execute(f'pragma index_info("{index_name}")').fetchall()
+        ]
+        if columns == legacy_unique_columns:
+            has_legacy_unique = True
+            break
+    if not has_legacy_unique:
+        return
+
+    conn.execute("alter table odds_snapshots rename to odds_snapshots_upsert_legacy")
+    conn.execute(
+        """
+        create table odds_snapshots (
+            snapshot_id text primary key,
+            race_id text not null,
+            bet_type text not null,
+            odds_timing text not null,
+            fetched_at text not null,
+            source text not null
+        )
+        """
+    )
+    conn.execute(
+        """
+        insert into odds_snapshots
+        (snapshot_id, race_id, bet_type, odds_timing, fetched_at, source)
+        select snapshot_id, race_id, bet_type, odds_timing, fetched_at, source
+        from odds_snapshots_upsert_legacy
+        """
+    )
+    conn.execute("drop table odds_snapshots_upsert_legacy")
 
 
 def _parse_meeting_fields_from_race_id(race_id: str) -> tuple[int | None, int | None]:

@@ -96,6 +96,7 @@ class JraOddsTimelineCollector:
         max_lateness_seconds: float = 90.0,
         max_live_requests: int | None = None,
         dry_run: bool = False,
+        refresh_existing: bool = False,
     ) -> OddsTimelineSummary:
         meetings = await self.service.get_meetings_for_date(target_date)
         tasks = build_timeline_tasks(target_date, meetings, courses, offsets)
@@ -132,7 +133,14 @@ class JraOddsTimelineCollector:
                     fetched_at=meeting.fetched_at,
                 )
             for bet_type in bet_types:
-                if self.store.has_odds_snapshot(task.race.race_id, bet_type, task.timing_label):
+                if (
+                    not refresh_existing
+                    and self.store.has_odds_snapshot(
+                        task.race.race_id,
+                        bet_type,
+                        task.timing_label,
+                    )
+                ):
                     skipped_existing += 1
                     continue
                 if max_live_requests is not None and live_requests >= max_live_requests:
