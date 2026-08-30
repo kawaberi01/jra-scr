@@ -255,7 +255,6 @@ nankan_service = build_nankan_service()
 nankankeiba_pattern_service = build_nankankeiba_pattern_service() 
 nankan_prediction_service = build_nankan_prediction_service()
 jra_prediction_service = build_jra_prediction_service()
-result_collection_jobs = ResultCollectionJobRegistry() 
 
 
 @app.middleware("http")
@@ -355,6 +354,13 @@ def _default_result_storage_kind() -> ResultStorageKind:
 
 def _default_result_storage_path() -> str:
     return os.environ.get("JRA_SRB_RESULTS_PATH", "data/results.jsonl")
+
+
+def _default_result_collection_jobs_path() -> str:
+    return os.environ.get("JRA_SRB_JOBS_PATH", "data/jobs.sqlite")
+
+
+result_collection_jobs = ResultCollectionJobRegistry(_default_result_collection_jobs_path())
 
 
 def build_result_storage(storage_kind: ResultStorageKind, output: str) -> ResultStorage:

@@ -79,3 +79,25 @@
 ### 次回確認
 
 - `JRA-NEXT-004`着手時も共通タスクを先に`in_progress`へ更新する。
+
+## 2026-07-17 JRA-NEXT-004完了評価
+
+### 1. セッション概要
+
+- 対象機能: Job registry SQLite 永続化
+- 使用 skill: `project-enhancement-implementation-spec`、`project-enhancement-direct-implementation`、`project-enhancement-progress-pack`
+- セッション種別: 仕様化 / 実装 / 検証
+- 主な成果物: Job SQLite 保存、再起動復元テスト、`spec/000`から`030`、共通 progress 更新
+
+### 2. エージェント動作評価
+
+| 評価項目 | 判定 | 根拠 | 改善要否 |
+| --- | --- | --- | --- |
+| タスク同期 | OK | 着手時に共通タスクを in_progress、完了時に completed へ更新 | 不要 |
+| API互換 | OK | path・response model を変えず既存 Job API test を回帰 | 不要 |
+| 再起動安全性 | OK | running を自動再実行せず failed に確定する test を追加 | 不要 |
+| 検証 | OK | 対象5件、全316件、ruff、diff check が成功 | 不要 |
+
+### 3. 次回確認すべき効果
+
+- JRA-NEXT-005 で SQLite 保存済み状態を基準に、cancel・retry の状態遷移と二重実行防止を設計できること。

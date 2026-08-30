@@ -49,6 +49,9 @@ from jra_srb.models import (
     RaceResult,
     RaceSummary,
     ResultEntry,
+    ResultCollectionJobRequest,
+    ResultCollectionJobStatus,
+    ResultStorageKind,
     Runner,
 )
 from jra_srb.nankankeiba_pattern_provider import NankankeibaPatternFixtureProvider 
@@ -1380,6 +1383,44 @@ def test_result_collection_job_api_records_failure(tmp_path):
         assert detail.json()["error"] == "fake result failure"
     finally:
         app.dependency_overrides.clear()
+
+
+def test_result_collection_job_registry_persists_completed_job_across_restart(tmp_path):
+    path = tmp_path / "jobs.sqlite"
+    registry = ResultCollectionJobRegistry(path)
+    output = tmp_path / "job-results.jsonl"
+    request = ResultCollectionJobRequest(
+        from_date=date(2026, 3, 22),
+        to_date=date(2026, 3, 22),
+        courses=["nakayama"],
+    )
+    job = registry.create_job(request, ResultStorageKind.jsonl, str(output))
+
+    asyncio.run(registry.run_job(job.job_id, FakeResultCollectionService(), lambda *_: JsonlRaceResultStorage(output)))
+    restarted = ResultCollectionJobRegistry(path)
+
+    assert restarted.get_job(job.job_id).status == ResultCollectionJobStatus.succeeded
+    assert restarted.list_jobs().total == 1
+
+
+def test_result_collection_job_registry_marks_running_job_failed_on_restart(tmp_path):
+    path = tmp_path / "jobs.sqlite"
+    registry = ResultCollectionJobRegistry(path)
+    request = ResultCollectionJobRequest(
+        from_date=date(2026, 3, 22),
+        to_date=date(2026, 3, 22),
+        courses=["nakayama"],
+    )
+    job = registry.create_job(request, ResultStorageKind.jsonl, str(tmp_path / "results.jsonl"))
+    registry._update(job.job_id, status=ResultCollectionJobStatus.running, started_at=datetime.now(UTC))
+
+    restarted = ResultCollectionJobRegistry(path)
+    restored = restarted.get_job(job.job_id)
+
+    assert restored.status == ResultCollectionJobStatus.failed
+    assert restored.finished_at is not None
+    assert restored.message == "collection interrupted by process restart"
+    assert restored.error == "collection interrupted by process restart"
 
 
 def test_result_collection_job_not_found_returns_404():
