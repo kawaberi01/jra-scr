@@ -91,6 +91,7 @@ class JraOddsTimelineCollector:
         courses: set[str],
         offsets: list[int],
         bet_types: list[str],
+        bet_type_offsets: dict[str, list[int]] | None = None,
         poll_seconds: float = 20.0,
         min_interval_seconds: float = 1.0,
         max_lateness_seconds: float = 90.0,
@@ -99,7 +100,14 @@ class JraOddsTimelineCollector:
         refresh_existing: bool = False,
     ) -> OddsTimelineSummary:
         meetings = await self.service.get_meetings_for_date(target_date)
-        tasks = build_timeline_tasks(target_date, meetings, courses, offsets)
+        effective_bet_type_offsets = bet_type_offsets or {
+            bet_type: offsets for bet_type in bet_types
+        }
+        task_offsets = sorted(
+            {offset for configured_offsets in effective_bet_type_offsets.values() for offset in configured_offsets},
+            reverse=True,
+        )
+        tasks = build_timeline_tasks(target_date, meetings, courses, task_offsets)
         if dry_run:
             for task in tasks:
                 print(
@@ -134,6 +142,8 @@ class JraOddsTimelineCollector:
                 )
             pending_bet_types = []
             for bet_type in bet_types:
+                if task.offset_minutes not in effective_bet_type_offsets.get(bet_type, []):
+                    continue
                 if (
                     not refresh_existing
                     and self.store.has_odds_snapshot(

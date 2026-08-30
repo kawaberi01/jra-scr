@@ -14,6 +14,7 @@ from jra_srb.cli import (
     fetch_nankan_prediction_bundle,
     fetch_nankankeiba_pattern, 
     generate_netkeiba_mapping, 
+    parse_jra_bet_type_offsets,
 ) 
 from jra_srb.daily_prediction_log_importer import import_daily_prediction_log, parse_daily_prediction_log
 from jra_srb.models import MeetingRace, MeetingSnapshot, NetkeibaRaceResult, RaceResult
@@ -215,6 +216,25 @@ def test_cli_parser_accepts_refresh_existing_for_jra_odds_timeline(tmp_path):
 
     assert args.command == "collect-jra-odds-timeline"
     assert args.refresh_existing is True
+
+
+def test_parse_jra_bet_type_offsets_accepts_per_bet_type_offsets() -> None:
+    parsed = parse_jra_bet_type_offsets(
+        "win=30,10,2;quinella=30,10,2;wide=30,10,2;trio=10,2"
+    )
+
+    assert parsed == {
+        "win": [30, 10, 2],
+        "quinella": [30, 10, 2],
+        "wide": [30, 10, 2],
+        "trio": [10, 2],
+    }
+
+
+@pytest.mark.parametrize("value", ["", "win=", "win=-2", "unknown=10", "win=10;win=2"])
+def test_parse_jra_bet_type_offsets_rejects_invalid_values(value: str) -> None:
+    with pytest.raises(ValueError):
+        parse_jra_bet_type_offsets(value)
 
 
 def test_cli_parser_accepts_fetch_nankankeiba_pattern(tmp_path):

@@ -153,6 +153,10 @@ def build_parser() -> argparse.ArgumentParser:
     timeline.add_argument("--db", type=Path, default=Path(os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/db/analysis.sqlite")))
     timeline.add_argument("--bet-types", default="win,wide")
     timeline.add_argument("--offset-minutes", default="30,10,2")
+    timeline.add_argument(
+        "--bet-type-offsets",
+        help="Optional per-bet-type offsets, for example 'win=30,10,2;wide=30,10,2;trio=10,2'.",
+    )
     timeline.add_argument("--poll-seconds", type=float, default=20.0)
     timeline.add_argument("--min-interval-seconds", type=float, default=1.0)
     timeline.add_argument("--max-lateness-seconds", type=float, default=90.0)
@@ -330,6 +334,9 @@ async def collect_analysis(
 async def collect_jra_odds_timeline(args: argparse.Namespace):
     courses = set() if args.courses.strip().lower() in AnalysisCollector.AUTO_COURSE_TOKENS else set(parse_course_list(args.courses))
     bet_types = [item.strip() for item in args.bet_types.split(",") if item.strip()]
+    bet_type_offsets = parse_jra_bet_type_offsets(args.bet_type_offsets)
+    if bet_type_offsets is not None:
+        bet_types = list(bet_type_offsets)
     unsupported = sorted(set(bet_types) - set(SUPPORTED_JRA_BET_TYPES))
     if unsupported:
         raise ValueError(f"unsupported JRA bet types: {','.join(unsupported)}")
@@ -345,6 +352,7 @@ async def collect_jra_odds_timeline(args: argparse.Namespace):
         courses=courses,
         offsets=offsets,
         bet_types=bet_types,
+        bet_type_offsets=bet_type_offsets,
         poll_seconds=args.poll_seconds,
         min_interval_seconds=args.min_interval_seconds,
         max_lateness_seconds=args.max_lateness_seconds,
@@ -499,6 +507,31 @@ def parse_course_list(value: str) -> list[str]:
     if len(items) == 1 and items[0].lower() in AnalysisCollector.AUTO_COURSE_TOKENS:
         return [items[0].lower()]
     return [_normalize_analysis_course(item) for item in items]
+
+
+def parse_jra_bet_type_offsets(value: str | None) -> dict[str, list[int]] | None:
+    if value is None:
+        return None
+    parsed: dict[str, list[int]] = {}
+    for group in value.split(";"):
+        bet_type, separator, raw_offsets = group.strip().partition("=")
+        if not separator or not bet_type or not raw_offsets or bet_type in parsed:
+            raise ValueError("--bet-type-offsets must use unique 'bet_type=minutes,minutes' groups")
+        if bet_type not in SUPPORTED_JRA_BET_TYPES:
+            raise ValueError(f"unsupported JRA bet type: {bet_type}")
+        try:
+            offsets = sorted(
+                {int(item.strip()) for item in raw_offsets.split(",") if item.strip()},
+                reverse=True,
+            )
+        except ValueError as exc:
+            raise ValueError("--bet-type-offsets minutes must be integers") from exc
+        if not offsets or any(offset < 0 for offset in offsets):
+            raise ValueError("--bet-type-offsets minutes must be non-negative integers")
+        parsed[bet_type] = offsets
+    if not parsed:
+        raise ValueError("--bet-type-offsets must not be empty")
+    return parsed
 
 
 def _normalize_analysis_course(value: str) -> str:

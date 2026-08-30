@@ -172,3 +172,70 @@ async def test_timeline_collector_refresh_existing_controls_append(tmp_path) -> 
     assert service.odds_calls == 1
     assert store.count_rows("race_card_snapshots") == 1
     assert store.count_rows("odds_snapshots") == 2
+
+
+@pytest.mark.asyncio
+async def test_timeline_collector_limits_bet_types_by_offset(tmp_path) -> None:
+    target_date = date.today()
+    observed_at = datetime.now(UTC)
+    race = MeetingRace(race_no=1, race_id=f"{target_date:%Y%m%d}1001", start_time="00:00")
+    meeting = MeetingSnapshot(
+        date=target_date,
+        course="kokura",
+        races=[race],
+        fetched_at=observed_at,
+        source="fixture",
+    )
+
+    class FakeTimelineService:
+        def __init__(self) -> None:
+            self.odds_calls: list[str] = []
+            self.card_calls = 0
+
+        async def get_meetings_for_date(self, requested_date):
+            assert requested_date == target_date
+            return [meeting]
+
+        async def get_race_card_by_number(self, *_args, **_kwargs):
+            self.card_calls += 1
+            return RaceCard(
+                race_id=race.race_id,
+                runners=[Runner(horse_no="1", horse_name="Runner")],
+                fetched_at=datetime.now(UTC),
+                source="fixture-card",
+            )
+
+        async def get_race_odds_by_number(self, _date, _course, _race_no, bet_type, refresh):
+            assert refresh is True
+            self.odds_calls.append(bet_type)
+            return RaceOdds(
+                race_id=race.race_id,
+                bet_type=bet_type,
+                entries=[OddsEntry(combination=["1"], odds="3.0")],
+                fetched_at=datetime.now(UTC),
+                source="fixture-odds",
+            )
+
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    service = FakeTimelineService()
+    collector = JraOddsTimelineCollector(service, store)  # type: ignore[arg-type]
+
+    summary = await collector.collect(
+        target_date,
+        {"kokura"},
+        [30, 10, 2],
+        ["win", "quinella", "wide", "trio"],
+        bet_type_offsets={
+            "win": [30, 10, 2],
+            "quinella": [30, 10, 2],
+            "wide": [30, 10, 2],
+            "trio": [10, 2],
+        },
+        max_lateness_seconds=1_000_000_000,
+    )
+
+    assert summary.saved == 11
+    assert summary.live_requests == 14
+    assert service.odds_calls.count("trio") == 2
+    assert service.card_calls == 3
+    assert store.count_rows("odds_snapshots") == 11
