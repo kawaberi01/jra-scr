@@ -79,6 +79,7 @@ class AnalysisSQLiteStore:
                     meeting_day integer,
                     race_no integer not null,
                     race_name text,
+                    race_grade text,
                     start_time text,
                     surface text,
                     surface_label text,
@@ -512,6 +513,7 @@ class AnalysisSQLiteStore:
             )
             _ensure_column(conn, "races", "meeting_no", "integer")
             _ensure_column(conn, "races", "meeting_day", "integer")
+            _ensure_column(conn, "races", "race_grade", "text")
             _ensure_column(conn, "races", "surface_label", "text")
             _ensure_column(conn, "races", "weather", "text")
             _ensure_column(conn, "races", "weather_label", "text")
@@ -711,8 +713,8 @@ class AnalysisSQLiteStore:
             conn.execute(
                 """
                 insert into races
-                (race_id, race_date, course, meeting_no, meeting_day, race_no, race_name, start_time, source, fetched_at)
-                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (race_id, race_date, course, meeting_no, meeting_day, race_no, race_name, race_grade, start_time, source, fetched_at)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 on conflict(race_id) do update set
                     race_date = excluded.race_date,
                     course = excluded.course,
@@ -720,6 +722,7 @@ class AnalysisSQLiteStore:
                     meeting_day = coalesce(excluded.meeting_day, races.meeting_day),
                     race_no = excluded.race_no,
                     race_name = coalesce(excluded.race_name, races.race_name),
+                    race_grade = coalesce(excluded.race_grade, races.race_grade),
                     start_time = coalesce(excluded.start_time, races.start_time),
                     source = coalesce(excluded.source, races.source),
                     fetched_at = coalesce(excluded.fetched_at, races.fetched_at)
@@ -732,6 +735,7 @@ class AnalysisSQLiteStore:
                     meeting_day,
                     race.race_no,
                     race.race_name,
+                    race.race_grade,
                     race.start_time,
                     source,
                     _dt(fetched_at),
@@ -1502,6 +1506,7 @@ class AnalysisSQLiteStore:
                 select rank, horse_no, horse_name, jockey, finish_time
                 from result_entries
                 where race_id = ?
+                  and rank is not null
                 order by rank
                 """,
                 (race_id,),
@@ -2494,6 +2499,27 @@ class AnalysisSQLiteStore:
             ),
         )
 
+    def list_pre_race_race_ids(self, target_date: date) -> list[str]:
+        """Return races that have a complete locally stored pre-race card."""
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                select r.race_id
+                from races r
+                where r.race_date = ?
+                  and exists (
+                      select 1
+                      from race_card_snapshots cs
+                      where cs.race_id = r.race_id
+                        and cs.runner_set_status = 'complete'
+                        and cs.source_kind = 'pre_race_card'
+                  )
+                order by r.course, r.race_no, r.race_id
+                """,
+                (target_date.isoformat(),),
+            ).fetchall()
+        return [str(row["race_id"]) for row in rows]
+
     def get_odds_timeline(
         self,
         race_id: str,
@@ -3137,8 +3163,8 @@ def _upsert_race_context(conn: sqlite3.Connection, context: dict[str, object]) -
     conn.execute(
         """
         insert into races
-        (race_id, race_date, course, meeting_no, meeting_day, race_no, race_name, start_time, surface, distance, source, fetched_at)
-        values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (race_id, race_date, course, meeting_no, meeting_day, race_no, race_name, race_grade, start_time, surface, distance, source, fetched_at)
+        values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         on conflict(race_id) do update set
             race_date = excluded.race_date,
             course = excluded.course,
@@ -3146,6 +3172,7 @@ def _upsert_race_context(conn: sqlite3.Connection, context: dict[str, object]) -
             meeting_day = coalesce(excluded.meeting_day, races.meeting_day),
             race_no = excluded.race_no,
             race_name = coalesce(excluded.race_name, races.race_name),
+            race_grade = coalesce(excluded.race_grade, races.race_grade),
             start_time = coalesce(excluded.start_time, races.start_time),
             surface = coalesce(excluded.surface, races.surface),
             distance = coalesce(excluded.distance, races.distance),
@@ -3160,6 +3187,7 @@ def _upsert_race_context(conn: sqlite3.Connection, context: dict[str, object]) -
             _parse_int(_stringify_optional(context.get("meeting_day"))),
             _parse_int(_stringify_optional(context.get("race_no"))),
             context.get("race_name"),
+            context.get("race_grade"),
             context.get("start_time"),
             context.get("surface"),
             _stringify_optional(context.get("distance")),

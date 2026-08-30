@@ -256,6 +256,7 @@ def test_get_meeting_endpoint():
         assert body["course"] == "nakayama"
         assert len(body["races"]) == 12
         assert body["races"][10]["race_id"] == "202603220611"
+        assert "race_grade" in body["races"][10]
     finally:
         app.dependency_overrides.clear()
 

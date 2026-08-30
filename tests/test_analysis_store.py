@@ -199,6 +199,32 @@ def test_analysis_store_creates_schema(tmp_path):
         columns = {row[1] for row in conn.execute("pragma table_info(races)").fetchall()}
     assert "meeting_no" in columns
     assert "meeting_day" in columns
+    assert "race_grade" in columns
+
+
+def test_analysis_store_persists_race_grade_and_card_upsert_keeps_it(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    race_id = "202603220611"
+    store.write_race(
+        date(2026, 3, 22),
+        "nakayama",
+        MeetingRace(race_no=11, race_id=race_id, race_name="Grade Race", race_grade="G3"),
+    )
+    store.write_card(
+        date(2026, 3, 22),
+        "nakayama",
+        11,
+        RaceCard(
+            race_id=race_id,
+            race_name="Grade Race",
+            fetched_at=datetime.now(UTC),
+            source="jra",
+        ),
+    )
+
+    with store._connect() as conn:
+        row = conn.execute("select race_grade from races where race_id = ?", (race_id,)).fetchone()
+    assert row["race_grade"] == "G3"
 
 
 def test_analysis_store_replaces_daily_prediction_log_entries_and_resolves_race_id(tmp_path):
@@ -342,6 +368,14 @@ def test_analysis_store_reads_latest_and_selected_pre_race_snapshots(tmp_path):
     assert [snapshot.bet_type for snapshot in selected.odds] == ["exacta", "wide", "win"]
     assert all(snapshot.odds_timing == "t_minus_10m" for snapshot in selected.odds)
     assert selected.meta.requested_odds_timing == "t_minus_10m"
+
+
+def test_analysis_store_lists_races_with_complete_pre_race_cards(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    race_id = _write_pre_race_timeline_fixture(store)
+
+    assert store.list_pre_race_race_ids(date(2026, 7, 18)) == [race_id]
+    assert store.list_pre_race_race_ids(date(2026, 7, 19)) == []
 
 
 def test_analysis_store_can_skip_odds_in_pre_race_snapshot(tmp_path):
@@ -1027,6 +1061,60 @@ def test_analysis_store_scales_payout_by_ticket_amount_when_evaluating_predictio
     assert result["total_bet"] == 200
     assert result["total_payout"] == 2180
     assert result["return_rate"] == 10.9
+
+
+def test_analysis_store_excludes_null_rank_entries_from_prediction_evaluation(tmp_path):
+    store = AnalysisSQLiteStore(tmp_path / "analysis.sqlite")
+    store.upsert_prediction_record(
+        {
+            "prediction_id": "pred-null-rank",
+            "race_id": "202608010410",
+            "theory_version": "assistant:v1",
+            "mode": "integrated_betting",
+            "budget": 0,
+            "pre_race_snapshot": {
+                "date": "2026-08-01",
+                "course": "niigata",
+                "race_no": 10,
+            },
+            "prediction_json": {
+                "predicted_top3": [
+                    {"horse_no": "13", "horse_name": "Gold Player"},
+                    {"horse_no": "4", "horse_name": "Tanisen Roma"},
+                    {"horse_no": "2", "horse_name": "Pawapoke Good"},
+                ],
+                "axis_horse_numbers": ["13"],
+            },
+        }
+    )
+    store.write_result(
+        RaceResult(
+            race_id="202608010410",
+            race_name="Sample",
+            results=[
+                ResultEntry(rank="取消", horse_no="8", horse_name="Withdrawn"),
+                ResultEntry(rank="1", horse_no="11", horse_name="Bright Run"),
+                ResultEntry(rank="2", horse_no="1", horse_name="Tamamo Breakin"),
+                ResultEntry(rank="3", horse_no="13", horse_name="Gold Player"),
+            ],
+            payouts=[PayoutEntry(bet_type="win", combination="11", payout="2640")],
+            fetched_at=datetime.now(UTC),
+            source="result",
+        )
+    )
+
+    store.evaluate_prediction_record(
+        {"prediction_id": "pred-null-rank", "evaluation_id": "eval-null-rank"}
+    )
+    evaluation = store.get_evaluation_record("eval-null-rank")
+
+    assert [entry["horse_no"] for entry in evaluation.evaluation["actual_top3"]] == [
+        "11",
+        "1",
+        "13",
+    ]
+    assert evaluation.axis_in_top3 is True
+    assert evaluation.evaluation["summary"]["axis_in_top3"] is True
 
 
 def test_analysis_store_creates_bet_record_with_16_digit_nankan_race_id(tmp_path):

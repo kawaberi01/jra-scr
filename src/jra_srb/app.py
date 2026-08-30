@@ -1195,10 +1195,13 @@ async def create_jra_day_race_scout(
     max_candidates: int = Query(default=5, ge=1, le=10),
     refresh: bool = Query(default=False),
     max_concurrency: int = Query(default=3, ge=1, le=5),
+    mode: str = Query(default="quick", pattern="^(quick|deep)$"),
+    time_budget_seconds: float = Query(default=45.0, ge=5.0, le=55.0),
     scout: JraDayRaceScout = Depends(get_jra_day_race_scout),
 ):
     return await scout.run(
         date_, max_candidates=max_candidates, refresh=refresh, max_concurrency=max_concurrency,
+        mode=mode, time_budget_seconds=time_budget_seconds,
     )
 
 

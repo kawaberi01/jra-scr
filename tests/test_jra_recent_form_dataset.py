@@ -46,3 +46,27 @@ def test_live_recent_form_excludes_target_date(tmp_path) -> None:
     enriched = append_recent_form_live_features([record], db, target_date=date(2024, 1, 13))
     offset = len(FEATURE_NAMES)
     assert enriched[0]["features"][offset + RECENT_FORM_FEATURE_NAMES.index("form_last_finish_strength")] == 1.0
+
+
+def test_live_recent_form_skips_missing_finish_rank(tmp_path) -> None:
+    db = tmp_path / "history.sqlite"
+    with sqlite3.connect(db) as connection:
+        connection.executescript("""
+            create table races (race_id text, race_date text, source text);
+            create table runners (race_id text, horse_no text, horse_name text);
+            create table result_entries (race_id text, horse_no text, rank integer);
+            create table payouts (race_id text);
+        """)
+        for race_id, race_date, rank in (
+            ("202401060601", "2024-01-06", 1),
+            ("202401070601", "2024-01-07", None),
+        ):
+            connection.execute("insert into races values (?,?,?)", (race_id, race_date, "https://www.jra.go.jp/"))
+            connection.execute("insert into runners values (?,?,?)", (race_id, "1", "A"))
+            connection.execute("insert into result_entries values (?,?,?)", (race_id, "1", rank))
+            connection.execute("insert into payouts values (?)", (race_id,))
+    record = _record("202401130601", "2024-01-13", 0)
+    enriched = append_recent_form_live_features([record], db, target_date=date(2024, 1, 13))
+    offset = len(FEATURE_NAMES)
+    assert enriched[0]["features"][offset + RECENT_FORM_FEATURE_NAMES.index("form_history_count_scaled")] == 0.2
+    assert enriched[0]["features"][offset + RECENT_FORM_FEATURE_NAMES.index("form_last_finish_strength")] == 1.0

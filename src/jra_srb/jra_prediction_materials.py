@@ -51,7 +51,7 @@ def build_best_time_lite(card: RaceCard, public: JraPublicAnalysis) -> JraLiteMa
     target_distance = _int(card.distance)
     runners = []
     ranked: list[tuple[float, JraLiteRunnerMaterial]] = []
-    public_by_horse = _public_runner_index(public)
+    public_by_horse = _public_runner_index(public, card)
     for card_runner in card.runners:
         source_runner = _match_runner(card_runner.horse_no, card_runner.horse_name, public_by_horse)
         candidates = _same_surface(source_runner, card.surface)
@@ -81,7 +81,7 @@ def build_closing_speed_lite(card: RaceCard, public: JraPublicAnalysis) -> JraLi
     target_distance = _int(card.distance)
     runners = []
     ranked: list[tuple[float, JraLiteRunnerMaterial]] = []
-    public_by_horse = _public_runner_index(public)
+    public_by_horse = _public_runner_index(public, card)
     for card_runner in card.runners:
         source_runner = _match_runner(card_runner.horse_no, card_runner.horse_name, public_by_horse)
         candidates = [race for race in _same_surface(source_runner, card.surface) if race.final_3f is not None]
@@ -105,7 +105,7 @@ def build_closing_speed_lite(card: RaceCard, public: JraPublicAnalysis) -> JraLi
 
 def build_style_profile_lite(card: RaceCard, public: JraPublicAnalysis) -> JraLiteMaterial:
     runners = []
-    public_by_horse = _public_runner_index(public)
+    public_by_horse = _public_runner_index(public, card)
     for card_runner in card.runners:
         source_runner = _match_runner(card_runner.horse_no, card_runner.horse_name, public_by_horse)
         counts = {"front": 0, "stalker": 0, "midpack": 0, "closer": 0}
@@ -149,17 +149,42 @@ def _material(race_id: str, kind: str, runners: list[JraLiteRunnerMaterial], pub
         status=status,
         runners=runners,
         fetched_at=datetime.now(UTC),
+        source="jra_official_card+public_race_pages",
         cache_hit=public.cache_hit,
     )
 
 
-def _public_runner_index(public: JraPublicAnalysis) -> dict[str, JraPublicRunnerAnalysis]:
+def _public_runner_index(public: JraPublicAnalysis, card: RaceCard) -> dict[str, JraPublicRunnerAnalysis]:
     result: dict[str, JraPublicRunnerAnalysis] = {}
     for source in public.sources.values():
         for runner in source.runners:
             result.setdefault(f"no:{runner.horse_no}", runner)
             result.setdefault(f"name:{normalize_horse_name(runner.horse_name)}", runner)
+    for card_runner in card.runners:
+        if not card_runner.official_recent_races:
+            continue
+        existing = _match_runner(card_runner.horse_no, card_runner.horse_name, result)
+        recent_races = list(card_runner.official_recent_races)
+        seen = {_recent_race_key(race) for race in recent_races}
+        if existing is not None:
+            recent_races.extend(
+                race for race in existing.recent_races
+                if _recent_race_key(race) not in seen
+            )
+        merged = JraPublicRunnerAnalysis(
+            horse_no=card_runner.horse_no or (existing.horse_no if existing else ""),
+            horse_name=card_runner.horse_name,
+            omega_index=existing.omega_index if existing else None,
+            recent_races=recent_races[:5],
+        )
+        if card_runner.horse_no:
+            result[f"no:{card_runner.horse_no}"] = merged
+        result[f"name:{normalize_horse_name(card_runner.horse_name)}"] = merged
     return result
+
+
+def _recent_race_key(race: JraRecentRace) -> tuple[object, ...]:
+    return (race.source_date, _normalize(race.source_course), race.source_race_no, race.surface, race.distance)
 
 
 def _match_runner(horse_no: str | None, horse_name: str, index: dict[str, JraPublicRunnerAnalysis]) -> JraPublicRunnerAnalysis | None:

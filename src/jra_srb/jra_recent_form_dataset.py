@@ -53,6 +53,7 @@ def append_recent_form_live_features(
                 where r.race_date < ? and ru.horse_name in ({placeholders})
                   and length(r.race_id)=12 and substr(r.race_id,9,2) between '01' and '10'
                   and r.source like 'https://www.jra.go.jp/%'
+                  and re.rank is not null
                   and exists (select 1 from payouts p where p.race_id=r.race_id)
                 order by r.race_date, r.race_id
                 """,

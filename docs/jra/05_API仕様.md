@@ -67,7 +67,7 @@ JRA upstream への軽量な到達性確認。
 ### `GET /races/{race_id}/card`
 ### `GET /meetings/{date_}/{course}/races/{race_no}/card`
 
-JRA 出馬表。
+JRA 出馬表。公式ページに公開済みの場合は、天候・馬場状態・枠番と各馬の近4走を返す。近走は `runners[].official_recent_races` に入り、現在馬体重が未発表のときは過去走の馬体重で補完しない。
 
 ### `GET /races/{race_id}/odds`
 ### `GET /meetings/{date_}/{course}/races/{race_no}/odds`
@@ -85,6 +85,18 @@ JRA オッズ。
 ### `GET /meetings/{date_}/{course}/races/{race_no}/result`
 
 JRA 結果・払戻。
+
+### `GET /jra/meetings/{date_}/{course}/races/{race_no}/prediction-bundle`
+
+JRAの出馬表、オッズ、公開分析、当日傾向、軽量近走材料をまとめて返す。`best_time_lite`、`closing_speed_lite`、`style_profile_lite` はJRA公式出馬表内の近走を優先し、不足分のみ匿名公開範囲の外部レースページで補う。
+
+主なクエリ:
+
+- `meeting_no`
+- `meeting_day`
+- `sources`
+- `bet_types`
+- `refresh`
 
 ## netkeiba 補完 API
 

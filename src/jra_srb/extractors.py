@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 from bs4.element import Tag
 
 from .models import (
+    JraRecentRace,
     MeetingRace,
     OddsEntry,
     PayoutEntry,
@@ -18,6 +19,22 @@ from .models import (
     RunnerStatus,
     RunnerStatusSource,
 )
+
+
+_JRA_WEATHER = {
+    "晴": "sunny",
+    "曇": "cloudy",
+    "雨": "rainy",
+    "小雨": "light_rain",
+    "雪": "snowy",
+    "小雪": "light_snow",
+}
+_JRA_TRACK_CONDITION = {
+    "良": "good",
+    "稍重": "slightly_heavy",
+    "重": "heavy",
+    "不良": "bad",
+}
 
 
 def _select_text(node: Tag, selector: str | None, default: str | None = None) -> str | None:
@@ -34,6 +51,33 @@ def _select_attr(node: Tag, selector: str, attr: str, default: str | None = None
     if target is None:
         return default
     return target.get(attr, default)
+
+
+def _parse_race_grade(row: Tag) -> str | None:
+    grade_node = row.select_one("td.race_name .grade_icon")
+    if grade_node is None:
+        return None
+    image = grade_node.select_one("img[alt]")
+    raw = image.get("alt") if image is not None else grade_node.get_text(" ", strip=True)
+    if not raw:
+        return None
+    normalized = (
+        str(raw).strip().upper()
+        .replace("Ⅰ", "1")
+        .replace("Ⅱ", "2")
+        .replace("Ⅲ", "3")
+        .replace("・", ".")
+        .replace(" ", "")
+    )
+    if normalized in {"リステッド", "LISTED", "L"}:
+        return "L"
+    if normalized == "OP":
+        return "OP"
+    match = re.fullmatch(r"(G|JPN|J\.G)([123])", normalized)
+    if match is None:
+        return None
+    prefix, number = match.groups()
+    return {"G": "G", "JPN": "Jpn", "J.G": "J.G"}[prefix] + number
 
 
 def _parse_collection(soup: BeautifulSoup, collection_cfg: dict[str, Any]) -> list[Tag]:
@@ -205,22 +249,104 @@ def _parse_horse_weight_text(value: str | None) -> tuple[str | None, str | None]
     return match.group("weight"), match.group("diff")
 
 
-def _parse_jra_card_weight_cells(soup: BeautifulSoup) -> list[tuple[str | None, str | None]]:
-    weights = []
-    for node in soup.select("td.horse .result_line .cell.weight, td.horse .cell.weight"):
-        horse_weight, horse_weight_diff = _parse_horse_weight_text(node.get_text("", strip=True))
-        if horse_weight is not None:
-            weights.append((horse_weight, horse_weight_diff))
-    return weights
+def _parse_int(value: str | None) -> int | None:
+    match = re.search(r"\d+", value or "")
+    return int(match.group()) if match else None
+
+
+def _parse_float(value: str | None) -> float | None:
+    match = re.search(r"\d+(?:\.\d+)?", value or "")
+    return float(match.group()) if match else None
+
+
+def _parse_final_3f(value: str | None) -> float | None:
+    match = re.search(r"(?:3F\s*)?(\d{2}(?:\.\d+)?)", value or "", flags=re.IGNORECASE)
+    return float(match.group(1)) if match else None
+
+
+def _parse_jra_frame_no(row: Tag) -> str | None:
+    image = row.select_one("td.waku img")
+    if image is not None:
+        for value in (image.get("alt"), image.get("src")):
+            match = re.search(r"(?:枠|/waku/)([1-8])", str(value or ""))
+            if match:
+                return match.group(1)
+    return str(_parse_int(_select_text(row, "td.waku"))) if _parse_int(_select_text(row, "td.waku")) else None
+
+
+def _parse_jra_recent_date(value: str | None) -> date | None:
+    match = re.search(r"(\d{4})年(\d{1,2})月(\d{1,2})日", value or "")
+    if match is None:
+        return None
+    try:
+        return date(*(int(part) for part in match.groups()))
+    except ValueError:
+        return None
+
+
+def _parse_jra_recent_races(row: Tag) -> list[JraRecentRace]:
+    races: list[JraRecentRace] = []
+    for node in row.select("td.past")[:4]:
+        href = _select_attr(node, ".race_line .name a", "href")
+        distance_text = _select_text(node, ".info_line2 .dist")
+        source_race_no = None
+        if href and (match := re.search(r"(?P<race>\d{2})(?P<date>\d{8})/[0-9A-F]+$", href, re.IGNORECASE)):
+            source_race_no = int(match.group("race"))
+        corner_positions = [
+            number
+            for item in node.select(".info_line3 .corner_list li")
+            if (number := _parse_int(item.get_text(" ", strip=True))) is not None
+        ]
+        source_url = f"https://www.jra.go.jp{href}" if href and href.startswith("/") else href
+        races.append(
+            JraRecentRace(
+                source_date=_parse_jra_recent_date(_select_text(node, ".date_line .date")),
+                source_course=_select_text(node, ".date_line .rc"),
+                source_race_no=source_race_no,
+                surface="芝" if distance_text and "芝" in distance_text else "ダート" if distance_text and "ダ" in distance_text else None,
+                distance=_parse_int(distance_text),
+                track_condition=_select_text(node, ".info_line2 .condition"),
+                finish_rank=_parse_int(_select_text(node, ".place_line .place")),
+                field_size=_parse_int(_select_text(node, ".place_line .num .max")),
+                finish_time=_select_text(node, ".info_line2 .time"),
+                final_3f=_parse_final_3f(_select_text(node, ".info_line3 .f3")),
+                corner_positions=corner_positions,
+                weight_carried=_parse_float(_select_text(node, ".info_line1 .weight")),
+                jockey=_select_text(node, ".info_line1 .jockey"),
+                popularity=_parse_int(_select_text(node, ".place_line .num .pop")),
+                source="jra_official_card",
+                source_url=source_url,
+            )
+        )
+    return races
+
+
+def _parse_jra_conditions(soup: BeautifulSoup, surface: str | None) -> dict[str, str | None]:
+    weather_label = _select_text(soup, ".race_header .date_line .cell.baba .weather .txt")
+    track_selector = ".turf .txt" if surface == "芝" else ".dirt .txt" if surface == "ダート" else None
+    track_condition_label = _select_text(soup, f".race_header .date_line .cell.baba {track_selector}") if track_selector else None
+    return {
+        "surface_label": surface,
+        "weather": _JRA_WEATHER.get(weather_label or ""),
+        "weather_label": weather_label,
+        "track_condition": _JRA_TRACK_CONDITION.get(track_condition_label or ""),
+        "track_condition_label": track_condition_label,
+    }
 
 
 def _parse_jra_race_card(soup: BeautifulSoup) -> dict[str, Any]:
     course_text = _select_text(soup, ".race_header .type .course")
     start_time = _select_text(soup, ".race_header .date_line .time strong")
+    distance = None
+    surface = None
+    if course_text:
+        distance_match = re.search(r"(\d{1,4}(?:,\d{3})?)", course_text)
+        distance = distance_match.group(1) if distance_match else None
+        surface = "ダート" if "ダート" in course_text else "芝" if "芝" in course_text else None
+    conditions = _parse_jra_conditions(soup, surface)
     runners = []
-    weight_cells = _parse_jra_card_weight_cells(soup)
     rows = soup.select("table.basic.narrow-xy.mt20 tbody tr")
-    for index, row in enumerate(rows):
+    for row in rows:
         horse_no = _select_text(row, "td.num")
         horse_name = _select_text(row, "td.horse .name a")
         if horse_name is None:
@@ -242,15 +368,11 @@ def _parse_jra_race_card(soup: BeautifulSoup) -> dict[str, Any]:
             popularity = re.sub(r"\D", "", popularity) or None
         horse_weight, horse_weight_diff = _parse_horse_weight_text(
             _select_text(row, "td.horse .result_line .cell.weight")
-            or _select_text(row, "td.horse .cell.weight")
-            or _select_text(row, "td.h_weight")
-            or _select_text(row, ".h_weight")
         )
-        if horse_weight is None and index < len(weight_cells):
-            horse_weight, horse_weight_diff = weight_cells[index]
         status, status_source = _runner_status(row)
         runners.append(
             Runner(
+                frame_no=_parse_jra_frame_no(row),
                 horse_no=horse_no,
                 horse_name=horse_name,
                 sex_age=sex_age,
@@ -261,21 +383,17 @@ def _parse_jra_race_card(soup: BeautifulSoup) -> dict[str, Any]:
                 horse_weight_diff=horse_weight_diff,
                 odds=_select_text(row, "td.horse .odds strong"),
                 popularity=popularity,
+                official_recent_races=_parse_jra_recent_races(row),
                 status=status,
                 status_source=status_source,
             )
         )
-    distance = None
-    surface = None
-    if course_text:
-        distance_match = re.search(r"(\d{1,4}(?:,\d{3})?)", course_text)
-        distance = distance_match.group(1) if distance_match else None
-        surface = "ダート" if "ダート" in course_text else "芝" if "芝" in course_text else None
     return {
         "race_name": _select_text(soup, ".race_header .race_name"),
         "course": course_text,
         "distance": distance,
         "surface": surface,
+        **conditions,
         "start_time": start_time,
         "runners": runners,
         "data_status": _race_card_data_status(
@@ -320,6 +438,7 @@ def parse_meeting_races(html: str) -> list[MeetingRace]:
                 race_no=race_no,
                 race_id=race_id,
                 race_name=_select_text(row, "td.race_name .stakes") or _select_text(row, "td.race_name div div"),
+                race_grade=_parse_race_grade(row),
                 start_time=_select_text(row, "td.time"),
                 card_cname=decoded,
                 odds_cname=odds_cname,

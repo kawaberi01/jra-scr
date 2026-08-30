@@ -107,6 +107,7 @@ class Runner(BaseModel):
     horse_weight_diff: str | None = None
     odds: str | None = None
     popularity: str | None = None
+    official_recent_races: list[JraRecentRace] = Field(default_factory=list)
     status: RunnerStatus = RunnerStatus.active
     status_source: RunnerStatusSource | None = None
 
@@ -225,6 +226,7 @@ class MeetingRace(BaseModel):
     race_no: int
     race_id: str
     race_name: str | None = None
+    race_grade: str | None = None
     start_time: str | None = None
     surface: str | None = None
     surface_label: str | None = None

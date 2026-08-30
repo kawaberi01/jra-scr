@@ -1,7 +1,24 @@
 from pathlib import Path
 
 from jra_srb.config import load_parser_config
-from jra_srb.extractors import parse_jra_table_odds, parse_race_card, parse_race_result
+from jra_srb.extractors import parse_jra_table_odds, parse_meeting_races, parse_race_card, parse_race_result
+
+
+def test_parse_meeting_races_normalizes_race_grades():
+    html = """
+    <table><tbody>
+      <tr><th class="race_num"><a href="?CNAME=pw01dde1206202603221120260322/AA">11R</a></th>
+        <td class="race_name"><span class="stakes">Grade Three</span><span class="grade_icon"><img alt="GⅢ" /></span></td><td class="time">15:45</td></tr>
+      <tr><th class="race_num"><a href="?CNAME=pw01dde1206202603221020260322/AA">10R</a></th>
+        <td class="race_name"><span class="stakes">Open</span><span class="grade_icon no_grade">OP</span></td><td class="time">15:10</td></tr>
+      <tr><th class="race_num"><a href="?CNAME=pw01dde1206202603220920260322/AA">9R</a></th>
+        <td class="race_name"><span class="stakes">Class</span><span class="grade_icon no_grade">3勝クラス</span></td><td class="time">14:35</td></tr>
+    </tbody></table>
+    """
+
+    grades = {race.race_no: race.race_grade for race in parse_meeting_races(html)}
+
+    assert grades == {11: "G3", 10: "OP", 9: None}
 
 
 def test_parse_race_card_keeps_apprentice_marker_with_jockey_name():
@@ -112,12 +129,56 @@ def test_parse_jra_race_card_extracts_horse_weight_from_fixture():
     parsed = parse_race_card(fixture, load_parser_config("race_card"))
 
     runners_by_no = {runner.horse_no: runner for runner in parsed["runners"]}
+    assert runners_by_no["1"].frame_no == "1"
     assert runners_by_no["1"].horse_weight == "470"
     assert runners_by_no["1"].horse_weight_diff == "+4"
     assert runners_by_no["2"].horse_weight == "504"
     assert runners_by_no["2"].horse_weight_diff == "-4"
     assert runners_by_no["8"].horse_weight == "466"
     assert runners_by_no["8"].horse_weight_diff == "0"
+    assert len(runners_by_no["1"].official_recent_races) == 4
+    assert runners_by_no["1"].official_recent_races[0].finish_time == "1:10.3"
+    assert runners_by_no["1"].official_recent_races[0].final_3f == 37.1
+    assert runners_by_no["1"].official_recent_races[0].corner_positions == [4, 6]
+
+
+def test_parse_jra_race_card_does_not_use_past_weight_as_current_weight():
+    html = """
+    <div class="race_header">
+      <div class="race_name">テスト競走</div>
+      <div class="date_line">
+        <div class="time"><strong>15時45分</strong></div>
+        <div class="cell baba">
+          <li class="weather"><span class="txt">曇</span></li>
+          <li class="turf"><span class="txt">良</span></li>
+        </div>
+      </div>
+      <div class="type"><div class="course">1,000メートル（芝・直）</div></div>
+    </div>
+    <table class="basic narrow-xy mt20"><tbody><tr>
+      <td class="waku"><img src="/JRADB/img/waku/1.png" alt="枠1白"></td>
+      <td class="num">1</td>
+      <td class="horse"><div class="name"><a>テストホース</a></div></td>
+      <td class="jockey">牡3 57.0 kg 騎手名</td>
+      <td class="past"><div class="date_line"><div class="date">2026年6月1日</div><div class="rc">東京</div></div>
+        <div class="place_line"><div class="place">1着</div><div class="num"><span class="max">16頭</span><span class="pop">2番人気</span></div></div>
+        <div class="info_line1"><div class="weight">57.0kg</div></div>
+        <div class="info_line2"><span class="dist">1000芝</span><p class="time">0:54.5</p><span class="condition">良</span><p class="h_weight">480kg</p></div>
+        <div class="info_line3"><div class="corner_list"><li>1</li></div><div class="f3">3F 32.1</div></div>
+      </td>
+    </tr></tbody></table>
+    """
+
+    parsed = parse_race_card(html, load_parser_config("race_card"))
+
+    runner = parsed["runners"][0]
+    assert runner.horse_weight is None
+    assert runner.horse_weight_diff is None
+    assert runner.official_recent_races[0].finish_time == "0:54.5"
+    assert parsed["weather"] == "cloudy"
+    assert parsed["weather_label"] == "曇"
+    assert parsed["track_condition"] == "good"
+    assert parsed["track_condition_label"] == "良"
 
 
 def test_parse_race_result_supports_jra_result_page_fixture():
