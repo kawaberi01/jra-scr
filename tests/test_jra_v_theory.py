@@ -42,6 +42,16 @@ def test_main_venue_v89_returns_shadow_ranking(tmp_path):
     assert len(result["ranking"]) == 6
     assert len(result["head_candidates"]) == 3
     assert result["ticket_candidates"] == []
+    assert build_v_theory_prediction(
+        db, target_date=date(2024, 1, 19), course="tokyo", card=card,
+        win_odds={str(number): float(number + 1) for number in range(1, 7)},
+    ) == result
+    summer = build_v_theory_prediction(
+        db, target_date=date(2024, 1, 19), course="fukushima", card=card,
+        win_odds={str(number): float(number + 1) for number in range(1, 7)},
+    )
+    assert summer["theory_version"] == "v90"
+    assert summer["application"] == "summer_shadow"
 
 
 def test_summer_route_and_consensus_are_explicit():
