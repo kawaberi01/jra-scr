@@ -1,0 +1,306 @@
+{
+  "generated_at": "2026-09-05T09:23:33",
+  "scan_root": ".workstate\\jra-srb\\prediction-v1-validation",
+  "scanned_files": 1049,
+  "skipped_files": 0,
+  "contaminated_ranges": [
+    {
+      "from_date": "2024-07-01",
+      "to_date": "2024-08-31",
+      "source_count": 4,
+      "sources": [
+        "v143_v143_external_2024_07_08_report.md",
+        "v143_v143_external_2024_07_08_summary.json",
+        "v90_v90_external_2024_07_08_report.md",
+        "v90_v90_external_2024_07_08_summary.json"
+      ]
+    },
+    {
+      "from_date": "2025-01-01",
+      "to_date": "2025-02-28",
+      "source_count": 2,
+      "sources": [
+        "v143_v143_method_h2_2025_01_02_report.md",
+        "v143_v143_method_h2_2025_01_02_summary.json"
+      ]
+    },
+    {
+      "from_date": "2025-01-01",
+      "to_date": "2025-06-30",
+      "source_count": 200,
+      "sources": [
+        "v145_v145_pair_smoke_2025h1_report.md",
+        "v145_v145_pair_smoke_2025h1_summary.json",
+        "v146_v146_pair_development_2025h1_report.md",
+        "v146_v146_pair_development_2025h1_summary.json",
+        "v147_v147_pair_development_2025h1_report.md",
+        "v147_v147_pair_development_2025h1_summary.json",
+        "v148_v148_pair_development_2025h1_report.md",
+        "v148_v148_pair_development_2025h1_summary.json",
+        "v149_v149_pair_development_2025h1_report.md",
+        "v149_v149_pair_development_2025h1_summary.json",
+        "v150_v150_pair_development_2025h1_report.md",
+        "v150_v150_pair_development_2025h1_summary.json",
+        "v151_v151_pair_development_2025h1_report.md",
+        "v151_v151_pair_development_2025h1_summary.json",
+        "v152_v152_pair_development_2025h1_report.md",
+        "v152_v152_pair_development_2025h1_summary.json",
+        "v153_v153_pair_development_2025h1_report.md",
+        "v153_v153_pair_development_2025h1_summary.json",
+        "v154_v154_pair_development_2025h1_report.md",
+        "v154_v154_pair_development_2025h1_summary.json"
+      ]
+    },
+    {
+      "from_date": "2025-01-01",
+      "to_date": "2025-09-30",
+      "source_count": 2,
+      "sources": [
+        "post_holdout_next_iteration.md",
+        "validation_iteration_result.md"
+      ]
+    },
+    {
+      "from_date": "2025-01-05",
+      "to_date": "2025-09-30",
+      "source_count": 1,
+      "sources": [
+        "post_holdout_next_iteration.md"
+      ]
+    },
+    {
+      "from_date": "2025-03-01",
+      "to_date": "2025-04-30",
+      "source_count": 2,
+      "sources": [
+        "v143_v143_method_h2_2025_03_04_report.md",
+        "v143_v143_method_h2_2025_03_04_summary.json"
+      ]
+    },
+    {
+      "from_date": "2025-05-01",
+      "to_date": "2025-06-30",
+      "source_count": 2,
+      "sources": [
+        "v143_v143_method_h2_2025_05_06_report.md",
+        "v143_v143_method_h2_2025_05_06_summary.json"
+      ]
+    },
+    {
+      "from_date": "2025-07-01",
+      "to_date": "2025-07-31",
+      "source_count": 49,
+      "sources": [
+        "rule_space_scoreboard.json",
+        "train_walkforward_summary.json",
+        "train_walkforward_v11_v16.json",
+        "train_walkforward_v11_v18.json",
+        "train_walkforward_v17_v20.json",
+        "train_walkforward_v17_v21.json",
+        "train_walkforward_v17_v22.json",
+        "train_walkforward_v23_v26.json",
+        "train_walkforward_v27_v30.json",
+        "train_walkforward_v31_v34.json",
+        "train_walkforward_v35_v38.json",
+        "train_walkforward_v39_v41.json",
+        "train_walkforward_v39_v42.json",
+        "train_walkforward_v42.json",
+        "train_walkforward_v43_v45.json",
+        "train_walkforward_v46_v48.json",
+        "train_walkforward_v49_v51.json",
+        "train_walkforward_v52_v54.json",
+        "train_walkforward_v55_v56.json",
+        "train_walkforward_v57_v59.json"
+      ]
+    },
+    {
+      "from_date": "2025-07-01",
+      "to_date": "2025-08-31",
+      "source_count": 2,
+      "sources": [
+        "v143_v143_method_h2_2025_07_08_report.md",
+        "v143_v143_method_h2_2025_07_08_summary.json"
+      ]
+    },
+    {
+      "from_date": "2025-07-01",
+      "to_date": "2025-10-31",
+      "source_count": 60,
+      "sources": [
+        "v245_v245_style_2025h2_report.md",
+        "v245_v245_style_2025h2_summary.json",
+        "v245_v245_surface_style_2025h2_report.md",
+        "v245_v245_surface_style_2025h2_summary.json",
+        "v246_v246_style_2025h2_report.md",
+        "v246_v246_style_2025h2_summary.json",
+        "v246_v246_surface_style_2025h2_report.md",
+        "v246_v246_surface_style_2025h2_summary.json",
+        "v247_v247_style_2025h2_report.md",
+        "v247_v247_style_2025h2_summary.json",
+        "v247_v247_surface_style_2025h2_report.md",
+        "v247_v247_surface_style_2025h2_summary.json",
+        "v248_v248_style_2025h2_report.md",
+        "v248_v248_style_2025h2_summary.json",
+        "v248_v248_surface_style_2025h2_report.md",
+        "v248_v248_surface_style_2025h2_summary.json",
+        "v249_v249_style_2025h2_report.md",
+        "v249_v249_style_2025h2_summary.json",
+        "v249_v249_surface_style_2025h2_report.md",
+        "v249_v249_surface_style_2025h2_summary.json"
+      ]
+    },
+    {
+      "from_date": "2025-08-01",
+      "to_date": "2025-08-31",
+      "source_count": 43,
+      "sources": [
+        "rule_space_scoreboard.json",
+        "train_walkforward_summary.json",
+        "train_walkforward_v11_v16.json",
+        "train_walkforward_v11_v18.json",
+        "train_walkforward_v17_v20.json",
+        "train_walkforward_v17_v21.json",
+        "train_walkforward_v17_v22.json",
+        "train_walkforward_v23_v26.json",
+        "train_walkforward_v27_v30.json",
+        "train_walkforward_v31_v34.json",
+        "train_walkforward_v35_v38.json",
+        "train_walkforward_v39_v41.json",
+        "train_walkforward_v39_v42.json",
+        "train_walkforward_v42.json",
+        "train_walkforward_v43_v45.json",
+        "train_walkforward_v46_v48.json",
+        "train_walkforward_v49_v51.json",
+        "train_walkforward_v52_v54.json",
+        "train_walkforward_v55_v56.json",
+        "train_walkforward_v57_v59.json"
+      ]
+    },
+    {
+      "from_date": "2025-09-01",
+      "to_date": "2025-09-30",
+      "source_count": 51,
+      "sources": [
+        "rule_space_scoreboard.json",
+        "train_walkforward_summary.json",
+        "train_walkforward_v11_v16.json",
+        "train_walkforward_v11_v18.json",
+        "train_walkforward_v17_v20.json",
+        "train_walkforward_v17_v21.json",
+        "train_walkforward_v17_v22.json",
+        "train_walkforward_v23_v26.json",
+        "train_walkforward_v27_v30.json",
+        "train_walkforward_v31_v34.json",
+        "train_walkforward_v35_v38.json",
+        "train_walkforward_v39_v41.json",
+        "train_walkforward_v39_v42.json",
+        "train_walkforward_v42.json",
+        "train_walkforward_v43_v45.json",
+        "train_walkforward_v46_v48.json",
+        "train_walkforward_v49_v51.json",
+        "train_walkforward_v52_v54.json",
+        "train_walkforward_v55_v56.json",
+        "train_walkforward_v57_v59.json"
+      ]
+    },
+    {
+      "from_date": "2025-09-01",
+      "to_date": "2025-10-31",
+      "source_count": 2,
+      "sources": [
+        "v143_v143_method_h2_2025_09_10_report.md",
+        "v143_v143_method_h2_2025_09_10_summary.json"
+      ]
+    },
+    {
+      "from_date": "2025-10-01",
+      "to_date": "2025-12-31",
+      "source_count": 287,
+      "sources": [
+        "post_holdout_next_iteration.md",
+        "rule_space_scoreboard.json",
+        "v100_v100_validation_2025q4_report.md",
+        "v100_v100_validation_2025q4_summary.json",
+        "v101_v101_validation_2025q4_report.md",
+        "v101_v101_validation_2025q4_summary.json",
+        "v102_v102_validation_2025q4_report.md",
+        "v102_v102_validation_2025q4_summary.json",
+        "v103_v103_validation_2025q4_report.md",
+        "v103_v103_validation_2025q4_summary.json",
+        "v104_v104_validation_2025q4_report.md",
+        "v104_v104_validation_2025q4_summary.json",
+        "v105_v105_validation_2025q4_report.md",
+        "v105_v105_validation_2025q4_summary.json",
+        "v106_v106_validation_2025q4_report.md",
+        "v106_v106_validation_2025q4_summary.json",
+        "v107_v107_validation_2025q4_report.md",
+        "v107_v107_validation_2025q4_summary.json",
+        "v108_v108_validation_2025q4_report.md",
+        "v108_v108_validation_2025q4_summary.json"
+      ]
+    },
+    {
+      "from_date": "2025-11-01",
+      "to_date": "2025-12-31",
+      "source_count": 6,
+      "sources": [
+        "v257_v257_closing_validation_2025q4_report.md",
+        "v257_v257_closing_validation_2025q4_summary.json",
+        "v261_v261_consistency_validation_2025q4_report.md",
+        "v261_v261_consistency_validation_2025q4_summary.json",
+        "v265_v265_lap_validation_2025q4_report.md",
+        "v265_v265_lap_validation_2025q4_summary.json"
+      ]
+    },
+    {
+      "from_date": "2026-01-01",
+      "to_date": "2026-06-28",
+      "source_count": 26,
+      "sources": [
+        "current_rule_space_decision.md",
+        "holdout_data_audit.md",
+        "holdout_data_collection_runbook.md",
+        "post_holdout_next_iteration.md",
+        "rule_space_scoreboard.json",
+        "v10_holdout_report.md",
+        "v10_holdout_summary.json",
+        "v12_conditional_rerank_iteration.md",
+        "v13_ticket_shape_filter_iteration.md",
+        "v75_holdout_report.md",
+        "v75_holdout_summary.json",
+        "v79_holdout_report.md",
+        "v79_holdout_summary.json",
+        "v80_holdout_report.md",
+        "v80_holdout_summary.json",
+        "v86_holdout_report.md",
+        "v86_holdout_summary.json",
+        "v87_holdout_report.md",
+        "v87_holdout_summary.json",
+        "v88_formal_adoption_decision.md"
+      ]
+    }
+  ],
+  "fixed_exclusions": [
+    {
+      "from_date": "2025-01-05",
+      "to_date": "2025-09-30",
+      "reason": "train/walk-forward explored"
+    },
+    {
+      "from_date": "2025-10-01",
+      "to_date": "2025-12-31",
+      "reason": "validation explored"
+    },
+    {
+      "from_date": "2026-01-01",
+      "to_date": "2026-06-28",
+      "reason": "v89 known holdout explored"
+    },
+    {
+      "from_date": "2024-12-28",
+      "to_date": "2024-12-28",
+      "reason": "collection/evaluation pilot inspected"
+    }
+  ],
+  "fresh_holdout_rule": "Only completed Tokyo/Nakayama autumn races after 2026-06-28 that were not used for model or threshold changes; fewer than 30 tickets means shadow-only."
+}

@@ -1363,7 +1363,7 @@ async def get_jra_model_comparison(
 ):
     bundle = await svc.get_prediction_bundle(
         date_, str(course), race_no, meeting_no, meeting_day,
-        sources=["netkeiba", "keibalab"], odds_bet_types=["win"], refresh=refresh,
+        sources=["netkeiba", "keibalab"], odds_bet_types=["win", "wide"], refresh=refresh,
     )
     materials_record = build_prediction_record(bundle)
     materials_ranking = materials_record["prediction_json"]["predicted_ranking"]
@@ -1399,6 +1399,7 @@ async def get_jra_model_comparison(
         v_theory = build_v_theory_prediction(
             _default_analysis_db_path(), target_date=date_, course=str(course), card=bundle.card,
             win_odds={item["horse_no"]: item["win_odds"] for item in materials_ranking if item.get("win_odds")},
+            race_odds=bundle.odds_summary,
         )
     except (FileNotFoundError, ValueError) as exc:
         v_theory = {"status": "unavailable", "reason": str(exc)}

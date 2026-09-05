@@ -1,0 +1,60 @@
+{
+  "contract_version": "tokyo-nakayama-v89-shadow-promotion-v1",
+  "frozen_at": "2026-09-05",
+  "candidate_generation": {
+    "generations_used": 1,
+    "generation_limit": 3,
+    "candidates_used": ["v89"],
+    "candidates_per_generation_limit": 10,
+    "reason_no_new_candidates": "No unused holdout and no historical pre-race odds snapshots; further search would only fit contaminated data."
+  },
+  "baselines": [
+    "v89_frozen",
+    "simple_win_popularity",
+    "jra-history-logistic-recent-form-v2"
+  ],
+  "scope": {
+    "courses": {"05": "tokyo", "06": "nakayama"},
+    "race_category": "flat_general",
+    "excluded": ["newcomer", "obstacle"],
+    "surfaces": ["turf", "dirt"]
+  },
+  "as_of": {
+    "history": "race_date strictly before target race date",
+    "market": "official snapshot fetched strictly before scheduled start",
+    "ticket_without_actual_market": "forbidden",
+    "result_or_payout_before_prediction": "forbidden"
+  },
+  "promotion_window": {
+    "starts": "first eligible Tokyo/Nakayama race after this contract commit",
+    "minimum_tickets_combined": 30,
+    "minimum_tickets_each_course": 10,
+    "change_rules_after_start": false
+  },
+  "promotion_gates": {
+    "roi_min": 1.0,
+    "roi_without_max_min": 1.0,
+    "roi_without_top3_min": 0.9,
+    "axis_top3_rate_min": 0.45,
+    "each_course_roi_min": 0.8,
+    "each_course_axis_top3_rate_min": 0.45,
+    "v89_axis_top3_vs_simple_popularity_tolerance": -0.05
+  },
+  "required_reporting": [
+    "ticket_count",
+    "race_coverage",
+    "roi",
+    "roi_without_max",
+    "roi_without_top3",
+    "axis_top3_rate",
+    "partner_top3_rate",
+    "hit_rate",
+    "course_split",
+    "surface_distance_field_race_no_class_splits"
+  ],
+  "decision": {
+    "all_gates_pass": "adopt v89 for Tokyo/Nakayama without changing ranking weights",
+    "sample_insufficient": "continue shadow; do not call adopted",
+    "any_gate_fail": "reject promotion; do not retune on the same window"
+  }
+}

@@ -1,0 +1,651 @@
+{
+  "status": "diagnostic_only",
+  "reason": "No historical pre-race odds snapshots; these results cannot promote the model.",
+  "v89": {
+    "known_validation": {
+      "combined": {
+        "candidate_races": 324,
+        "evaluated_races": 201,
+        "tickets": 7,
+        "hits": 4,
+        "total_bet": 700,
+        "total_payout": 1990,
+        "roi": 2.8429,
+        "roi_without_max": 1.7429,
+        "roi_without_top3": 0.4571,
+        "axis_top3_rate": 0.5871,
+        "partner_top3_rate": 0.5714,
+        "hit_rate": 0.5714,
+        "ticket_target_rate": 0.0348,
+        "max_payout": 770
+      },
+      "by_course": {
+        "tokyo": {
+          "candidate_races": 228,
+          "evaluated_races": 142,
+          "tickets": 5,
+          "hits": 2,
+          "total_bet": 500,
+          "total_payout": 1300,
+          "roi": 2.6,
+          "roi_without_max": 1.06,
+          "roi_without_top3": 0.0,
+          "axis_top3_rate": 0.5915,
+          "partner_top3_rate": 0.4,
+          "hit_rate": 0.4,
+          "ticket_target_rate": 0.0352,
+          "max_payout": 770
+        },
+        "nakayama": {
+          "candidate_races": 96,
+          "evaluated_races": 59,
+          "tickets": 2,
+          "hits": 2,
+          "total_bet": 200,
+          "total_payout": 690,
+          "roi": 3.45,
+          "roi_without_max": 1.6,
+          "roi_without_top3": 0.0,
+          "axis_top3_rate": 0.5763,
+          "partner_top3_rate": 1.0,
+          "hit_rate": 1.0,
+          "ticket_target_rate": 0.0339,
+          "max_payout": 370
+        }
+      },
+      "segments": {
+        "surface": {
+          "dirt": {
+            "candidate_races": 158,
+            "evaluated_races": 105,
+            "tickets": 7,
+            "hits": 4,
+            "total_bet": 700,
+            "total_payout": 1990,
+            "roi": 2.8429,
+            "roi_without_max": 1.7429,
+            "roi_without_top3": 0.4571,
+            "axis_top3_rate": 0.6476,
+            "partner_top3_rate": 0.5714,
+            "hit_rate": 0.5714,
+            "ticket_target_rate": 0.0667,
+            "max_payout": 770
+          },
+          "turf": {
+            "candidate_races": 166,
+            "evaluated_races": 96,
+            "tickets": 0,
+            "hits": 0,
+            "total_bet": 0,
+            "total_payout": 0,
+            "roi": null,
+            "roi_without_max": null,
+            "roi_without_top3": null,
+            "axis_top3_rate": 0.5208,
+            "partner_top3_rate": null,
+            "hit_rate": null,
+            "ticket_target_rate": 0.0,
+            "max_payout": 0
+          }
+        },
+        "distance": {
+          "long_over_2200": {
+            "candidate_races": 26,
+            "evaluated_races": 26,
+            "tickets": 1,
+            "hits": 0,
+            "total_bet": 100,
+            "total_payout": 0,
+            "roi": 0.0,
+            "roi_without_max": 0.0,
+            "roi_without_top3": 0.0,
+            "axis_top3_rate": 0.6923,
+            "partner_top3_rate": 0.0,
+            "hit_rate": 0.0,
+            "ticket_target_rate": 0.0385,
+            "max_payout": 0
+          },
+          "middle_1801_2200": {
+            "candidate_races": 44,
+            "evaluated_races": 25,
+            "tickets": 0,
+            "hits": 0,
+            "total_bet": 0,
+            "total_payout": 0,
+            "roi": null,
+            "roi_without_max": null,
+            "roi_without_top3": null,
+            "axis_top3_rate": 0.6,
+            "partner_top3_rate": null,
+            "hit_rate": null,
+            "ticket_target_rate": 0.0,
+            "max_payout": 0
+          },
+          "mile_1401_1800": {
+            "candidate_races": 151,
+            "evaluated_races": 75,
+            "tickets": 1,
+            "hits": 0,
+            "total_bet": 100,
+            "total_payout": 0,
+            "roi": 0.0,
+            "roi_without_max": 0.0,
+            "roi_without_top3": 0.0,
+            "axis_top3_rate": 0.56,
+            "partner_top3_rate": 0.0,
+            "hit_rate": 0.0,
+            "ticket_target_rate": 0.0133,
+            "max_payout": 0
+          },
+          "sprint_1400_or_less": {
+            "candidate_races": 103,
+            "evaluated_races": 75,
+            "tickets": 5,
+            "hits": 4,
+            "total_bet": 500,
+            "total_payout": 1990,
+            "roi": 3.98,
+            "roi_without_max": 2.44,
+            "roi_without_top3": 0.64,
+            "axis_top3_rate": 0.5733,
+            "partner_top3_rate": 0.8,
+            "hit_rate": 0.8,
+            "ticket_target_rate": 0.0667,
+            "max_payout": 770
+          }
+        },
+        "field_size": {
+          "11_13": {
+            "candidate_races": 69,
+            "evaluated_races": 41,
+            "tickets": 0,
+            "hits": 0,
+            "total_bet": 0,
+            "total_payout": 0,
+            "roi": null,
+            "roi_without_max": null,
+            "roi_without_top3": null,
+            "axis_top3_rate": 0.6829,
+            "partner_top3_rate": null,
+            "hit_rate": null,
+            "ticket_target_rate": 0.0,
+            "max_payout": 0
+          },
+          "ge_14": {
+            "candidate_races": 217,
+            "evaluated_races": 142,
+            "tickets": 7,
+            "hits": 4,
+            "total_bet": 700,
+            "total_payout": 1990,
+            "roi": 2.8429,
+            "roi_without_max": 1.7429,
+            "roi_without_top3": 0.4571,
+            "axis_top3_rate": 0.5282,
+            "partner_top3_rate": 0.5714,
+            "hit_rate": 0.5714,
+            "ticket_target_rate": 0.0493,
+            "max_payout": 770
+          },
+          "le_10": {
+            "candidate_races": 38,
+            "evaluated_races": 18,
+            "tickets": 0,
+            "hits": 0,
+            "total_bet": 0,
+            "total_payout": 0,
+            "roi": null,
+            "roi_without_max": null,
+            "roi_without_top3": null,
+            "axis_top3_rate": 0.8333,
+            "partner_top3_rate": null,
+            "hit_rate": null,
+            "ticket_target_rate": 0.0,
+            "max_payout": 0
+          }
+        },
+        "race_no": {
+          "1_4": {
+            "candidate_races": 108,
+            "evaluated_races": 37,
+            "tickets": 3,
+            "hits": 1,
+            "total_bet": 300,
+            "total_payout": 770,
+            "roi": 2.5667,
+            "roi_without_max": 0.0,
+            "roi_without_top3": 0.0,
+            "axis_top3_rate": 0.6486,
+            "partner_top3_rate": 0.3333,
+            "hit_rate": 0.3333,
+            "ticket_target_rate": 0.0811,
+            "max_payout": 770
+          },
+          "5_8": {
+            "candidate_races": 108,
+            "evaluated_races": 59,
+            "tickets": 4,
+            "hits": 3,
+            "total_bet": 400,
+            "total_payout": 1220,
+            "roi": 3.05,
+            "roi_without_max": 1.725,
+            "roi_without_top3": 0.0,
+            "axis_top3_rate": 0.6102,
+            "partner_top3_rate": 0.75,
+            "hit_rate": 0.75,
+            "ticket_target_rate": 0.0678,
+            "max_payout": 530
+          },
+          "9_12": {
+            "candidate_races": 108,
+            "evaluated_races": 105,
+            "tickets": 0,
+            "hits": 0,
+            "total_bet": 0,
+            "total_payout": 0,
+            "roi": null,
+            "roi_without_max": null,
+            "roi_without_top3": null,
+            "axis_top3_rate": 0.5524,
+            "partner_top3_rate": null,
+            "hit_rate": null,
+            "ticket_target_rate": 0.0,
+            "max_payout": 0
+          }
+        },
+        "class": {
+          "flat_general": {
+            "candidate_races": 258,
+            "evaluated_races": 193,
+            "tickets": 6,
+            "hits": 4,
+            "total_bet": 600,
+            "total_payout": 1990,
+            "roi": 3.3167,
+            "roi_without_max": 2.0333,
+            "roi_without_top3": 0.5333,
+            "axis_top3_rate": 0.5803,
+            "partner_top3_rate": 0.6667,
+            "hit_rate": 0.6667,
+            "ticket_target_rate": 0.0311,
+            "max_payout": 770
+          },
+          "newcomer": {
+            "candidate_races": 58,
+            "evaluated_races": 0,
+            "tickets": 0,
+            "hits": 0,
+            "total_bet": 0,
+            "total_payout": 0,
+            "roi": null,
+            "roi_without_max": null,
+            "roi_without_top3": null,
+            "axis_top3_rate": null,
+            "partner_top3_rate": null,
+            "hit_rate": null,
+            "ticket_target_rate": null,
+            "max_payout": 0
+          },
+          "obstacle": {
+            "candidate_races": 8,
+            "evaluated_races": 8,
+            "tickets": 1,
+            "hits": 0,
+            "total_bet": 100,
+            "total_payout": 0,
+            "roi": 0.0,
+            "roi_without_max": 0.0,
+            "roi_without_top3": 0.0,
+            "axis_top3_rate": 0.75,
+            "partner_top3_rate": 0.0,
+            "hit_rate": 0.0,
+            "ticket_target_rate": 0.125,
+            "max_payout": 0
+          }
+        }
+      }
+    },
+    "known_holdout": {
+      "combined": {
+        "candidate_races": 463,
+        "evaluated_races": 398,
+        "tickets": 16,
+        "hits": 4,
+        "total_bet": 1600,
+        "total_payout": 2350,
+        "roi": 1.4688,
+        "roi_without_max": 0.9563,
+        "roi_without_top3": 0.2938,
+        "axis_top3_rate": 0.5829,
+        "partner_top3_rate": 0.25,
+        "hit_rate": 0.25,
+        "ticket_target_rate": 0.0402,
+        "max_payout": 820
+      },
+      "by_course": {
+        "tokyo": {
+          "candidate_races": 163,
+          "evaluated_races": 138,
+          "tickets": 5,
+          "hits": 1,
+          "total_bet": 500,
+          "total_payout": 470,
+          "roi": 0.94,
+          "roi_without_max": 0.0,
+          "roi_without_top3": 0.0,
+          "axis_top3_rate": 0.6232,
+          "partner_top3_rate": 0.2,
+          "hit_rate": 0.2,
+          "ticket_target_rate": 0.0362,
+          "max_payout": 470
+        },
+        "nakayama": {
+          "candidate_races": 300,
+          "evaluated_races": 260,
+          "tickets": 11,
+          "hits": 3,
+          "total_bet": 1100,
+          "total_payout": 1880,
+          "roi": 1.7091,
+          "roi_without_max": 0.9636,
+          "roi_without_top3": 0.0,
+          "axis_top3_rate": 0.5615,
+          "partner_top3_rate": 0.2727,
+          "hit_rate": 0.2727,
+          "ticket_target_rate": 0.0423,
+          "max_payout": 820
+        }
+      },
+      "segments": {
+        "surface": {
+          "dirt": {
+            "candidate_races": 274,
+            "evaluated_races": 236,
+            "tickets": 14,
+            "hits": 4,
+            "total_bet": 1400,
+            "total_payout": 2350,
+            "roi": 1.6786,
+            "roi_without_max": 1.0929,
+            "roi_without_top3": 0.3357,
+            "axis_top3_rate": 0.5593,
+            "partner_top3_rate": 0.2857,
+            "hit_rate": 0.2857,
+            "ticket_target_rate": 0.0593,
+            "max_payout": 820
+          },
+          "turf": {
+            "candidate_races": 189,
+            "evaluated_races": 162,
+            "tickets": 2,
+            "hits": 0,
+            "total_bet": 200,
+            "total_payout": 0,
+            "roi": 0.0,
+            "roi_without_max": 0.0,
+            "roi_without_top3": 0.0,
+            "axis_top3_rate": 0.6173,
+            "partner_top3_rate": 0.0,
+            "hit_rate": 0.0,
+            "ticket_target_rate": 0.0123,
+            "max_payout": 0
+          }
+        },
+        "distance": {
+          "long_over_2200": {
+            "candidate_races": 35,
+            "evaluated_races": 32,
+            "tickets": 3,
+            "hits": 0,
+            "total_bet": 300,
+            "total_payout": 0,
+            "roi": 0.0,
+            "roi_without_max": 0.0,
+            "roi_without_top3": 0.0,
+            "axis_top3_rate": 0.7812,
+            "partner_top3_rate": 0.0,
+            "hit_rate": 0.0,
+            "ticket_target_rate": 0.0938,
+            "max_payout": 0
+          },
+          "middle_1801_2200": {
+            "candidate_races": 72,
+            "evaluated_races": 61,
+            "tickets": 1,
+            "hits": 0,
+            "total_bet": 100,
+            "total_payout": 0,
+            "roi": 0.0,
+            "roi_without_max": 0.0,
+            "roi_without_top3": 0.0,
+            "axis_top3_rate": 0.6393,
+            "partner_top3_rate": 0.0,
+            "hit_rate": 0.0,
+            "ticket_target_rate": 0.0164,
+            "max_payout": 0
+          },
+          "mile_1401_1800": {
+            "candidate_races": 215,
+            "evaluated_races": 181,
+            "tickets": 5,
+            "hits": 2,
+            "total_bet": 500,
+            "total_payout": 1060,
+            "roi": 2.12,
+            "roi_without_max": 1.0,
+            "roi_without_top3": 0.0,
+            "axis_top3_rate": 0.5635,
+            "partner_top3_rate": 0.4,
+            "hit_rate": 0.4,
+            "ticket_target_rate": 0.0276,
+            "max_payout": 560
+          },
+          "sprint_1400_or_less": {
+            "candidate_races": 141,
+            "evaluated_races": 124,
+            "tickets": 7,
+            "hits": 2,
+            "total_bet": 700,
+            "total_payout": 1290,
+            "roi": 1.8429,
+            "roi_without_max": 0.6714,
+            "roi_without_top3": 0.0,
+            "axis_top3_rate": 0.5323,
+            "partner_top3_rate": 0.2857,
+            "hit_rate": 0.2857,
+            "ticket_target_rate": 0.0565,
+            "max_payout": 820
+          }
+        },
+        "field_size": {
+          "11_13": {
+            "candidate_races": 83,
+            "evaluated_races": 76,
+            "tickets": 0,
+            "hits": 0,
+            "total_bet": 0,
+            "total_payout": 0,
+            "roi": null,
+            "roi_without_max": null,
+            "roi_without_top3": null,
+            "axis_top3_rate": 0.6447,
+            "partner_top3_rate": null,
+            "hit_rate": null,
+            "ticket_target_rate": 0.0,
+            "max_payout": 0
+          },
+          "ge_14": {
+            "candidate_races": 333,
+            "evaluated_races": 284,
+            "tickets": 16,
+            "hits": 4,
+            "total_bet": 1600,
+            "total_payout": 2350,
+            "roi": 1.4688,
+            "roi_without_max": 0.9563,
+            "roi_without_top3": 0.2938,
+            "axis_top3_rate": 0.5423,
+            "partner_top3_rate": 0.25,
+            "hit_rate": 0.25,
+            "ticket_target_rate": 0.0563,
+            "max_payout": 820
+          },
+          "le_10": {
+            "candidate_races": 47,
+            "evaluated_races": 38,
+            "tickets": 0,
+            "hits": 0,
+            "total_bet": 0,
+            "total_payout": 0,
+            "roi": null,
+            "roi_without_max": null,
+            "roi_without_top3": null,
+            "axis_top3_rate": 0.7632,
+            "partner_top3_rate": null,
+            "hit_rate": null,
+            "ticket_target_rate": 0.0,
+            "max_payout": 0
+          }
+        },
+        "race_no": {
+          "1_4": {
+            "candidate_races": 156,
+            "evaluated_races": 114,
+            "tickets": 9,
+            "hits": 2,
+            "total_bet": 900,
+            "total_payout": 1030,
+            "roi": 1.1444,
+            "roi_without_max": 0.5222,
+            "roi_without_top3": 0.0,
+            "axis_top3_rate": 0.614,
+            "partner_top3_rate": 0.2222,
+            "hit_rate": 0.2222,
+            "ticket_target_rate": 0.0789,
+            "max_payout": 560
+          },
+          "5_8": {
+            "candidate_races": 155,
+            "evaluated_races": 136,
+            "tickets": 7,
+            "hits": 2,
+            "total_bet": 700,
+            "total_payout": 1320,
+            "roi": 1.8857,
+            "roi_without_max": 0.7143,
+            "roi_without_top3": 0.0,
+            "axis_top3_rate": 0.5588,
+            "partner_top3_rate": 0.2857,
+            "hit_rate": 0.2857,
+            "ticket_target_rate": 0.0515,
+            "max_payout": 820
+          },
+          "9_12": {
+            "candidate_races": 152,
+            "evaluated_races": 148,
+            "tickets": 0,
+            "hits": 0,
+            "total_bet": 0,
+            "total_payout": 0,
+            "roi": null,
+            "roi_without_max": null,
+            "roi_without_top3": null,
+            "axis_top3_rate": 0.5811,
+            "partner_top3_rate": null,
+            "hit_rate": null,
+            "ticket_target_rate": 0.0,
+            "max_payout": 0
+          }
+        },
+        "class": {
+          "flat_general": {
+            "candidate_races": 431,
+            "evaluated_races": 388,
+            "tickets": 13,
+            "hits": 4,
+            "total_bet": 1300,
+            "total_payout": 2350,
+            "roi": 1.8077,
+            "roi_without_max": 1.1769,
+            "roi_without_top3": 0.3615,
+            "axis_top3_rate": 0.5825,
+            "partner_top3_rate": 0.3077,
+            "hit_rate": 0.3077,
+            "ticket_target_rate": 0.0335,
+            "max_payout": 820
+          },
+          "newcomer": {
+            "candidate_races": 22,
+            "evaluated_races": 0,
+            "tickets": 0,
+            "hits": 0,
+            "total_bet": 0,
+            "total_payout": 0,
+            "roi": null,
+            "roi_without_max": null,
+            "roi_without_top3": null,
+            "axis_top3_rate": null,
+            "partner_top3_rate": null,
+            "hit_rate": null,
+            "ticket_target_rate": null,
+            "max_payout": 0
+          },
+          "obstacle": {
+            "candidate_races": 10,
+            "evaluated_races": 10,
+            "tickets": 3,
+            "hits": 0,
+            "total_bet": 300,
+            "total_payout": 0,
+            "roi": 0.0,
+            "roi_without_max": 0.0,
+            "roi_without_top3": 0.0,
+            "axis_top3_rate": 0.6,
+            "partner_top3_rate": 0.0,
+            "hit_rate": 0.0,
+            "ticket_target_rate": 0.3,
+            "max_payout": 0
+          }
+        }
+      }
+    }
+  },
+  "simple_popularity_baseline": {
+    "known_validation": {
+      "tokyo": {
+        "races": 227,
+        "top3_rate": 0.7048
+      },
+      "nakayama": {
+        "races": 96,
+        "top3_rate": 0.6042
+      },
+      "combined": {
+        "races": 323,
+        "top3_rate": 0.6749
+      }
+    },
+    "known_holdout": {
+      "tokyo": {
+        "races": 163,
+        "top3_rate": 0.6871
+      },
+      "nakayama": {
+        "races": 300,
+        "top3_rate": 0.7067
+      },
+      "combined": {
+        "races": 463,
+        "top3_rate": 0.6998
+      }
+    }
+  },
+  "history_model_baseline": {
+    "status": "not_comparable_on_known_periods",
+    "model_version": "jra-history-logistic-recent-form-v2",
+    "trained_through": "2026-07-11",
+    "reason": "The only current artifact was trained through 2026-07-11, later than both known periods.",
+    "prospective_use": "Compare on shadow races strictly after trained_through."
+  }
+}
