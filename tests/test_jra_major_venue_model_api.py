@@ -41,10 +41,22 @@ def test_model_comparison_passes_actual_wide_market_to_v89(monkeypatch):
     monkeypatch.setattr(app_module, "build_v_theory_prediction", fake_v_theory)
     app_module.app.dependency_overrides[app_module.get_jra_prediction_service] = lambda: PredictionService()
     try:
-        response = TestClient(app_module.app).get(
+        client = TestClient(app_module.app)
+        response = client.get(
+            "/jra/meetings/2026-09-20/tokyo/races/5/model-comparison?meeting_no=4&meeting_day=2"
+        )
+        monkeypatch.setattr(
+            app_module,
+            "load_model_artifact",
+            lambda _path: {"trained_through": "2026-10-01", "model_version": "history", "artifact_hash": "test"},
+        )
+        guarded = client.get(
             "/jra/meetings/2026-09-20/tokyo/races/5/model-comparison?meeting_no=4&meeting_day=2"
         )
     finally:
         app_module.app.dependency_overrides.clear()
     assert response.status_code == 200, response.text
     assert response.json()["v_theory"]["model_status"] == "shadow"
+    assert guarded.status_code == 200, guarded.text
+    assert guarded.json()["history_model"]["status"] == "unavailable"
+    assert guarded.json()["v_theory"]["model_status"] == "shadow"

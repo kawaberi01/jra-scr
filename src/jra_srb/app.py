@@ -1392,7 +1392,7 @@ async def get_jra_model_comparison(
             "top3_agreement": sorted(material_top3 & history_top3),
             "top_pick_agrees": bool(materials_ranking and history_ranking and materials_ranking[0]["horse_no"] == history_ranking[0]["horse_no"]),
         }
-    except FileNotFoundError as exc:
+    except (FileNotFoundError, BadRequestError) as exc:
         history = {"status": "unavailable", "reason": str(exc)}
         comparison = None
     try:
