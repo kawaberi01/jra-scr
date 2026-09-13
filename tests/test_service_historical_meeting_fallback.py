@@ -1,9 +1,10 @@
-from datetime import date
+from datetime import UTC, date, datetime
 
 import pytest
 
 from jra_srb.provider import BaseProvider, PageContent
 from jra_srb.navigation import COURSE_NAMES
+from jra_srb.models import MeetingRace, MeetingSnapshot
 from jra_srb.service import JraService
 
 
@@ -302,3 +303,35 @@ async def test_service_builds_historical_card_from_result_page_when_card_cname_i
     assert card.runners[0].horse_name == "Horse A"
     assert card.runners[0].jockey == "Jockey A"
     assert card.runners[0].trainer == "Trainer A"
+
+
+def test_merge_meetings_keeps_live_navigation_and_adds_calendar_races():
+    target_date = date(2026, 9, 13)
+    calendar = MeetingSnapshot(
+        date=target_date,
+        course="nakayama",
+        fetched_at=datetime.now(UTC),
+        source="calendar",
+        races=[
+            MeetingRace(race_id="202609130601", race_no=1, race_name="first"),
+            MeetingRace(race_id="202609130602", race_no=2, race_name="second"),
+        ],
+    )
+    live = MeetingSnapshot(
+        date=target_date,
+        course="nakayama",
+        fetched_at=datetime.now(UTC),
+        source="card",
+        meeting_no=4,
+        meeting_day=4,
+        races=[MeetingRace(
+            race_id="202609130602", race_no=2, race_name="second",
+            card_cname="live-card-cname",
+        )],
+    )
+
+    merged = JraService._merge_meetings([live], [calendar])
+
+    assert [race.race_no for race in merged[0].races] == [1, 2]
+    assert merged[0].races[1].card_cname == "live-card-cname"
+    assert merged[0].meeting_no == 4

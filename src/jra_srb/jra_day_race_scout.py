@@ -101,11 +101,18 @@ class JraDayRaceScout:
         observed_at = datetime.now(UTC)
         run_id = f"jra-scout-{target_date:%Y%m%d}-{uuid4().hex[:12]}"
         local_race_ids = self.store.list_pre_race_race_ids(target_date)
-        if local_race_ids:
+        meetings = await self.jra_service.get_meetings_for_date(target_date)
+        meeting_race_ids = {
+            race.race_id
+            for meeting in meetings
+            for race in meeting.races
+        }
+        if local_race_ids and (
+            not meeting_race_ids or meeting_race_ids.issubset(local_race_ids)
+        ):
             return self._run_from_local_snapshots(
                 target_date, run_id, observed_at, local_race_ids, max_candidates,
             )
-        meetings = await self.jra_service.get_meetings_for_date(target_date)
         race_count = sum(len(meeting.races) for meeting in meetings)
         if not meetings:
             result = JraDayRaceScoutResult(

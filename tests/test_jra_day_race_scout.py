@@ -85,14 +85,20 @@ def test_build_shadow_decision_removes_tickets_without_mutating_source():
     assert decision["tickets"] == [{"bet_type": "win", "amount": 1000}]
 
 
-def test_run_prefers_local_pre_race_snapshots_without_loading_meetings(monkeypatch):
+def test_run_prefers_local_pre_race_snapshots_when_they_cover_all_meeting_races(monkeypatch):
+    race = SimpleNamespace(race_id="202607190301")
+    meeting = SimpleNamespace(races=[race])
+
     class Store:
         def list_pre_race_race_ids(self, target_date):
             assert target_date == date(2026, 7, 19)
             return ["202607190301"]
 
     scout = JraDayRaceScout(
-        jra_service=object(), prediction_service=object(), store=Store(),
+        jra_service=SimpleNamespace(
+            get_meetings_for_date=lambda _target_date: _async_result([meeting])
+        ),
+        prediction_service=object(), store=Store(),
         analysis_db_path="unused.sqlite", history_model_path="unused.json",
     )
     expected = object()
@@ -106,6 +112,60 @@ def test_run_prefers_local_pre_race_snapshots_without_loading_meetings(monkeypat
     monkeypatch.setattr(scout, "_run_from_local_snapshots", local_run)
 
     assert asyncio.run(scout.run(date(2026, 7, 19))) is expected
+
+
+def test_run_does_not_limit_scout_to_incomplete_local_snapshots(monkeypatch):
+    target_date = date(2026, 8, 9)
+    first = SimpleNamespace(race_id="202608090401", race_no=1, race_name="first", start_time="10:00")
+    second = SimpleNamespace(race_id="202608090402", race_no=2, race_name="second", start_time="10:30")
+    meeting = SimpleNamespace(course="niigata", meeting_no=1, meeting_day=1, races=[first, second])
+
+    class Store:
+        def list_pre_race_race_ids(self, _target_date):
+            return [first.race_id]
+
+        def save_jra_scout_result(self, result, observations=None):
+            self.result = result
+
+    class JraService:
+        async def get_meetings_for_date(self, _target_date):
+            return [meeting]
+
+        async def get_race_card_by_number(self, _date, _course, race_no, **_kwargs):
+            race = first if race_no == 1 else second
+            return RaceCard(
+                race_id=race.race_id, race_name=race.race_name, course="niigata",
+                start_time=race.start_time,
+                runners=[Runner(horse_no="1", horse_name="test horse", odds="3.5")],
+                fetched_at=datetime.now(UTC), source="test",
+            )
+
+    monkeypatch.setattr(scout_module, "_has_started", lambda *_args: False)
+    monkeypatch.setattr(scout_module, "load_model_artifact", lambda _path: {"trained_through": "2026-08-08"})
+    monkeypatch.setattr(scout_module, "build_artifact_live_records", lambda *_args, **_kwargs: [])
+    monkeypatch.setattr(
+        scout_module, "score_live_records",
+        lambda *_args: [{"horse_no": "1", "win_probability_race_normalized": 0.2}],
+    )
+    monkeypatch.setattr(
+        scout_module, "build_win_betting_decision",
+        lambda *_args: {"status": "not_recommended", "reason": "test"},
+    )
+    store = Store()
+    scout = JraDayRaceScout(
+        jra_service=JraService(), prediction_service=object(), store=store,
+        analysis_db_path="unused.sqlite", history_model_path="unused.json",
+    )
+
+    result = asyncio.run(scout.run(target_date, mode="quick", time_budget_seconds=1))
+
+    assert result.race_count == 2
+    assert result.analyzed_count == 2
+    assert {entry.race_id for entry in result.entries} == {first.race_id, second.race_id}
+
+
+async def _async_result(value):
+    return value
 
 
 def test_quick_scout_uses_card_odds_without_loading_public_prediction_materials(monkeypatch):

@@ -240,7 +240,20 @@ class JraService:
             courses = {summary.course for summary in await self.get_races(target_date) if summary.course}
             return [await self.get_meeting(target_date, course) for course in sorted(courses)]
         meetings = await self._get_meetings_for_date(target_date)
-        if self._has_meeting_races(meetings):
+        if target_date == date.today():
+            calendar_meetings = await self._get_meetings_for_date_from_calendar(
+                target_date, use_cached=False,
+            )
+            merged_meetings = self._merge_meetings(meetings, calendar_meetings)
+            if self._has_meeting_races(merged_meetings):
+                for meeting in merged_meetings:
+                    self.cache.set(
+                        f"meeting:{target_date.isoformat()}:{meeting.course}",
+                        meeting,
+                        ttl_seconds=60,
+                    )
+                return merged_meetings
+        elif self._has_meeting_races(meetings):
             return meetings
         meetings = await self._get_meetings_for_date_from_kind(target_date, kind="payout")
         if self._has_meeting_races(meetings):
@@ -462,7 +475,9 @@ class JraService:
                 return page
         raise LookupError(f"result selection page not found for date={target_date}")
 
-    async def _get_meetings_for_date_from_calendar(self, target_date: date) -> list[MeetingSnapshot]:
+    async def _get_meetings_for_date_from_calendar(
+        self, target_date: date, *, use_cached: bool = True,
+    ) -> list[MeetingSnapshot]:
         page = await self.provider.fetch_calendar_month(target_date.year, target_date.month)
         parsed = parse_calendar_meetings(page.content, target_date, COURSE_NAMES)
         meetings: list[MeetingSnapshot] = []
@@ -470,7 +485,7 @@ class JraService:
             course = item["course"]
             cache_key = f"meeting:{target_date.isoformat()}:{course}"
             cached = self.cache.get(cache_key)
-            if cached is not None and cached.races:
+            if use_cached and cached is not None and cached.races:
                 meetings.append(cached.model_copy(update={"cache_hit": True}))
                 continue
             races = [
@@ -486,7 +501,8 @@ class JraService:
                 fetched_at=datetime.now(UTC),
                 source=page.source,
             )
-            self.cache.set(cache_key, meeting, ttl_seconds=60)
+            if use_cached:
+                self.cache.set(cache_key, meeting, ttl_seconds=60)
             meetings.append(meeting)
         return meetings
 
@@ -571,6 +587,33 @@ class JraService:
     @staticmethod
     def _has_meeting_races(meetings: list[MeetingSnapshot]) -> bool:
         return any(meeting.races for meeting in meetings)
+
+    @staticmethod
+    def _merge_meetings(
+        primary: list[MeetingSnapshot], fallback: list[MeetingSnapshot],
+    ) -> list[MeetingSnapshot]:
+        """Keep the card navigation from the live page and fill missing races from the calendar."""
+        primary_by_course = {meeting.course: meeting for meeting in primary}
+        fallback_by_course = {meeting.course: meeting for meeting in fallback}
+        merged: list[MeetingSnapshot] = []
+        for course in sorted(set(primary_by_course) | set(fallback_by_course)):
+            primary_meeting = primary_by_course.get(course)
+            fallback_meeting = fallback_by_course.get(course)
+            if primary_meeting is None:
+                merged.append(fallback_meeting)
+                continue
+            if fallback_meeting is None:
+                merged.append(primary_meeting)
+                continue
+            races = {
+                race.race_no: race
+                for race in fallback_meeting.races
+            }
+            races.update({race.race_no: race for race in primary_meeting.races})
+            merged.append(primary_meeting.model_copy(update={
+                "races": [races[race_no] for race_no in sorted(races)],
+            }))
+        return merged
 
     async def _get_jra_race_odds_bundle(
         self,
