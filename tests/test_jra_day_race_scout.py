@@ -114,54 +114,33 @@ def test_run_prefers_local_pre_race_snapshots_when_they_cover_all_meeting_races(
     assert asyncio.run(scout.run(date(2026, 7, 19))) is expected
 
 
-def test_run_does_not_limit_scout_to_incomplete_local_snapshots(monkeypatch):
+def test_run_uses_available_local_pre_race_snapshots_without_loading_missing_races(monkeypatch):
     target_date = date(2026, 8, 9)
-    first = SimpleNamespace(race_id="202608090401", race_no=1, race_name="first", start_time="10:00")
-    second = SimpleNamespace(race_id="202608090402", race_no=2, race_name="second", start_time="10:30")
-    meeting = SimpleNamespace(course="niigata", meeting_no=1, meeting_day=1, races=[first, second])
+    race_id = "202608090401"
 
     class Store:
         def list_pre_race_race_ids(self, _target_date):
-            return [first.race_id]
+            return [race_id]
 
-        def save_jra_scout_result(self, result, observations=None):
-            self.result = result
+    async def should_not_load_meetings(_target_date):
+        raise AssertionError("local snapshots must not trigger external meeting loading")
 
-    class JraService:
-        async def get_meetings_for_date(self, _target_date):
-            return [meeting]
-
-        async def get_race_card_by_number(self, _date, _course, race_no, **_kwargs):
-            race = first if race_no == 1 else second
-            return RaceCard(
-                race_id=race.race_id, race_name=race.race_name, course="niigata",
-                start_time=race.start_time,
-                runners=[Runner(horse_no="1", horse_name="test horse", odds="3.5")],
-                fetched_at=datetime.now(UTC), source="test",
-            )
-
-    monkeypatch.setattr(scout_module, "_has_started", lambda *_args: False)
-    monkeypatch.setattr(scout_module, "load_model_artifact", lambda _path: {"trained_through": "2026-08-08"})
-    monkeypatch.setattr(scout_module, "build_artifact_live_records", lambda *_args, **_kwargs: [])
-    monkeypatch.setattr(
-        scout_module, "score_live_records",
-        lambda *_args: [{"horse_no": "1", "win_probability_race_normalized": 0.2}],
-    )
-    monkeypatch.setattr(
-        scout_module, "build_win_betting_decision",
-        lambda *_args: {"status": "not_recommended", "reason": "test"},
-    )
-    store = Store()
     scout = JraDayRaceScout(
-        jra_service=JraService(), prediction_service=object(), store=store,
+        jra_service=SimpleNamespace(get_meetings_for_date=should_not_load_meetings),
+        prediction_service=object(), store=Store(),
         analysis_db_path="unused.sqlite", history_model_path="unused.json",
     )
+    expected = object()
 
-    result = asyncio.run(scout.run(target_date, mode="quick", time_budget_seconds=1))
+    def local_run(actual_date, _run_id, _observed_at, race_ids, max_candidates):
+        assert actual_date == target_date
+        assert race_ids == [race_id]
+        assert max_candidates == 5
+        return expected
 
-    assert result.race_count == 2
-    assert result.analyzed_count == 2
-    assert {entry.race_id for entry in result.entries} == {first.race_id, second.race_id}
+    monkeypatch.setattr(scout, "_run_from_local_snapshots", local_run)
+
+    assert asyncio.run(scout.run(target_date)) is expected
 
 
 async def _async_result(value):
