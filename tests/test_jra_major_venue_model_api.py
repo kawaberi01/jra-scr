@@ -34,8 +34,12 @@ def test_model_comparison_passes_actual_wide_market_to_v89(monkeypatch):
     monkeypatch.setattr(app_module, "build_artifact_live_records", lambda *_args, **_kwargs: [])
     monkeypatch.setattr(app_module, "score_live_records", lambda *_args: [{"horse_no": "1"}])
 
+    history_rankings = []
+
     def fake_v_theory(*_args, **kwargs):
         assert kwargs["race_odds"] is odds
+        assert kwargs["materials_ranking"] == [{"horse_no": "1", "win_odds": 2.0}]
+        history_rankings.append(kwargs["history_ranking"])
         return {"status": "available", "model_status": "shadow", "ranking": [{"horse_no": "1"}]}
 
     monkeypatch.setattr(app_module, "build_v_theory_prediction", fake_v_theory)
@@ -60,3 +64,4 @@ def test_model_comparison_passes_actual_wide_market_to_v89(monkeypatch):
     assert guarded.status_code == 200, guarded.text
     assert guarded.json()["history_model"]["status"] == "unavailable"
     assert guarded.json()["v_theory"]["model_status"] == "shadow"
+    assert history_rankings == [[{"horse_no": "1"}], []]

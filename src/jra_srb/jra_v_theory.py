@@ -23,6 +23,8 @@ def build_v_theory_prediction(
     card,
     win_odds: dict[str, float],
     race_odds=None,
+    materials_ranking: list[dict] | None = None,
+    history_ranking: list[dict] | None = None,
 ) -> dict:
     """Run the frozen venue-routed V theory as a shadow prediction.
 
@@ -45,9 +47,26 @@ def build_v_theory_prediction(
             "ticket_candidates": [],
             "ticket_status": "excluded",
         }
-    history = _load_history(db_path, target_date)
+    try:
+        history = _load_history(db_path, target_date)
+    except (OSError, sqlite3.Error) as exc:
+        return _provisional_v89_result(
+            route,
+            card,
+            win_odds,
+            materials_ranking,
+            history_ranking,
+            reason=f"history_unavailable:{exc}",
+        )
     if not history["rows"]:
-        return {**route, "status": "unavailable", "reason": "no_prior_official_history"}
+        return _provisional_v89_result(
+            route,
+            card,
+            win_odds,
+            materials_ranking,
+            history_ranking,
+            reason="no_prior_official_history",
+        )
     field_size = len(card.runners)
     market_as_of_valid = _market_is_pre_race(race_odds, target_date, card)
     candidates = []
@@ -72,7 +91,14 @@ def build_v_theory_prediction(
             "middle_score": round(base_score + _middle_adjustment(features, odds), 3),
         })
     if len(candidates) < 6:
-        return {**route, "status": "unavailable", "reason": f"few_history_candidates:{len(candidates)}", "ranking": []}
+        return _provisional_v89_result(
+            route,
+            card,
+            win_odds,
+            materials_ranking,
+            history_ranking,
+            reason=f"few_history_candidates:{len(candidates)}",
+        )
 
     axis_ranked = sorted(candidates, key=lambda item: (-item["axis_score"], _horse_no(item["horse_no"])))
     axis = next((item for item in axis_ranked if _axis_eligible(item)), axis_ranked[0])
@@ -179,9 +205,12 @@ def build_v_theory_prediction_record(db_path: str | Path, bundle, amount_per_tic
 
 def build_three_way_consensus(materials: list[dict], history: list[dict], v_theory: dict) -> dict:
     """Return an explainable rank-consensus, not a merged probability model."""
+    provisional_v89 = v_theory.get("status") == "provisional"
     sources = {
         "materials": materials,
         "history": history,
+        # A provisional V89 ranking already aggregates these two sources.  Do
+        # not count it as a third independent vote.
         "v_theory": v_theory.get("ranking", []) if v_theory.get("status") == "available" else [],
     }
     entries: dict[str, dict] = {}
@@ -202,10 +231,110 @@ def build_three_way_consensus(materials: list[dict], history: list[dict], v_theo
     ranking.sort(key=lambda item: (-item["consensus_score"], -item["agreement_count"], _horse_no(item["horse_no"])))
     return {
         "kind": "transparent_rank_consensus_v1",
-        "status": "reference_only" if v_theory.get("status") != "available" else "three_way_reference",
-        "note": "順位票の集計であり、確率の合算や購入推奨ではない",
+        "status": (
+            "v89_provisional_reference" if provisional_v89
+            else "reference_only" if v_theory.get("status") != "available"
+            else "three_way_reference"
+        ),
+        "note": (
+            "暫定V89は公開材料・履歴モデルの順位を再集計した評価軸であり、独立した第三票としては加算しない"
+            if provisional_v89
+            else "順位票の集計であり、確率の合算や購入推奨ではない"
+        ),
         "ranking": ranking,
     }
+
+
+def _provisional_v89_result(
+    route: dict,
+    card,
+    win_odds: dict[str, float],
+    materials_ranking: list[dict] | None,
+    history_ranking: list[dict] | None,
+    *,
+    reason: str,
+) -> dict:
+    """Return a ranking-only V89 fallback when its history prerequisites fail."""
+    ranking, source_names = _provisional_v89_ranking(
+        card,
+        win_odds,
+        materials_ranking or [],
+        history_ranking or [],
+    )
+    if not ranking:
+        return {**route, "status": "unavailable", "reason": reason, "ranking": []}
+    axis = ranking[0]
+    return {
+        **route,
+        "status": "provisional",
+        "theory_version": "v89_provisional_rank_v1",
+        "application": "v89_provisional_evaluation",
+        "model_status": "provisional",
+        "betting_status": "not_for_betting",
+        "reason": reason,
+        "ranking_sources": source_names,
+        "ranking": ranking,
+        "axis": axis["horse_no"],
+        "head_candidates": ranking[:3],
+        "axis_candidates": [_candidate_view(axis)],
+        "partner_candidates": [],
+        "ticket_candidates": [],
+        "ticket_status": "not_for_betting",
+        "ticket_policy_version": "v89-provisional-ranking-only-v1",
+        "limitations": [
+            "V89の過去走候補数の前提を満たさないため、公開材料と履歴モデルの順位を同じ尺度へ正規化した暫定評価である",
+            "暫定順位は軸・相手候補の比較にだけ使い、チケット生成や期待値判定には使わない",
+            "確率・校正済み期待値・利益保証ではない",
+        ],
+    }
+
+
+def _provisional_v89_ranking(
+    card,
+    win_odds: dict[str, float],
+    materials_ranking: list[dict],
+    history_ranking: list[dict],
+) -> tuple[list[dict], list[str]]:
+    runner_by_no = {str(runner.horse_no or ""): runner for runner in card.runners if runner.horse_no}
+    field_size = len(runner_by_no)
+    if not field_size:
+        return [], []
+    rank_maps = {
+        "materials": _ranking_positions(materials_ranking, runner_by_no),
+        "history": _ranking_positions(history_ranking, runner_by_no),
+    }
+    rank_maps = {name: values for name, values in rank_maps.items() if values}
+    if not rank_maps:
+        return [], []
+    ranking = []
+    for horse_no, runner in runner_by_no.items():
+        source_ranks = {name: positions[horse_no] for name, positions in rank_maps.items() if horse_no in positions}
+        if not source_ranks:
+            continue
+        support = sum((field_size - rank + 1) / field_size for rank in source_ranks.values()) / len(source_ranks)
+        ranking.append({
+            "horse_no": horse_no,
+            "horse_name": runner.horse_name,
+            "score": round(support * 100, 3),
+            "base_score": round(support * 100, 3),
+            "win_odds": win_odds.get(horse_no) or _float(getattr(runner, "odds", None)),
+            "popularity": _integer(getattr(runner, "popularity", None)),
+            "source_ranks": source_ranks,
+            "reasons": [f"暫定V89 {name}順位 {rank}" for name, rank in source_ranks.items()],
+        })
+    ranking.sort(key=lambda item: (-item["score"], item["win_odds"] or float("inf"), _horse_no(item["horse_no"])))
+    for rank, item in enumerate(ranking, start=1):
+        item["rank"] = rank
+    return ranking, list(rank_maps)
+
+
+def _ranking_positions(rows: list[dict], runner_by_no: dict[str, object]) -> dict[str, int]:
+    positions = {}
+    for rank, row in enumerate(rows, start=1):
+        horse_no = str(row.get("horse_no") or "")
+        if horse_no in runner_by_no and horse_no not in positions:
+            positions[horse_no] = rank
+    return positions
 
 
 def _route(course: str) -> dict:

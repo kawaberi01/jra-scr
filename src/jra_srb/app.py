@@ -1400,6 +1400,8 @@ async def get_jra_model_comparison(
             _default_analysis_db_path(), target_date=date_, course=str(course), card=bundle.card,
             win_odds={item["horse_no"]: item["win_odds"] for item in materials_ranking if item.get("win_odds")},
             race_odds=bundle.odds_summary,
+            materials_ranking=materials_ranking,
+            history_ranking=history.get("ranking", []) if history["status"] == "available" else [],
         )
     except (FileNotFoundError, ValueError) as exc:
         v_theory = {"status": "unavailable", "reason": str(exc)}
