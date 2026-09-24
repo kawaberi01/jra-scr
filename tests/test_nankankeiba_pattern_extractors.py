@@ -20,6 +20,13 @@ def test_build_pattern_race_id_for_kawasaki_lifetime():
     assert build_pattern_race_id(date(2026, 7, 6), "川崎", 4, 1, 1, "lifetime") == RACE_ID
 
 
+def test_build_pattern_race_id_for_urawa_lifetime():
+    expected = "202609231806020101"
+
+    assert build_pattern_race_id(date(2026, 9, 23), "urawa", 6, 2, 1, "01") == expected
+    assert build_pattern_race_id(date(2026, 9, 23), "浦和", 6, 2, 1, "lifetime") == expected
+
+
 def test_build_pattern_url_path_for_all_categories():
     assert build_pattern_url_path("pattern_kis", RACE_ID) == f"/pattern_kis/{RACE_ID}.do"
     assert build_pattern_url_path("pattern_uma", RACE_ID) == f"/pattern_uma/{RACE_ID}.do"
