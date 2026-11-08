@@ -1,4 +1,14 @@
+"""概要: 既存の収集・集計を共通backendの保存済みデータに対して実行する。
+作成日: 不明
+入力: 従来のCLI引数、JRA_SRB_STORAGE_BACKENDとSQL接続設定。
+出力: 従来の保存・集計・明示export。SQL運用時の業務正本はSQL Server。
+実行例: uv run python scripts/jra_live_result_day.py
+注意事項: 取得処理は外部通信を行う。旧SQLiteへの自動fallbackは行わない。
+"""
+
 from __future__ import annotations
+
+from jra_srb.storage import build_analysis_store, open_analysis_read
 
 import argparse
 import asyncio
@@ -13,8 +23,9 @@ from jra_srb.service import JraService
 
 
 async def collect(target_date: date, db_path: Path, output_path: Path, settle_delay_minutes: int) -> dict:
+    """従来の引数と取得条件に従い、選択backendで収集・集計を実行する。"""
     service = JraService()
-    store = AnalysisSQLiteStore(db_path)
+    store = build_analysis_store(db_path)
     now = datetime.now()
     meetings = await service.get_meetings_for_date(target_date)
     report = {"observed_at": now.astimezone().isoformat(), "saved": [], "not_finalized": [], "evaluated": []}
@@ -44,7 +55,8 @@ async def collect(target_date: date, db_path: Path, output_path: Path, settle_de
 
 
 def _prediction_ids(db_path: Path, race_id: str) -> list[str]:
-    with sqlite3.connect(db_path) as conn:
+    """対象レースに保存した予想IDを選択backendから読み込む。"""
+    with open_analysis_read(db_path) as conn:
         return [row[0] for row in conn.execute("select prediction_id from predictions where race_id = ?", (race_id,))]
 
 

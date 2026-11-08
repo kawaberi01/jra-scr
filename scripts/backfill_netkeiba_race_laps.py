@@ -1,4 +1,14 @@
+"""概要: 既存の収集・集計を共通backendの保存済みデータに対して実行する。
+作成日: 不明
+入力: 従来のCLI引数、JRA_SRB_STORAGE_BACKENDとSQL接続設定。
+出力: 従来の保存・集計・明示export。SQL運用時の業務正本はSQL Server。
+実行例: uv run python scripts/backfill_netkeiba_race_laps.py
+注意事項: 取得処理は外部通信を行う。旧SQLiteへの自動fallbackは行わない。
+"""
+
 from __future__ import annotations
+
+from jra_srb.storage import build_analysis_store, open_analysis_read
 
 import argparse
 import asyncio
@@ -11,7 +21,8 @@ from jra_srb.netkeiba_service import NetkeibaService
 
 
 def targets(db: Path, start: str, end: str) -> list[tuple[str, str]]:
-    conn = sqlite3.connect(db)
+    """選択backendから不足する補完対象のレースを読み込む。"""
+    conn = open_analysis_read(db)
     try:
         return conn.execute(
             """
@@ -28,6 +39,7 @@ def targets(db: Path, start: str, end: str) -> list[tuple[str, str]]:
 
 
 async def main() -> None:
+    """従来の引数と取得条件に従い、選択backendで収集・集計を実行する。"""
     p = argparse.ArgumentParser()
     p.add_argument("--db", default="data/db/analysis.sqlite")
     p.add_argument("--from-date", required=True)
@@ -35,7 +47,7 @@ async def main() -> None:
     p.add_argument("--interval", type=float, default=5.0)
     args = p.parse_args()
     db = Path(args.db)
-    store = AnalysisSQLiteStore(db)
+    store = build_analysis_store(db)
     service = NetkeibaService(NetkeibaHttpProvider(min_interval_seconds=args.interval, retries=1))
     for index, (jra_id, netkeiba_id) in enumerate(targets(db, args.from_date, args.to_date), 1):
         try:

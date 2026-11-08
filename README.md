@@ -2,6 +2,10 @@
 
 JRA のレース情報を取得するための Python SDK 兼ローカル HTTP API です。開催一覧、出馬表、オッズ、結果・払戻を取得し、FastAPI 経由で JSON API として扱えます。
 
+ローカル運用のAPI・分析収集・job・cacheはSQL Server backendに対応しています。接続設定、既存データの採用、明示export、切戻しは [SQL Server API切替と復旧](docs/jra/30_SQLServer_API切替と復旧.md) を参照してください。
+
+JRA予想・全日候補抽出のモデル選択は [共通設定](configs/jra_prediction_models.json) と [共通入口](scripts/jra_selected_model.py) を使います。明示指定を優先し、未指定なら承認済み既定を選択します。研究利用と購入推奨は別管理です。旧 `race-scout` APIの履歴勝率差は従来モデル専用で、共通既定の出力ではありません。通常の依頼例・更新手順・検証範囲は [既定モデル移行記録](.workstate/jra-srb/sqlserver-model-data-audit/progress/088-既定モデル選択への移行.md) を参照してください。
+
 > [!NOTE]
 > このリポジトリは JRA 公式サイトの HTML を取得・解析するための実装を含みます。利用時は対象サイトの利用規約、アクセス頻度、運用上の制約を確認してください。
 
@@ -32,6 +36,7 @@ JRA のレース情報を取得するための Python SDK 兼ローカル HTTP A
 - HTML 解析ルールを JSON 設定として管理
 - 短時間のインメモリキャッシュ
 - SQLite 永続キャッシュ
+- SQL ServerによるAPI・分析Store・cache・jobの通常永続化
 - fixture を使ったテストしやすい provider 抽象
 - 日本語入力の正規化 API
 - 保存済み結果の JSONL / SQLite 読み出し API

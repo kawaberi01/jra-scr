@@ -1,11 +1,25 @@
+"""概要: 対象日より前の結果から近走特徴量を生成する。
+作成日: 不明
+入力: 選択backendの過去結果と特徴量record。
+出力: 近走特徴量を追加したrecord。
+実行例: uv run jra-srb --help
+注意事項: 取得・保存を呼ぶ操作は外部通信やDB更新を伴う。SQL障害時に旧SQLiteへ切り替えない。
+"""
+
 from __future__ import annotations
 
 from collections import defaultdict, deque
+from collections.abc import Sequence
 from datetime import date
 from pathlib import Path
 import sqlite3
+from typing import TYPE_CHECKING
+from .storage import open_analysis_read
 
 from .jra_history_dataset import FEATURE_NAMES
+
+if TYPE_CHECKING:
+    from .jra_history_dataset import LiveHistoryContext
 
 
 RECENT_FORM_FEATURE_NAMES = [
@@ -36,13 +50,18 @@ def append_recent_form_features(records: list[dict]) -> list[dict]:
 
 def append_recent_form_live_features(
     records: list[dict], db_path: str | Path, *, target_date: date,
+    history_context: LiveHistoryContext | None = None,
 ) -> list[dict]:
+    """近走特徴を追加し、共有contextがあれば集計済みの近走を使いSQLへ戻らない。"""
+    if history_context is not None:
+        recent = history_context.get(db_path, target_date).recent
+        return [_append(record, recent.get(record["horse_name"], ())) for record in records]
     horse_names = sorted({record["horse_name"] for record in records})
     histories: dict[str, deque[tuple[float, int]]] = defaultdict(lambda: deque(maxlen=5))
     if horse_names:
         placeholders = ",".join("?" for _ in horse_names)
         path = Path(db_path).resolve()
-        with sqlite3.connect(f"file:{path.as_posix()}?mode=ro", uri=True) as connection:
+        with open_analysis_read(path) as connection:
             rows = connection.execute(
                 f"""
                 select ru.horse_name, re.rank,
@@ -64,7 +83,8 @@ def append_recent_form_live_features(
     return [_append(record, histories[record["horse_name"]]) for record in records]
 
 
-def _append(record: dict, recent: deque[tuple[float, int]]) -> dict:
+def _append(record: dict, recent: Sequence[tuple[float, int]]) -> dict:
+    """変更しない近走列から6特徴を計算してrecordへ追加する。"""
     last_strength = recent[-1][0] if recent else 0.5
     recent3 = list(recent)[-3:]
     recent3_strength = _mean([item[0] for item in recent3], 0.5)

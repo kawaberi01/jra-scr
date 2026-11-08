@@ -11,7 +11,7 @@
 | MCP transport | Streamable HTTP |
 | MCP endpoint | `http://127.0.0.1:8000/mcp` |
 | 認証 | なし。ローカル利用限定 |
-| 文書版 | 1.0 |
+| 文書版 | 1.1 |
 | 初版 | 2026-07-17 |
 
 ## 改訂履歴
@@ -19,6 +19,9 @@
 | 文書版 | 日付 | 内容 |
 | --- | --- | --- |
 | 1.0 | 2026-07-17 | 初版。MCP 接続、10 ツール、運用・セキュリティ・受け入れ条件を制定 |
+| 1.1 | 2026-10-15 | SQL Server backendへの切替。既存10ツール名・入力契約・接続URLを維持 |
+
+永続backendの設定と復旧は [SQL Server API切替と復旧](30_SQLServer_API切替と復旧.md) を参照してください。MCPの10 operationは同じHTTP serviceと共通cache/Storeを使います。
 
 ## 1. 目的
 

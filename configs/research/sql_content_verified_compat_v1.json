@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "profile_id": "sql_content_verified_compat_v1",
+  "source_policy": {
+    "policy_id": "sql_content_verified_compat_v1",
+    "parsed": {"source_key": "odds-parsed-current", "snapshot_id": 30},
+    "raw": {"source_key": "nas-master-20261005", "snapshot_id": 29}
+  },
+  "parser_version": "jv-o1o2-v2",
+  "limits": {
+    "fetch_rows": 1000,
+    "query_timeout_seconds": 30,
+    "memory_bytes": 2147483648,
+    "max_observations_per_spec": 2000,
+    "max_entries_per_observation": 500,
+    "max_compressed_bytes": 262144,
+    "max_rows_all_passes": 20000
+  }
+}

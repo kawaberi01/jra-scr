@@ -1,14 +1,25 @@
+"""概要: 保存済み公式結果から時点を守った履歴特徴量を生成する。
+作成日: 不明
+入力: 対象日、出馬表、選択backendの過去結果、任意の実行単位の履歴context。
+出力: 履歴特徴量、明示dataset export。
+実行例: uv run jra-srb --help
+注意事項: 取得・保存を呼ぶ操作は外部通信やDB更新を伴う。SQL障害時に旧SQLiteへ切り替えない。
+"""
+
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import defaultdict, deque
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 import gzip
 import json
 import math
 from pathlib import Path
 import re
 import sqlite3
+from threading import Lock
+from .storage import open_analysis_read
+from .storage_config import storage_backend
 from typing import Iterable
 
 
@@ -47,13 +58,119 @@ class HistoryStat:
         self.last_date = race_date
 
 
+@dataclass(frozen=True)
+class LiveHistorySnapshot:
+    """1回の実行で共有する対象日前の履歴行・生涯集計・近走集計を保持する。"""
+
+    rows: list[dict]
+    states: dict
+    recent: dict[str, tuple[tuple[float, int], ...]]
+
+
+class LiveHistoryContext:
+    """同じ実行・日付・DBの履歴を初回だけ取得し、接続を共有せず集計を再利用する。"""
+
+    def __init__(self, db_path: str | Path, *, target_date: date):
+        """対象DBと日付を固定し、初回利用までSQLを実行しない。"""
+        self.db_path = Path(db_path).resolve()
+        self.target_date = target_date
+        self._snapshot: LiveHistorySnapshot | None = None
+        self._error: Exception | None = None
+        self._lock = Lock()
+
+    def get(self, db_path: str | Path, target_date: date) -> LiveHistorySnapshot:
+        """日付・DBを照合し、最初の利用者だけがSQL取得と集計を行う。
+
+        Args:
+            db_path: context作成時と同じDBパス。
+            target_date: 履歴に含めない当日。作成時の日付との一致が必要。
+        Returns:
+            呼出元で変更せず参照する共通履歴と集計。
+        Raises:
+            ValueError: 別の日付またはDBにcontextを流用した場合。
+            RuntimeError: 同じ実行内で履歴取得が既に失敗した場合。
+        Notes:
+            初回失敗の元例外は呼出元へ伝え、後続利用時は再取得しない。
+        """
+        if self.db_path != Path(db_path).resolve() or self.target_date != target_date:
+            raise ValueError("live history context date/database mismatch")
+        with self._lock:
+            if self._error is not None:
+                raise RuntimeError("shared live history is unavailable for this run") from self._error
+            if self._snapshot is None:
+                try:
+                    rows = _load_live_history_rows(self.db_path, target_date)
+                    from .jra_recent_form_dataset import _result
+                    recent = defaultdict(lambda: deque(maxlen=5))
+                    for row in rows:
+                        if row["rank"] is not None:
+                            recent[str(row["horse_name"])].append(
+                                _result(int(row["rank"]), int(row["history_field_size"])))
+                    self._snapshot = LiveHistorySnapshot(
+                        rows, _build_history_states(rows), {name: tuple(runs) for name, runs in recent.items()},
+                    )
+                except Exception as error:
+                    self._error = error
+                    raise
+            return self._snapshot
+
+
+def _load_live_history_rows(db_path: Path, target_date: date) -> list[dict]:
+    """対象日前の共通履歴と結果表の頭数を1回のSELECTで読み、接続を閉じる。
+
+    Args:
+        db_path: 選択backendへ渡す解析DBのパス。
+        target_date: この日以降の履歴行を返さない排他的な上限。
+    Returns:
+        日付・競走・馬番順の履歴行。history_field_sizeは結果表の全頭数。
+    Notes:
+        結果頭数はrunnerと結合する前に数え、近走特徴の従来の分母を維持する。
+        SQL Serverだけ明示的にHASH JOINを指定し、SQLiteへfallbackしない。
+    """
+    query = """
+        select r.race_id, r.race_date, r.race_name, r.surface, r.distance,
+               ru.horse_no, ru.frame_no, ru.horse_name, ru.sex_age,
+               ru.weight_carried, ru.jockey, ru.trainer, re.rank, re.history_field_size
+        from races r
+        join runners ru on ru.race_id = r.race_id
+        join (select race_id, horse_no, rank,
+                     count(*) over (partition by race_id) as history_field_size
+              from result_entries) re
+          on re.race_id = r.race_id and re.horse_no = ru.horse_no
+        where length(r.race_id) = 12
+          and substr(r.race_id, 9, 2) between '01' and '10'
+          and r.source like 'https://www.jra.go.jp/%'
+          and r.race_date < ?
+          and exists (select 1 from payouts p where p.race_id = r.race_id)
+        order by r.race_date, r.race_id, cast(ru.horse_no as integer)
+    """
+    connection = open_analysis_read(db_path)
+    try:
+        options = {"hash_join": True} if storage_backend() == "sqlserver" else {}
+        return [dict(row) for row in connection.execute(query, (target_date.isoformat(),), **options).fetchall()]
+    finally:
+        connection.close()
+
+
 def build_history_dataset(
     db_path: str | Path, *, through_date: date | None = None,
+    history_context: LiveHistoryContext | None = None,
 ) -> tuple[list[dict], dict]:
-    """Read the source DB in read-only mode and build leakage-safe runner rows."""
+    """過去datasetを作り、当日context指定時は取得済み行を使ってSQL再取得を避ける。
+
+    Notes:
+        context利用時のthrough_dateは対象日の前日に一致する必要がある。
+        contextなしの既存学習/export経路は従来どおり独立して取得する。
+    """
+    if history_context is not None:
+        if through_date != history_context.target_date - timedelta(days=1):
+            raise ValueError("history dataset cutoff does not match live context")
+        snapshot = history_context.get(db_path, history_context.target_date)
+        records, metadata = build_history_dataset_from_rows(snapshot.rows)
+        metadata["source_through_date"] = through_date.isoformat()
+        return records, metadata
     path = Path(db_path).resolve()
-    conn = sqlite3.connect(f"file:{path.as_posix()}?mode=ro", uri=True)
-    conn.row_factory = sqlite3.Row
+    conn = open_analysis_read(path)
     try:
         rows = conn.execute(
             """
@@ -174,39 +291,25 @@ def build_live_feature_records(
     target_date: date,
     course: str,
     card,
+    history_context: LiveHistoryContext | None = None,
 ) -> list[dict]:
-    """Create pre-race features using only races before ``target_date``.
+    """対象日前の集計から43特徴を作り、context指定時は同じ履歴を再取得しない。
 
-    Same-day results are deliberately excluded. This is conservative but prevents
-    an unavailable live result from becoming an accidental future feature.
+    Args:
+        db_path: 解析DBのパス。context作成時と一致する必要がある。
+        target_date: 履歴へ含めない対象日。
+        course: 対象レースの競馬場コード。
+        card: レースごとの最新カード。
+        history_context: 同じ実行内で共有する履歴。省略時は今回だけ取得する。
+    Returns:
+        馬別の43特徴、履歴件数と履歴上限を持つrecord。
+    Notes:
+        当日結果を除外する。共有集計へ当日馬の情報や欠測馬を追加しない。
     """
     if course not in COURSE_CODES.values():
         raise ValueError(f"unsupported JRA course={course}")
-    path = Path(db_path).resolve()
-    conn = sqlite3.connect(f"file:{path.as_posix()}?mode=ro", uri=True)
-    conn.row_factory = sqlite3.Row
-    try:
-        rows = conn.execute(
-            """
-            select r.race_id, r.race_date, r.race_name, r.surface, r.distance,
-                   ru.horse_no, ru.frame_no, ru.horse_name, ru.sex_age,
-                   ru.weight_carried, ru.jockey, ru.trainer, re.rank
-            from races r
-            join runners ru on ru.race_id = r.race_id
-            join result_entries re on re.race_id = r.race_id and re.horse_no = ru.horse_no
-            where length(r.race_id) = 12
-              and substr(r.race_id, 9, 2) between '01' and '10'
-              and r.source like 'https://www.jra.go.jp/%'
-              and r.race_date < ?
-              and exists (select 1 from payouts p where p.race_id = r.race_id)
-            order by r.race_date, r.race_id, cast(ru.horse_no as integer)
-            """,
-            (target_date.isoformat(),),
-        ).fetchall()
-    finally:
-        conn.close()
-
-    states = _build_history_states(rows)
+    context = history_context or LiveHistoryContext(db_path, target_date=target_date)
+    states = context.get(db_path, target_date).states
     field_size = len(card.runners)
     surface = _surface(card.surface)
     distance = _number(card.distance) or 0
@@ -216,7 +319,7 @@ def build_live_feature_records(
         horse_name = _text(runner.horse_name, "unknown")
         jockey = _text(runner.jockey, "unknown")
         trainer = _text(runner.trainer, "unknown")
-        horse = states["horse"][horse_name]
+        horse = states["horse"].get(horse_name, HistoryStat())
         records.append({
             "race_id": card.race_id,
             "race_date": target_date.isoformat(),
@@ -241,11 +344,11 @@ def build_live_feature_records(
                 distance=distance,
                 field_size=field_size,
                 horse=horse,
-                horse_course=states["horse_course"][(horse_name, course)],
-                horse_surface=states["horse_surface"][(horse_name, surface)],
-                horse_distance=states["horse_distance"][(horse_name, distance_band)],
-                jockey=states["jockey"][jockey],
-                trainer=states["trainer"][trainer],
+                horse_course=states["horse_course"].get((horse_name, course), HistoryStat()),
+                horse_surface=states["horse_surface"].get((horse_name, surface), HistoryStat()),
+                horse_distance=states["horse_distance"].get((horse_name, distance_band), HistoryStat()),
+                jockey=states["jockey"].get(jockey, HistoryStat()),
+                trainer=states["trainer"].get(trainer, HistoryStat()),
             ),
             "history_as_of": f"{target_date.isoformat()}T00:00:00",
             "history_starts": horse.starts,

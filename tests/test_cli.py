@@ -218,6 +218,29 @@ def test_cli_parser_accepts_refresh_existing_for_jra_odds_timeline(tmp_path):
     assert args.refresh_existing is True
 
 
+@pytest.mark.parametrize("limited,expected_exit", [(False, 0), (True, 1)])
+def test_timeline_cli_reports_request_limit_and_exit(monkeypatch, capsys, limited, expected_exit):
+    """取得失敗0件でも上限打切りなら非0終了し、未処理予定を表示する。"""
+    from jra_srb import cli
+    from jra_srb.jra_odds_timeline import OddsTimelineSummary
+
+    async def collect_fixture(args):
+        """本番収集を呼ばず、CLIへ集計を返す。"""
+        assert args.max_live_requests is None
+        return OddsTimelineSummary(
+            108, 339 if limited else 396, 0, 0, 0, 432 if limited else 504,
+            planned_requests=504, request_limit=432 if limited else 504,
+            limit_reached=limited, unprocessed_odds=57 if limited else 0,
+        )
+
+    monkeypatch.setattr(cli, "collect_jra_odds_timeline", collect_fixture)
+    monkeypatch.setattr(cli, "_configure_stdout", lambda: None)
+    assert cli.main(["collect-jra-odds-timeline", "--date", "2026-10-24"]) == expected_exit
+    output = capsys.readouterr().out
+    assert f"limit_reached={limited}" in output
+    assert f"unprocessed_odds={57 if limited else 0}" in output
+
+
 def test_parse_jra_bet_type_offsets_accepts_per_bet_type_offsets() -> None:
     parsed = parse_jra_bet_type_offsets(
         "win=30,10,2;quinella=30,10,2;wide=30,10,2;trio=10,2"

@@ -1,3 +1,11 @@
+"""概要: 通常scriptが利用する既存の履歴評価ロジックを共通readerへ接続する。
+作成日: 不明
+入力: 従来CLI引数、既存理論設定、共通backend。
+出力: 既存の履歴評価・明示export。
+実行例: uv run jra-srb --help
+注意事項: 取得・保存を呼ぶ操作は外部通信やDB更新を伴う。SQL障害時に旧SQLiteへ切り替えない。
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -8,6 +16,7 @@ import json
 from pathlib import Path
 import re
 import sqlite3
+from jra_srb.storage import open_analysis_read
 from statistics import mean, pstdev
 from types import SimpleNamespace
 from typing import Any
@@ -3367,8 +3376,8 @@ class RaceEvaluation:
 
 
 def load_rows(db_path: Path) -> dict[str, list[dict[str, Any]]]:
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
+    """選択backendから評価に必要なレース・出走・結果・補完を読み込む。"""
+    conn = open_analysis_read(db_path)
     try:
         rows = conn.execute(
             """
@@ -3397,8 +3406,8 @@ def load_rows(db_path: Path) -> dict[str, list[dict[str, Any]]]:
 
 
 def load_netkeiba_db_results(db_path: Path) -> tuple[dict[str, Any], dict[str, str]]:
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
+    """選択backendから保存済みnetkeiba対応・結果・払戻を読み込む。"""
+    conn = open_analysis_read(db_path)
     try:
         mappings = conn.execute(
             """

@@ -1,3 +1,11 @@
+"""概要: 結果収集jobの状態遷移と永続化契約を提供する。
+作成日: 不明
+入力: 結果収集要求、保存先、job ID。
+出力: job状態と収集結果。
+実行例: uv run jra-srb --help
+注意事項: 取得・保存を呼ぶ操作は外部通信やDB更新を伴う。SQL障害時に旧SQLiteへ切り替えない。
+"""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -24,6 +32,11 @@ StorageFactory = Callable[[ResultStorageKind, str], ResultStorage]
 
 
 class ResultCollectionJobRegistry:
+    @property
+    def persistent(self) -> bool:
+        """保存先が指定されているregistryかを返す。"""
+        return self.path is not None
+
     def __init__(self, path: str | Path | None = None) -> None:
         self._jobs: dict[str, ResultCollectionJobSummary] = {}
         self.path = Path(path) if path is not None else None
@@ -40,7 +53,7 @@ class ResultCollectionJobRegistry:
         output: str,
     ) -> ResultCollectionJobSummary:
         job = ResultCollectionJobSummary(
-            job_id=str(uuid4()),
+            job_id=self._new_job_id(),
             status=ResultCollectionJobStatus.queued,
             from_date=request.from_date,
             to_date=request.to_date,
@@ -64,6 +77,10 @@ class ResultCollectionJobRegistry:
             },
         )
         return job
+
+    def _new_job_id(self) -> str:
+        """既存backendの新規job IDを生成する。"""
+        return str(uuid4())
 
     def list_jobs(self) -> ResultCollectionJobPage:
         items = sorted(self._jobs.values(), key=lambda job: job.created_at)
@@ -123,7 +140,7 @@ class ResultCollectionJobRegistry:
 
     def clear(self) -> None:
         self._jobs.clear()
-        if self.path is not None:
+        if self.persistent:
             with self._connect() as conn:
                 conn.execute("delete from result_collection_jobs")
 
@@ -182,7 +199,7 @@ class ResultCollectionJobRegistry:
                 )
 
     def _save(self, job: ResultCollectionJobSummary) -> None:
-        if self.path is None:
+        if not self.persistent:
             return
         with self._connect() as conn:
             conn.execute(

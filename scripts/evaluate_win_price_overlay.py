@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from jra_srb.storage import build_analysis_store, open_analysis_read
+
 import argparse
 import json
 import sqlite3
@@ -40,7 +42,8 @@ class HorseRow:
 
 
 def _load_market(db: Path) -> tuple[dict[tuple[str, str], float], dict[tuple[str, str], int]]:
-    conn = sqlite3.connect(db)
+    """従来の引数と取得条件に従い、選択backendで収集・集計を実行する。"""
+    conn = open_analysis_read(db)
     try:
         odds_rows = conn.execute(
             """

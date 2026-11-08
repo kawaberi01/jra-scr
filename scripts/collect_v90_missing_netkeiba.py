@@ -1,4 +1,14 @@
+"""概要: 既存の収集・集計を共通backendの保存済みデータに対して実行する。
+作成日: 不明
+入力: 従来のCLI引数、JRA_SRB_STORAGE_BACKENDとSQL接続設定。
+出力: 従来の保存・集計・明示export。SQL運用時の業務正本はSQL Server。
+実行例: uv run python scripts/collect_v90_missing_netkeiba.py
+注意事項: 取得処理は外部通信を行う。旧SQLiteへの自動fallbackは行わない。
+"""
+
 from __future__ import annotations
+
+from jra_srb.storage import build_analysis_store, open_analysis_read
 
 import argparse
 import asyncio
@@ -15,7 +25,8 @@ TO_DATE = "2024-08-31"
 
 
 def missing_targets(db_path: Path, limit: int) -> list[tuple[str, str]]:
-    with sqlite3.connect(db_path) as conn:
+    """選択backendから不足する補完対象のレースを読み込む。"""
+    with open_analysis_read(db_path) as conn:
         return [
             (str(row[0]), str(row[1]))
             for row in conn.execute(
@@ -38,6 +49,7 @@ def missing_targets(db_path: Path, limit: int) -> list[tuple[str, str]]:
 
 
 async def main() -> int:
+    """従来の引数と取得条件に従い、選択backendで収集・集計を実行する。"""
     parser = argparse.ArgumentParser()
     parser.add_argument("--db", type=Path, default=Path("data/db/analysis.sqlite"))
     parser.add_argument("--limit", type=int, default=10)
@@ -46,7 +58,7 @@ async def main() -> int:
     args = parser.parse_args()
 
     service = NetkeibaService()
-    store = AnalysisSQLiteStore(args.db)
+    store = build_analysis_store(args.db)
     idle_batches = 0
     while True:
         targets = missing_targets(args.db, args.limit)

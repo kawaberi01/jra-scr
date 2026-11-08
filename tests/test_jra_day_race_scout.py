@@ -85,14 +85,20 @@ def test_build_shadow_decision_removes_tickets_without_mutating_source():
     assert decision["tickets"] == [{"bet_type": "win", "amount": 1000}]
 
 
-def test_run_prefers_local_pre_race_snapshots_without_loading_meetings(monkeypatch):
+def test_run_prefers_local_pre_race_snapshots_when_they_cover_all_meeting_races(monkeypatch):
+    race = SimpleNamespace(race_id="202607190301")
+    meeting = SimpleNamespace(races=[race])
+
     class Store:
         def list_pre_race_race_ids(self, target_date):
             assert target_date == date(2026, 7, 19)
             return ["202607190301"]
 
     scout = JraDayRaceScout(
-        jra_service=object(), prediction_service=object(), store=Store(),
+        jra_service=SimpleNamespace(
+            get_meetings_for_date=lambda _target_date: _async_result([meeting])
+        ),
+        prediction_service=object(), store=Store(),
         analysis_db_path="unused.sqlite", history_model_path="unused.json",
     )
     expected = object()
@@ -106,6 +112,39 @@ def test_run_prefers_local_pre_race_snapshots_without_loading_meetings(monkeypat
     monkeypatch.setattr(scout, "_run_from_local_snapshots", local_run)
 
     assert asyncio.run(scout.run(date(2026, 7, 19))) is expected
+
+
+def test_run_uses_available_local_pre_race_snapshots_without_loading_missing_races(monkeypatch):
+    target_date = date(2026, 8, 9)
+    race_id = "202608090401"
+
+    class Store:
+        def list_pre_race_race_ids(self, _target_date):
+            return [race_id]
+
+    async def should_not_load_meetings(_target_date):
+        raise AssertionError("local snapshots must not trigger external meeting loading")
+
+    scout = JraDayRaceScout(
+        jra_service=SimpleNamespace(get_meetings_for_date=should_not_load_meetings),
+        prediction_service=object(), store=Store(),
+        analysis_db_path="unused.sqlite", history_model_path="unused.json",
+    )
+    expected = object()
+
+    def local_run(actual_date, _run_id, _observed_at, race_ids, max_candidates):
+        assert actual_date == target_date
+        assert race_ids == [race_id]
+        assert max_candidates == 5
+        return expected
+
+    monkeypatch.setattr(scout, "_run_from_local_snapshots", local_run)
+
+    assert asyncio.run(scout.run(target_date)) is expected
+
+
+async def _async_result(value):
+    return value
 
 
 def test_quick_scout_uses_card_odds_without_loading_public_prediction_materials(monkeypatch):

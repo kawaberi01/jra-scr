@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from jra_srb.storage import build_analysis_store, open_analysis_read
+
 import argparse
 import json
 import sqlite3
@@ -44,7 +46,8 @@ def _price(exact: Any, lower: Any, upper: Any) -> float | None:
 
 
 def load_candidates(db: Path) -> list[Candidate]:
-    conn = sqlite3.connect(db)
+    """従来の引数と取得条件に従い、選択backendで収集・集計を実行する。"""
+    conn = open_analysis_read(db)
     try:
         dates = dict(conn.execute("select race_id, race_date from races where race_date like '2025%'").fetchall())
         win_rows = conn.execute(

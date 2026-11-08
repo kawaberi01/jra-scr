@@ -1,3 +1,11 @@
+"""概要: 収集・検証・明示exportのCLIを共通backendへ接続する。
+作成日: 不明
+入力: CLI引数と永続backend設定。
+出力: 収集データ、集計、明示したexport。
+実行例: uv run jra-srb --help
+注意事項: 取得・保存を呼ぶ操作は外部通信やDB更新を伴う。SQL障害時に旧SQLiteへ切り替えない。
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -20,6 +28,9 @@ from .analysis_maintenance import (
     format_join_verification,
 )
 from .analysis_store import AnalysisSQLiteStore 
+from .storage import build_analysis_store, build_cache, build_job_registry
+from .storage import build_result_storage as build_backend_result_storage
+from .storage_config import storage_backend
 from .batch import JsonlRaceResultStorage, PastResultCollector, ResultStorage, SQLiteRaceResultStorage 
 from .daily_prediction_log_importer import import_daily_prediction_log 
 from .jra_odds_timeline import JraOddsTimelineCollector
@@ -34,6 +45,7 @@ from .service import JraService, SUPPORTED_JRA_BET_TYPES
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    """従来の引数と取得条件に従い、選択backendで収集・集計を実行する。"""
     _configure_stdout()
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -52,9 +64,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(
             f"scheduled={summary.scheduled} saved={summary.saved} "
             f"skipped_existing={summary.skipped_existing} skipped_late={summary.skipped_late} "
-            f"failed={summary.failed} live_requests={summary.live_requests}"
+            f"failed={summary.failed} live_requests={summary.live_requests} "
+            f"planned_requests={summary.planned_requests} request_limit={summary.request_limit} "
+            f"limit_reached={summary.limit_reached} unprocessed_odds={summary.unprocessed_odds}"
         )
-        return 1 if summary.failed else 0
+        return 1 if summary.failed or summary.limit_reached else 0
     if args.command == "collect-netkeiba-results":
         if args.from_date > args.to_date:
             parser.error("--from-date must be earlier than or equal to --to-date")
@@ -101,7 +115,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         asyncio.run(fetch_nankan_prediction_bundle(args))
         return 0
     if args.command == "import-daily-prediction-log": 
-        summary = import_daily_prediction_log(AnalysisSQLiteStore(args.db), args.path) 
+        summary = import_daily_prediction_log(build_analysis_store(args.db), args.path)
         print(
             "source_path={source_path} log_date={log_date} venue={venue} imported_entries={imported_entries} "
             "resolved_race_ids={resolved_race_ids}".format(
@@ -127,9 +141,9 @@ def build_parser() -> argparse.ArgumentParser:
     collect.add_argument("--courses", required=True, help="Comma-separated course names or codes. Example: nakayama,hanshin")
     collect.add_argument("--output", type=Path, required=True)
     collect.add_argument("--retries", type=int, default=0)
-    collect.add_argument("--storage", choices=("jsonl", "sqlite"), default="jsonl")
+    collect.add_argument("--storage", choices=("jsonl", "sqlite", "sqlserver"), default="jsonl")
 
-    analysis = subparsers.add_parser("collect-analysis", help="Collect analysis data into a local SQLite database.")
+    analysis = subparsers.add_parser("collect-analysis", help="Collect analysis data into the configured storage backend.")
     analysis.add_argument("--from-date", type=date.fromisoformat, required=True)
     analysis.add_argument("--to-date", type=date.fromisoformat, required=True)
     analysis.add_argument("--courses", required=True, help="Comma-separated course names or codes. Example: nakayama,hanshin")
@@ -160,7 +174,10 @@ def build_parser() -> argparse.ArgumentParser:
     timeline.add_argument("--poll-seconds", type=float, default=20.0)
     timeline.add_argument("--min-interval-seconds", type=float, default=1.0)
     timeline.add_argument("--max-lateness-seconds", type=float, default=90.0)
-    timeline.add_argument("--max-live-requests", type=int)
+    timeline.add_argument(
+        "--max-live-requests", type=int,
+        help="出馬表・オッズの取得試行上限。省略時は当日の開催・券種・取得時点から自動算出。",
+    )
     timeline.add_argument("--dry-run", action="store_true")
     timeline.add_argument(
         "--refresh-existing",
@@ -290,6 +307,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 async def collect_results(args: argparse.Namespace, service: JraService | None = None) -> None:
+    """指定期間の結果を、明示したexportまたはSQL保存先へ収集する。"""
     storage = build_storage(args.storage, args.output)
     courses = parse_course_list(args.courses)
     collector = PastResultCollector(
@@ -305,9 +323,10 @@ async def collect_analysis(
     service: JraService | None = None,
     nar_service: NarNetkeibaService | None = None,
 ) -> str:
+    """既存の取得条件に従い、分析データを選択backendへ収集する。"""
     courses = parse_course_list(args.courses)
     bet_types = [item.strip() for item in args.bet_types.split(",") if item.strip()]
-    store = AnalysisSQLiteStore(args.db)
+    store = build_analysis_store(args.db)
     collector = AnalysisCollector(
         service=service or JraService(),
         store=store,
@@ -332,6 +351,7 @@ async def collect_analysis(
 
 
 async def collect_jra_odds_timeline(args: argparse.Namespace):
+    """既存の時点収集条件に従い、出馬表とオッズを選択backendへ保存する。"""
     courses = set() if args.courses.strip().lower() in AnalysisCollector.AUTO_COURSE_TOKENS else set(parse_course_list(args.courses))
     bet_types = [item.strip() for item in args.bet_types.split(",") if item.strip()]
     bet_type_offsets = parse_jra_bet_type_offsets(args.bet_type_offsets)
@@ -346,7 +366,7 @@ async def collect_jra_odds_timeline(args: argparse.Namespace):
     )
     if not offsets or any(offset < 0 for offset in offsets):
         raise ValueError("--offset-minutes must contain non-negative integers")
-    collector = JraOddsTimelineCollector(JraService(), AnalysisSQLiteStore(args.db))
+    collector = JraOddsTimelineCollector(JraService(), build_analysis_store(args.db))
     return await collector.collect(
         target_date=args.target_date,
         courses=courses,
@@ -363,7 +383,8 @@ async def collect_jra_odds_timeline(args: argparse.Namespace):
 
 
 async def collect_netkeiba_results(args: argparse.Namespace, service: NetkeibaService | None = None):
-    store = AnalysisSQLiteStore(args.db)
+    """既存の対応表と取得条件に従い、補完結果を選択backendへ保存する。"""
+    store = build_analysis_store(args.db)
     collector = NetkeibaAnalysisCollector(service=service or NetkeibaService(), store=store)
     return await collector.collect_results(
         NetkeibaResultCollectionOptions(
@@ -382,7 +403,8 @@ async def collect_netkeiba_results(args: argparse.Namespace, service: NetkeibaSe
 
 
 def generate_netkeiba_mapping(args: argparse.Namespace):
-    store = AnalysisSQLiteStore(args.db)
+    """保存済みレースから対応表を生成し、明示exportと選択backendへの保存を行う。"""
+    store = build_analysis_store(args.db)
     return generate_netkeiba_mapping_csv(
         store=store,
         from_date=args.from_date,
@@ -415,8 +437,9 @@ def format_netkeiba_collection_summary(summary) -> str:
 
 
 async def backfill_analysis_runners(args: argparse.Namespace, service: JraService | None = None):
+    """保存済みの不足条件から出走馬補完を行い、選択backendへ保存する。"""
     courses = parse_course_list(args.courses)
-    store = AnalysisSQLiteStore(args.db)
+    store = build_analysis_store(args.db)
     backfiller = AnalysisRunnerBackfiller(service=service or JraService(), store=store)
     return await backfiller.backfill(
         RunnerBackfillOptions(
@@ -433,7 +456,8 @@ async def backfill_analysis_runners(args: argparse.Namespace, service: JraServic
 
 
 def verify_analysis_joins(args: argparse.Namespace):
-    store = AnalysisSQLiteStore(args.db)
+    """保存済みのレース・出走馬・結果・払戻の結合状態を集計する。"""
+    store = build_analysis_store(args.db)
     verifier = AnalysisJoinVerifier(store)
     return verifier.verify(args.from_date, args.to_date, args.sample_size)
 
@@ -497,9 +521,8 @@ async def fetch_nankan_prediction_bundle(args: argparse.Namespace, client: httpx
 
 
 def build_storage(kind: str, path: Path) -> ResultStorage: 
-    if kind == "sqlite":
-        return SQLiteRaceResultStorage(path)
-    return JsonlRaceResultStorage(path)
+    """結果収集CLIでもAPIと同じ永続backendを選択する。"""
+    return build_backend_result_storage(kind, path)
 
 
 def parse_course_list(value: str) -> list[str]:

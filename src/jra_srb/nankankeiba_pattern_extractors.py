@@ -10,8 +10,15 @@ from .models import NankankeibaPatternCategoryEntry, NankankeibaPatternRate
 
 
 NANKANKEIBA_PATTERN_COURSE_CODES = {
+    "urawa": "18",
+    "浦和": "18",
     "kawasaki": "21",
     "川崎": "21",
+}
+
+NANKANKEIBA_PATTERN_COURSE_CANONICAL_NAMES = {
+    "浦和": "urawa",
+    "川崎": "kawasaki",
 }
 
 NANKANKEIBA_PATTERN_CATEGORIES = {
@@ -105,8 +112,9 @@ PATTERN_UMA_DATA_COLUMN_TO_KEY = {
 
 
 def normalize_pattern_course(value: str) -> str:
-    if value in NANKANKEIBA_PATTERN_COURSE_CODES:
-        return value if value == "kawasaki" else "kawasaki"
+    normalized = NANKANKEIBA_PATTERN_COURSE_CANONICAL_NAMES.get(value, value)
+    if normalized in NANKANKEIBA_PATTERN_COURSE_CODES:
+        return normalized
     raise LookupError(f"unsupported nankankeiba course={value}")
 
 

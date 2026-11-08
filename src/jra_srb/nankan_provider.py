@@ -95,7 +95,8 @@ class NankanHttpProvider(BaseNankanProvider):
         self.trace_logger = trace_logger or PredictionTraceLogger()
 
     async def fetch_calendar(self, year: int, month: int) -> NankanPageContent:
-        return await self._get(f"/calendar/{year:04d}{month:02d}.do")
+        calendar_month = ((month - 1) // 3) * 3 + 1
+        return await self._get(f"/calendar/{year:04d}{calendar_month:02d}.do")
 
     async def fetch_meeting(self, meeting_id: str) -> NankanPageContent:
         return await self._get(f"/program/{meeting_id}.do")
@@ -266,7 +267,8 @@ class NankanFixtureProvider(BaseNankanProvider):
         self.fixture_dir = Path(fixture_dir)
 
     async def fetch_calendar(self, year: int, month: int) -> NankanPageContent:
-        return self._load(f"nankan_calendar_{year:04d}{month:02d}.html")
+        calendar_month = ((month - 1) // 3) * 3 + 1
+        return self._load(f"nankan_calendar_{year:04d}{calendar_month:02d}.html")
 
     async def fetch_meeting(self, meeting_id: str) -> NankanPageContent:
         return self._load(f"nankan_program_{meeting_id}.html")

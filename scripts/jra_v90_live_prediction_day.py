@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from jra_srb.storage import build_analysis_store, open_analysis_read
+
 import argparse
 import asyncio
 from datetime import date, datetime
@@ -117,9 +119,10 @@ def build_record(bundle, rows: dict, evaluator) -> dict | None:
 
 
 async def run(target_date: date, db_path: Path, min_lead_minutes: int) -> dict:
+    """従来の引数と取得条件に従い、選択backendで収集・集計を実行する。"""
     evaluator = _evaluator()
     rows = evaluator.load_rows(db_path)
-    service, prediction, store = JraService(), None, AnalysisSQLiteStore(db_path)
+    service, prediction, store = JraService(), None, build_analysis_store(db_path)
     prediction = JraPredictionService(service)
     report = {"date": target_date.isoformat(), "saved": [], "skipped": []}
     for meeting in await service.get_meetings_for_date(target_date):

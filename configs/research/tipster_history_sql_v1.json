@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "source_policy": {"source_key": "analysis-current", "snapshot_id": 34},
+  "date_from": "2023-01-01",
+  "date_through": "2026-09-26",
+  "limits": {"fetch_rows": 2000, "query_timeout_seconds": 30, "memory_bytes": 2147483648, "max_candidate_rows": 1500000}
+}

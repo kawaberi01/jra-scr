@@ -1,4 +1,14 @@
+"""概要: 既存の収集・集計を共通backendの保存済みデータに対して実行する。
+作成日: 不明
+入力: 従来のCLI引数、JRA_SRB_STORAGE_BACKENDとSQL接続設定。
+出力: 従来の保存・集計・明示export。SQL運用時の業務正本はSQL Server。
+実行例: uv run python scripts/backfill_netkeiba_wide_odds.py
+注意事項: 取得処理は外部通信を行う。旧SQLiteへの自動fallbackは行わない。
+"""
+
 from __future__ import annotations
+
+from jra_srb.storage import build_analysis_store, open_analysis_read
 
 import argparse
 import asyncio
@@ -14,7 +24,7 @@ from jra_srb.netkeiba_provider import NetkeibaHttpProvider
 
 def targets(db: Path, start: str, end: str) -> list[tuple[str, str]]:
     """Return mapped JRA races whose complete wide-odds table is absent."""
-    conn = sqlite3.connect(db)
+    conn = open_analysis_read(db)
     try:
         return conn.execute(
             """
@@ -38,6 +48,7 @@ def targets(db: Path, start: str, end: str) -> list[tuple[str, str]]:
 
 
 async def main() -> None:
+    """従来の引数と取得条件に従い、選択backendで収集・集計を実行する。"""
     parser = argparse.ArgumentParser(
         description="Backfill missing historical netkeiba wide-odds tables at a bounded rate."
     )
@@ -57,7 +68,7 @@ async def main() -> None:
     if args.dry_run:
         return
 
-    store = AnalysisSQLiteStore(db)
+    store = build_analysis_store(db)
     provider = NetkeibaHttpProvider(min_interval_seconds=args.interval, retries=1)
     saved = failed = empty = 0
     for index, (jra_id, netkeiba_id) in enumerate(pending, 1):

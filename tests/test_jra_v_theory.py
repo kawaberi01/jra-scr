@@ -161,3 +161,36 @@ def test_v89_separates_newcomer_and_obstacle_without_db_access():
         result = build_v_theory_prediction("missing.sqlite", target_date=date(2024, 9, 1), course="tokyo", card=card, win_odds={})
         assert result["status"] == "excluded"
         assert result["reason"] == f"separate_race_category:{expected}"
+
+
+def test_v89_returns_ranking_only_provisional_axis_when_history_is_insufficient(tmp_path):
+    db = tmp_path / "analysis.sqlite"
+    _database(db)
+    runners = [
+        SimpleNamespace(horse_no=str(number), horse_name=f"馬{number}", jockey=f"新騎手{number}", trainer=f"新厩舎{number}", odds=str(number + 1), popularity=str(number), horse_weight_diff="0")
+        for number in range(1, 5)
+    ]
+    card = SimpleNamespace(race_id="202401190605", race_name="2歳未勝利", runners=runners, surface="ダ", distance="1,800")
+    result = build_v_theory_prediction(
+        db,
+        target_date=date(2024, 1, 19),
+        course="nakayama",
+        card=card,
+        win_odds={str(number): float(number + 1) for number in range(1, 5)},
+        materials_ranking=[{"horse_no": "2"}, {"horse_no": "1"}, {"horse_no": "3"}, {"horse_no": "4"}],
+        history_ranking=[{"horse_no": "1"}, {"horse_no": "2"}, {"horse_no": "4"}, {"horse_no": "3"}],
+    )
+    assert result["status"] == "provisional"
+    assert result["theory_version"] == "v89_provisional_rank_v1"
+    assert result["axis"] == "1"
+    assert result["ranking_sources"] == ["materials", "history"]
+    assert result["ticket_status"] == "not_for_betting"
+    assert result["ranking"][0]["source_ranks"] == {"materials": 2, "history": 1}
+
+    consensus = build_three_way_consensus(
+        [{"horse_no": "2"}, {"horse_no": "1"}],
+        [{"horse_no": "1"}, {"horse_no": "2"}],
+        result,
+    )
+    assert consensus["status"] == "v89_provisional_reference"
+    assert "v_theory" not in consensus["ranking"][0]["source_ranks"]

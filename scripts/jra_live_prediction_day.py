@@ -1,4 +1,15 @@
+"""概要: 既存の収集・集計を共通backendの保存済みデータに対して実行する。
+作成日: 不明
+入力: 従来のCLI引数、JRA_SRB_STORAGE_BACKENDとSQL接続設定。
+出力: 従来の保存・集計・明示export。SQL運用時の業務正本はSQL Server。
+実行例: uv run python scripts/jra_live_prediction_day.py
+注意事項: 取得処理は外部通信を行う。旧SQLiteへの自動fallbackは行わない。
+"""
+
 from __future__ import annotations
+
+from jra_srb.storage import build_analysis_store, open_analysis_read
+from jra_srb.storage_config import storage_backend
 
 import argparse
 import asyncio
@@ -6,9 +17,7 @@ from datetime import date, datetime
 import json
 from pathlib import Path
 import re
-import sqlite3
 
-from jra_srb.analysis_store import AnalysisSQLiteStore
 from jra_srb.jra_prediction_engine import build_prediction_record
 from jra_srb.jra_prediction_service import JraPredictionService
 from jra_srb.service import JraService
@@ -22,9 +31,10 @@ MEETING_META = {
 
 
 async def predict_day(target_date: date, db_path: Path, output_path: Path, min_lead_minutes: int) -> dict:
+    """従来の引数と取得条件に従い、選択backendで収集・集計を実行する。"""
     jra = JraService()
     prediction = JraPredictionService(jra)
-    store = AnalysisSQLiteStore(db_path)
+    store = build_analysis_store(db_path)
     now = datetime.now()
     meetings = await jra.get_meetings_for_date(target_date)
     report = {"observed_at": now.astimezone().isoformat(), "date": target_date.isoformat(), "predictions": [], "skipped": []}
@@ -68,9 +78,10 @@ def _start_datetime(target_date: date, value: str | None) -> datetime | None:
 
 
 def _has_prediction(db_path: Path, race_id: str) -> bool:
-    if not db_path.exists():
+    """SQLでは旧ファイルの存在に依存せず、保存済み予想の有無を確認する。"""
+    if storage_backend() == "sqlite" and not db_path.exists():
         return False
-    with sqlite3.connect(db_path) as conn:
+    with open_analysis_read(db_path) as conn:
         row = conn.execute("select 1 from predictions where race_id = ? limit 1", (race_id,)).fetchone()
     return row is not None
 

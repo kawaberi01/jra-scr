@@ -1,4 +1,14 @@
+"""概要: 既存の収集・集計を共通backendの保存済みデータに対して実行する。
+作成日: 不明
+入力: 従来のCLI引数、JRA_SRB_STORAGE_BACKENDとSQL接続設定。
+出力: 従来の保存・集計・明示export。SQL運用時の業務正本はSQL Server。
+実行例: uv run python scripts/jra_live_monitor.py
+注意事項: 取得処理は外部通信を行う。旧SQLiteへの自動fallbackは行わない。
+"""
+
 from __future__ import annotations
+
+from jra_srb.storage import build_analysis_store, open_analysis_read
 
 import asyncio
 from datetime import date, datetime, time
@@ -19,8 +29,9 @@ EVENT_LOG = Path("data/live/2026-07-11-monitor.jsonl")
 
 
 async def main() -> None:
+    """従来の引数と取得条件に従い、選択backendで収集・集計を実行する。"""
     service = JraService()
-    store = AnalysisSQLiteStore(DB_PATH)
+    store = build_analysis_store(DB_PATH)
     meetings = await service.get_meetings_for_date(TARGET_DATE)
     captured: set[str] = {
         path.name.split("-", 1)[0]
@@ -83,7 +94,8 @@ async def _capture_result(service, store, course, race_no, race_id, now):
 
 
 def _prediction_ids(race_id: str) -> list[str]:
-    with sqlite3.connect(DB_PATH) as conn:
+    """対象レースに保存した予想IDを選択backendから読み込む。"""
+    with open_analysis_read(DB_PATH) as conn:
         return [row[0] for row in conn.execute("select prediction_id from predictions where race_id = ?", (race_id,))]
 
 

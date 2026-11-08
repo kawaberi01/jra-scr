@@ -9,6 +9,12 @@
 - OpenAPI JSON: `/openapi.json`
 - MCP HTTP endpoint: `/mcp`
 
+永続backendは共通設定で選択する。SQL Server運用では保存済みデータ・cache・jobを `jra_unified.api_runtime` で扱う。設定と復旧は [SQL Server API切替と復旧](30_SQLServer_API切替と復旧.md) を参照する。
+
+SQL運用の新規予想・購入・jobのPOSTには任意の `Idempotency-Key` headerを付けられる。同じキーと同じ要求の再送は同じ業務IDへ対応し、別のpath/query/bodyへの再利用は409になる。キーを省略した通常の新規作成は従来どおり。
+
+結果保存には `storage=sqlserver` を追加した。通常設定の既定保存先はSQL。`jsonl` / `sqlite` とoutputを明示した要求は従来のファイルexportを行い、outputだけを指定した結果収集も従来どおりJSONLとする。
+
 主なクエリ慣習:
 
 - `refresh=true`

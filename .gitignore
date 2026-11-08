@@ -20,3 +20,11 @@ dist/
 
 # Local runtime outputs
 data/
+
+# Generated research data and local execution outputs
+/artifacts/
+/tmp/
+/.codex-remote-attachments/
+/.workstate/logs/
+/$stdout
+/$stderr

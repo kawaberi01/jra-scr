@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "profile_id": "cross_market_disagreement_sql_v1",
+  "source_policy": {"source_key": "analysis-current", "snapshot_id": 34},
+  "year": 2025,
+  "timing_policy": "matching_captured_at",
+  "limits": {
+    "fetch_rows": 10000,
+    "query_timeout_seconds": 30,
+    "memory_bytes": 2147483648,
+    "max_candidate_rows": 1000000
+  }
+}

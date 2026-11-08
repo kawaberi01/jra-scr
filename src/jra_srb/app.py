@@ -1,8 +1,18 @@
+"""概要: 既存HTTP/MCP APIを共通永続backendで提供する。
+作成日: 不明
+入力: HTTP/MCP要求、JRA_SRB_STORAGE_BACKENDとSQL設定。
+出力: 既存API応答、選択backendへの永続化。
+実行例: uv run jra-srb --help
+注意事項: 取得・保存を呼ぶ操作は外部通信やDB更新を伴う。SQL障害時に旧SQLiteへ切り替えない。
+"""
+
 from __future__ import annotations
 
 from datetime import date
 import logging
 import os
+import asyncio
+import hashlib
 import time
 from pathlib import Path as FilePath
 from typing import Annotated
@@ -16,6 +26,12 @@ from fastapi_mcp import FastApiMCP
 from pydantic import AwareDatetime
 
 from .analysis_store import AnalysisSQLiteStore
+from .storage import build_analysis_store, build_cache, build_job_registry
+from .storage import build_result_storage as build_backend_result_storage
+from .storage_config import storage_backend, storage_environment
+from .storage_config import SqlServerSettings
+from .idempotency import current_key, entity_id, register_request, IdempotencyConflict
+from .sqlserver_db import SqlServerStorageError
 from .batch import JsonlRaceResultStorage, ResultStorage, SQLiteRaceResultStorage
 from .cache import SQLiteTTLCache
 from .errors import BadRequestError, JraApiError
@@ -132,6 +148,27 @@ app = FastAPI(
 )
 
 
+@app.middleware("http")
+async def bind_idempotency_key(request: Request, call_next):
+    """SQL運用の任意POST再試行キーを、公開bodyを変えずに要求文脈へ設定する。"""
+    key = request.headers.get("Idempotency-Key") if request.method == "POST" and storage_backend() == "sqlserver" else None
+    if key is not None:
+        if not key.strip() or len(key) > 256:
+            return error_response(request, 422, "validation_error", "Idempotency-Key must contain 1 to 256 characters")
+        fingerprint = hashlib.sha256(request.method.encode() + b"\n" + request.url.path.encode() + b"\n" + request.url.query.encode() + b"\n" + await request.body()).digest()
+        try:
+            await asyncio.to_thread(register_request, SqlServerSettings.from_env(), key, fingerprint)
+        except IdempotencyConflict as error:
+            return error_response(request, error.status_code, error.error_code, error.detail)
+        except SqlServerStorageError:
+            return error_response(request, 503, "storage_unavailable", "SQL Server storage is unavailable")
+    token = current_key.set(key)
+    try:
+        return await call_next(request)
+    finally:
+        current_key.reset(token)
+
+
 def _default_analysis_db_path() -> str:
     return os.environ.get("JRA_SRB_ANALYSIS_DB_PATH", "data/db/analysis.sqlite")
 
@@ -141,37 +178,41 @@ def _default_history_model_path() -> FilePath:
 
 
 def build_service() -> JraService:
+    """JRA providerと選択backendのTTL cacheを組み立てる。"""
     cache_path = os.environ.get("JRA_SRB_CACHE_PATH")
     provider = HttpProvider(
         max_concurrency=_env_int("JRA_SRB_UPSTREAM_MAX_CONCURRENCY", default=5, minimum=1),
         min_interval_seconds=_env_float("JRA_SRB_UPSTREAM_MIN_INTERVAL_SECONDS", default=0.0, minimum=0.0),
     )
-    if cache_path:
-        return JraService(provider=provider, cache=SQLiteTTLCache(cache_path))
+    if cache_path or storage_backend() == "sqlserver":
+        return JraService(provider=provider, cache=build_cache(cache_path))
     return JraService(provider=provider)
 
 
 def build_netkeiba_service() -> NetkeibaService:
+    """netkeiba providerと選択backendのTTL cacheを組み立てる。"""
     cache_path = os.environ.get("JRA_SRB_CACHE_PATH")
     provider = NetkeibaHttpProvider(
         min_interval_seconds=_env_float("JRA_SRB_NETKEIBA_MIN_INTERVAL_SECONDS", default=1.0, minimum=0.0),
     )
-    if cache_path:
-        return NetkeibaService(provider=provider, cache=SQLiteTTLCache(cache_path))
+    if cache_path or storage_backend() == "sqlserver":
+        return NetkeibaService(provider=provider, cache=build_cache(cache_path))
     return NetkeibaService(provider=provider)
 
 
 def build_nar_netkeiba_service() -> NarNetkeibaService:
+    """NAR providerと選択backendのTTL cacheを組み立てる。"""
     cache_path = os.environ.get("JRA_SRB_CACHE_PATH")
     provider = NarNetkeibaHttpProvider(
         min_interval_seconds=_env_float("JRA_SRB_NAR_NETKEIBA_MIN_INTERVAL_SECONDS", default=1.0, minimum=0.0),
     )
-    if cache_path:
-        return NarNetkeibaService(provider=provider, cache=SQLiteTTLCache(cache_path))
+    if cache_path or storage_backend() == "sqlserver":
+        return NarNetkeibaService(provider=provider, cache=build_cache(cache_path))
     return NarNetkeibaService(provider=provider)
 
 
 def build_nankan_service() -> NankanService:
+    """南関provider・cache・業務Storeを選択backendで組み立てる。"""
     cache_path = os.environ.get("JRA_SRB_CACHE_PATH")
     ttl_config = NankanCacheTtls(
         odds=_env_int("JRA_SRB_NANKAN_ODDS_TTL_SECONDS", default=60, minimum=1),
@@ -188,21 +229,22 @@ def build_nankan_service() -> NankanService:
         min_interval_seconds=_env_float("JRA_SRB_NANKAN_MIN_INTERVAL_SECONDS", default=1.0, minimum=0.0),
         trace_logger=prediction_trace_logger,
     )
-    if cache_path:
+    if cache_path or storage_backend() == "sqlserver":
         return NankanService(
             provider=provider,
-            cache=SQLiteTTLCache(cache_path),
+            cache=build_cache(cache_path),
             ttl_config=ttl_config,
-            analysis_store=lambda: AnalysisSQLiteStore(_default_analysis_db_path()),
+            analysis_store=lambda: build_analysis_store(_default_analysis_db_path()),
         )
     return NankanService(
         provider=provider,
         ttl_config=ttl_config,
-        analysis_store=lambda: AnalysisSQLiteStore(_default_analysis_db_path()),
+        analysis_store=lambda: build_analysis_store(_default_analysis_db_path()),
     )
 
 
 def build_nankankeiba_pattern_service() -> NankankeibaPatternService: 
+    """南関分析providerと選択backendのTTL cacheを組み立てる。"""
     cache_path = os.environ.get("JRA_SRB_CACHE_PATH")
     ttl_config = NankankeibaPatternCacheTtls(
         pattern=_env_int("JRA_SRB_NANKAN_STATIC_MATERIAL_TTL_SECONDS", default=86400, minimum=1),
@@ -211,8 +253,8 @@ def build_nankankeiba_pattern_service() -> NankankeibaPatternService:
         min_interval_seconds=_env_float("JRA_SRB_NANKANKEIBA_MIN_INTERVAL_SECONDS", default=1.0, minimum=0.0),
         trace_logger=prediction_trace_logger,
     )
-    if cache_path: 
-        return NankankeibaPatternService(provider=provider, cache=SQLiteTTLCache(cache_path), ttl_config=ttl_config) 
+    if cache_path or storage_backend() == "sqlserver":
+        return NankankeibaPatternService(provider=provider, cache=build_cache(cache_path), ttl_config=ttl_config)
     return NankankeibaPatternService(provider=provider, ttl_config=ttl_config) 
 
 
@@ -331,10 +373,11 @@ def get_jra_prediction_service() -> JraPredictionService:
 
 
 def get_jra_day_race_scout() -> JraDayRaceScout:
+    """選択backendのStoreを使う日次scoutを組み立てる。"""
     return JraDayRaceScout(
         jra_service=service,
         prediction_service=jra_prediction_service,
-        store=AnalysisSQLiteStore(_default_analysis_db_path()),
+        store=build_analysis_store(_default_analysis_db_path()),
         analysis_db_path=_default_analysis_db_path(),
         history_model_path=_default_history_model_path(),
     )
@@ -345,7 +388,9 @@ def get_result_collection_job_registry() -> ResultCollectionJobRegistry:
 
 
 def _default_result_storage_kind() -> ResultStorageKind:
-    storage_kind = os.environ.get("JRA_SRB_RESULTS_STORAGE", "jsonl").strip().lower()
+    """SQL backendでは結果保存の既定値もSQLに統一する。"""
+    default = "sqlserver" if storage_backend() == "sqlserver" else "jsonl"
+    storage_kind = storage_environment().get("JRA_SRB_RESULTS_STORAGE", default).strip().lower()
     try:
         return ResultStorageKind(storage_kind)
     except ValueError as exc:
@@ -360,16 +405,12 @@ def _default_result_collection_jobs_path() -> str:
     return os.environ.get("JRA_SRB_JOBS_PATH", "data/jobs.sqlite")
 
 
-result_collection_jobs = ResultCollectionJobRegistry(_default_result_collection_jobs_path())
+result_collection_jobs = build_job_registry(_default_result_collection_jobs_path())
 
 
 def build_result_storage(storage_kind: ResultStorageKind, output: str) -> ResultStorage:
-    path = FilePath(output)
-    if storage_kind == ResultStorageKind.jsonl:
-        return JsonlRaceResultStorage(path)
-    if storage_kind == ResultStorageKind.sqlite:
-        return SQLiteRaceResultStorage(path)
-    raise BadRequestError(f"unsupported results storage={storage_kind}")
+    """公開storage種別を共通backend設定に従う保存先へ解決する。"""
+    return build_backend_result_storage(str(storage_kind), output)
 
 
 def get_result_storage() -> ResultStorage:
@@ -377,7 +418,8 @@ def get_result_storage() -> ResultStorage:
 
 
 def get_analysis_store() -> AnalysisSQLiteStore:
-    return AnalysisSQLiteStore(_default_analysis_db_path())
+    """全APIで共用するbackend設定から分析Storeを返す。"""
+    return build_analysis_store(_default_analysis_db_path())
 
 
 @app.middleware("http")
@@ -579,9 +621,11 @@ async def get_race_card_by_number(
     date_: RaceDatePath,
     course: CourseCodePath,
     race_no: RaceNoPath,
+    refresh: bool = Query(default=False, description="trueの場合は出馬表を再取得します。"),
     svc: JraService = Depends(get_service),
 ):
-    return await svc.get_race_card_by_number(date_, str(course), race_no)
+    """開催場とRで出馬表を取得し、明示された再取得指定を既存サービスへ渡す。"""
+    return await svc.get_race_card_by_number(date_, str(course), race_no, refresh=refresh)
 
 
 @app.get(
@@ -1400,6 +1444,8 @@ async def get_jra_model_comparison(
             _default_analysis_db_path(), target_date=date_, course=str(course), card=bundle.card,
             win_odds={item["horse_no"]: item["win_odds"] for item in materials_ranking if item.get("win_odds")},
             race_odds=bundle.odds_summary,
+            materials_ranking=materials_ranking,
+            history_ranking=history.get("ranking", []) if history["status"] == "available" else [],
         )
     except (FileNotFoundError, ValueError) as exc:
         v_theory = {"status": "unavailable", "reason": str(exc)}
@@ -1509,7 +1555,12 @@ async def create_jra_prediction(
         sources=["netkeiba", "keibalab"], odds_bet_types=["win", "wide"], refresh=refresh,
     )
     record = build_prediction_record(bundle, budget=budget)
-    return {"record": record, "saved": store.upsert_prediction_record(record)}
+    if current_key.get() is not None:
+        record["prediction_id"] = entity_id("prediction", bundle.race_id)
+    saved = store.upsert_prediction_record(record)
+    if current_key.get() is not None and hasattr(store, "canonical_prediction_record"):
+        record = store.canonical_prediction_record(record)
+    return {"record": record, "saved": saved}
 
 
 @app.get(
@@ -1589,6 +1640,7 @@ async def list_jra_live_shadow_observations(
     offset: int = Query(default=0, ge=0),
     store: AnalysisSQLiteStore = Depends(get_analysis_store),
 ):
+    """レースごとの保存済みshadow観測を時刻順のページで返す。"""
     return store.list_jra_live_shadow_observations(
         race_id,
         limit=limit,
@@ -1774,6 +1826,7 @@ async def create_bet_record(
     request: BetRecordCreateRequest,
     store: AnalysisSQLiteStore = Depends(get_analysis_store),
 ):
+    """購入額と買い目を検証して保存し、保存した購入記録を返す。"""
     return store.create_bet_record(request)
 
 
@@ -1794,6 +1847,7 @@ async def list_bet_records(
     offset: int = Query(default=0, ge=0, description="å…ˆé ­ã‹ã‚‰ã‚¹ã‚­ãƒƒãƒ—ã™ã‚‹ä»¶æ•°ã€‚"),
     store: AnalysisSQLiteStore = Depends(get_analysis_store),
 ):
+    """指定条件の購入記録を既存の安定順とページングで返す。"""
     return store.list_bet_records(
         from_date=from_date,
         to_date=to_date,
@@ -1816,6 +1870,7 @@ async def get_bet_record(
     bet_record_id: str,
     store: AnalysisSQLiteStore = Depends(get_analysis_store),
 ):
+    """保存した購入記録を関連する予想・買い目・精算結果とともに返す。"""
     return store.get_bet_record(bet_record_id)
 
 
@@ -1846,7 +1901,7 @@ async def create_result_collection_job(
     svc: JraService = Depends(get_service),
     registry: ResultCollectionJobRegistry = Depends(get_result_collection_job_registry),
 ):
-    storage = request.storage or _default_result_storage_kind()
+    storage = request.storage or (ResultStorageKind.jsonl if request.output is not None else _default_result_storage_kind())
     output = request.output or _default_result_storage_path()
     job = registry.create_job(request, storage=storage, output=output)
     background_tasks.add_task(registry.run_job, job.job_id, svc, build_result_storage)

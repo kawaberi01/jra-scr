@@ -10,8 +10,36 @@ from jra_srb.models import RaceCard, Runner
 from jra_srb.nankankeiba_pattern_provider import NankankeibaPatternFixtureProvider
 from jra_srb.nankankeiba_pattern_service import NankankeibaPatternService
 from jra_srb.nankan_prediction_service import NankanPredictionService
-from jra_srb.nankan_provider import NANKAN_BET_TYPE_TO_ODDS_CODE, NankanFixtureProvider, NankanPageContent
+from jra_srb.nankan_provider import (
+    NANKAN_BET_TYPE_TO_ODDS_CODE,
+    NankanFixtureProvider,
+    NankanHttpProvider,
+    NankanPageContent,
+)
 from jra_srb.nankan_service import NankanCacheTtls, NankanService
+
+
+class RecordingNankanHttpProvider(NankanHttpProvider):
+    def __init__(self) -> None:
+        super().__init__(min_interval_seconds=0)
+        self.paths: list[str] = []
+
+    async def _get(self, path: str) -> NankanPageContent:
+        self.paths.append(path)
+        return NankanPageContent(source=f"fixture:{path}", content="")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("month", "expected_month"),
+    [(1, 1), (3, 1), (4, 4), (6, 4), (7, 7), (9, 7), (10, 10), (12, 10)],
+)
+async def test_nankan_http_provider_uses_quarter_start_calendar(month: int, expected_month: int):
+    provider = RecordingNankanHttpProvider()
+
+    await provider.fetch_calendar(2026, month)
+
+    assert provider.paths == [f"/calendar/2026{expected_month:02d}.do"]
 
 
 @pytest.mark.asyncio

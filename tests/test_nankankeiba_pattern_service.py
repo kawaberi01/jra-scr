@@ -46,6 +46,19 @@ async def test_get_pattern_bundle_merges_four_categories_by_horse_no():
 
 
 @pytest.mark.asyncio
+async def test_get_pattern_bundle_supports_urawa_course_code():
+    provider = UrawaRaceIdFixtureProvider("tests/fixtures")
+    service = NankankeibaPatternService(provider=provider)
+
+    bundle = await service.get_pattern_bundle(date(2026, 9, 23), "urawa", 6, 2, 1)
+
+    assert bundle.race_id == "202609231806020101"
+    assert bundle.course == "urawa"
+    assert set(provider.race_ids) == {"202609231806020101"}
+    assert len(bundle.runners) == 7
+
+
+@pytest.mark.asyncio
 async def test_get_pattern_category_uses_db_first_ttl_cache(tmp_path):
     provider = CountingPatternProvider("tests/fixtures")
     service = NankankeibaPatternService(
@@ -148,6 +161,16 @@ class CountingPatternProvider(NankankeibaPatternFixtureProvider):
     async def fetch_pattern(self, race_id: str, category: str) -> NankankeibaPatternPageContent:
         self.calls += 1
         return await super().fetch_pattern(race_id, category)
+
+
+class UrawaRaceIdFixtureProvider(NankankeibaPatternFixtureProvider):
+    def __init__(self, fixtures_dir: str) -> None:
+        super().__init__(fixtures_dir)
+        self.race_ids: list[str] = []
+
+    async def fetch_pattern(self, race_id: str, category: str) -> NankankeibaPatternPageContent:
+        self.race_ids.append(race_id)
+        return await super().fetch_pattern("202607062104010101", category)
 
 
 def _pattern_html() -> str:

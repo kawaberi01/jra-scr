@@ -7,6 +7,8 @@ before the race, then compares it with the probability implied by the wide odds.
 
 from __future__ import annotations
 
+from jra_srb.storage import build_analysis_store, open_analysis_read
+
 import argparse
 import importlib.util
 import json
@@ -84,7 +86,8 @@ def _pair_features(left: dict[str, Any], right: dict[str, Any]) -> tuple[float |
 
 
 def _load_wide_market(db: Path) -> tuple[dict[str, dict[tuple[str, str], float]], dict[str, dict[tuple[str, str], int]]]:
-    conn = sqlite3.connect(db)
+    """従来の引数と取得条件に従い、選択backendで収集・集計を実行する。"""
+    conn = open_analysis_read(db)
     try:
         odds_rows = conn.execute(
             """
