@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "default_model": "attribute-d0-v3",
+  "decision_record": ".workstate/jra-srb/sqlserver-model-data-audit/progress/088-既定モデル選択への移行.md",
+  "models": {
+    "attribute-d0-v3": {
+      "name": "市場・当日属性キメラ D0",
+      "aliases": ["D0"],
+      "version": "spec365-v3",
+      "adapter": "attribute_chimera",
+      "artifact": "artifacts/jra_research/market_attribute_chimera_20261024_v3/final_model.joblib",
+      "sha256": "4e3c43fc32d792a3b34dd8b44bae774d151ea9e23660bb2fda04001c9f37cb07",
+      "expected_case": "D0",
+      "training_start": "2020-01-05",
+      "trained_through": "2025-12-28",
+      "availability": "enabled",
+      "validation": "verified_research",
+      "default_eligible": true,
+      "research_allowed": true,
+      "purchase_allowed": false,
+      "probabilities": ["quinella", "top2_marginal"],
+      "ranking_semantics": "top2_marginal_not_finish_order",
+      "scout_metric": "top_pair_probability",
+      "scout_metric_validated_for_hit_rate": false,
+      "history_checkpoint_run": "artifacts/jra_research/condition_chimera_20261024",
+      "limitations": ["安定利益・的中率優位・京都3000mの優位は未証明", "同じ市場を使うモデルの一致は独立した裏付けではない"]
+    },
+    "j23-fixed-2026-09": {
+      "name": "J23（固定研究モデル）",
+      "aliases": ["J23"],
+      "version": "2026-09-frozen",
+      "adapter": "j23_frozen",
+      "artifact": "artifacts/jra_research/runs/20261022T080510Z_b6a4eb0716114496b680ea3378644159/cells/2026-09_J23.joblib",
+      "sha256": "cc69d01c7b01776f30b5d55fa286fc0428eb58f41faecd72a7f32686f875034e",
+      "model_cell": "artifacts/jra_research/runs/20261022T080510Z_b6a4eb0716114496b680ea3378644159/cells/2026-09_J23.json",
+      "model_cell_sha256": "29a9c130888f396c0a1390029ce857ce6e7f1e9162ae32700721a4d0fda8937b",
+      "training_start": null,
+      "trained_through": "2026-08-30",
+      "training_period_note": "開始日は固定モデル/セルに未記録。学習7697競走、終了日を照合。",
+      "availability": "enabled",
+      "validation": "legacy_explicit",
+      "selection_policy": "explicit_only",
+      "default_eligible": false,
+      "research_allowed": true,
+      "purchase_allowed": false,
+      "purchase_assessment": "rejected_for_practical_purchase",
+      "probabilities": ["quinella", "top2_marginal"],
+      "ranking_semantics": "top2_marginal_not_finish_order",
+      "history_checkpoint_run": "artifacts/jra_research/condition_chimera_20261024",
+      "limitations": ["利用者による明示指定専用の研究参考。実用購入は不採用", "単勝勝率・着順予測ではない。未実装券種の確率を補完しない", "同じ市場情報を使うモデルとの一致は独立した裏付けではない"]
+    },
+    "v89": {
+      "name": "V89", "aliases": ["V89"], "version": "v89-existing",
+      "adapter": "v_theory", "availability": "enabled", "validation": "legacy_explicit",
+      "default_eligible": false, "research_allowed": true, "purchase_allowed": false,
+      "probabilities": [], "ranking_semantics": "v_theory_score_not_probability",
+      "training_start": null, "trained_through": null,
+      "courses": ["tokyo", "nakayama", "kyoto", "hanshin"]
+    },
+    "v90": {
+      "name": "V90", "aliases": ["V90"], "version": "v90-existing",
+      "adapter": "v_theory", "availability": "enabled", "validation": "legacy_explicit",
+      "default_eligible": false, "research_allowed": true, "purchase_allowed": false,
+      "probabilities": [], "ranking_semantics": "v_theory_score_not_probability",
+      "training_start": null, "trained_through": null,
+      "courses": ["sapporo", "hakodate", "fukushima", "niigata", "kokura"]
+    }
+  }
+}

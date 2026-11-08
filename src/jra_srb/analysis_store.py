@@ -1605,6 +1605,7 @@ class AnalysisSQLiteStore:
                 )
 
             prediction_json = prediction["prediction_json"]
+            research_evaluation = _evaluate_research_plan(prediction_json, payout_index)
             predicted_top3 = _extract_predicted_top3(prediction_json)
             predicted_top3_horses = [str(item["horse_no"]) for item in predicted_top3 if item.get("horse_no") is not None]
             actual_top3 = [_row_to_dict(row) for row in result_rows[:3]]
@@ -1633,6 +1634,14 @@ class AnalysisSQLiteStore:
                 "predicted_top3_contains_winner": winner_hit,
             }
             review_summary.update(review)
+            if research_evaluation is not None:
+                review_summary["research_simulation"] = research_evaluation
+            if prediction_json.get("finish_order_prediction_available") is False:
+                # 着順を出さないモデルの空top3を、着順予測の不的中として保存しない。
+                review_summary.update(winner_hit=None, top3_box_hit=None,
+                                      predicted_top3_contains_winner=None, finish_order_metrics_applicable=False)
+                review_summary["model_output_evaluation"] = _evaluate_selected_model_outputs(
+                    prediction_json, [_row_to_dict(row) for row in result_rows])
             evaluation_json = {
                 "prediction_id": prediction_id,
                 "race_id": race_id,
@@ -3293,8 +3302,72 @@ def _upsert_race_context(conn: sqlite3.Connection, context: dict[str, object]) -
         )
 
 
+def _evaluate_research_plan(prediction_json: dict, payout_index: dict) -> dict | None:
+    """事前保存した仮想買い目を公式払戻で評価し、実購入集計から分離する。
+
+    Args:
+        prediction_json: 読み戻した予想。買い目を評価時に追加・再配分しない。
+        payout_index: 既存処理で正規化された券種・組合せごとの100円払戻。
+    Returns:
+        仮想的中・投資・払戻・回収率。旧予想はNone、不足時は理由のみ。
+    Notes:
+        払戻未取得を不的中にしない。実購入のtotal_betやticket_resultsは変更しない。
+    """
+    plan = prediction_json.get("research_plan")
+    if plan is None:
+        return None
+    if not prediction_json.get("generated_before_result") or prediction_json.get("reconstruction_after_result"):
+        return {"status": "unavailable", "reason": "事前保存された研究予想ではありません"}
+    if plan.get("status") != "available" or not plan.get("virtual_only") or not plan.get("tickets"):
+        return {"status": "unavailable", "reason": plan.get("reason", "仮想買い目なし")}
+    if not any(kind == "quinella" for kind, _ in payout_index):
+        return {"status": "unavailable", "reason": "公式馬連払戻が未取得。的中・回収率は未判定"}
+    tickets = []
+    for ticket in plan["tickets"]:
+        amount = ticket["amount"]
+        if ticket["bet_type"] != "quinella" or type(amount) is not int or amount <= 0 or amount % 100:
+            raise ValueError("保存済み仮想買い目の券種・金額が不正です")
+        selection = "-".join(_normalize_selection_items("quinella", ticket["selection"]))
+        payout = _scale_payout_for_amount(payout_index.get(("quinella", selection), 0), amount)
+        tickets.append({"bet_type": "quinella", "selection": selection, "amount": amount,
+                        "hit": payout > 0, "payout": payout})
+    stake = sum(row["amount"] for row in tickets)
+    if stake != plan["total_stake_yen"] or stake != plan["virtual_budget_yen"]:
+        raise ValueError("保存済み仮想予算と買い目金額が一致しません")
+    returned = sum(row["payout"] for row in tickets)
+    return {"status": "available", "virtual_only": True, "policy_id": plan["policy_id"],
+            "virtual_stake_yen": stake, "virtual_payout_yen": returned,
+            "virtual_return_rate": returned / stake, "hit": any(row["hit"] for row in tickets),
+            "ticket_results": tickets}
 
 
+def _evaluate_selected_model_outputs(prediction_json: dict, results: list[dict]) -> dict:
+    """対応する馬連・2着内予測だけを公式着順と比較する。
+
+    Args:
+        prediction_json: 保存済みのモデル能力と確率分布。
+        results: 確定済み公式結果。rankが欠測の馬は評価対象外。
+    Returns:
+        券種の意味を保持した事実比較。同着等で一意でない馬連は非適用。
+    Notes:
+        未実装の勝率や収益性を推定せず、保存済み予想を変更しない。
+    """
+    capabilities = prediction_json.get("probability_capabilities", [])
+    eligible = [row for row in results if row.get("rank") in (1, 2)]
+    if len(eligible) != 2 or {row["rank"] for row in eligible} != {1, 2}:
+        return {"status": "unavailable", "reason": "一意の1・2着組合せを確認できません（同着等）"}
+    actual = {str(row["horse_no"]).zfill(2) for row in eligible}
+    forecast = prediction_json.get("forecast", {})
+    output = {"status": "available", "actual_top2": sorted(actual), "purchase_status": "未購入" if not prediction_json.get("prediction_tickets") else "保存買い目のみ評価"}
+    if "quinella" in capabilities and forecast.get("pair_ranking"):
+        pairs = forecast["pair_ranking"]
+        output["quinella_top_pair_hit"] = {str(h).zfill(2) for h in pairs[0]["horses"]} == actual
+        output["actual_pair_probability"] = next((row["probability"] for row in pairs
+            if {str(h).zfill(2) for h in row["horses"]} == actual), None)
+    if "top2_marginal" in capabilities:
+        output["top2_marginal_outcomes"] = [{"horse_no": row["horse_no"], "probability": row["top2_probability"],
+            "finished_top2": str(row["horse_no"]).zfill(2) in actual} for row in forecast.get("horse_ranking", [])]
+    return output
 
 
 def _extract_predicted_top3(prediction_json: dict) -> list[dict]:
