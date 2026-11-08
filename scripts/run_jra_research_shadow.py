@@ -32,6 +32,7 @@ from jra_srb.storage import build_analysis_store
 from jra_srb.jra_odds_timeline import parse_start_datetime
 from jra_srb.jra_research_contracts import ResearchError
 from jra_srb.idempotency import current_key, register_request
+from jra_srb.jra_research_result_wait import pending_result
 
 ROOT, read, save, sha, require = learning.ROOT, learning.read, learning.save, learning.sha, learning.require
 JST = timezone(timedelta(hours=9))
@@ -179,18 +180,28 @@ class Watcher:
         return True
 
     def evaluate(self):
-        """事前保存済み予想だけ15分後に公式結果保存・仮想精算・GET照合する。"""
+        """15分後に公式結果を照合し、型付き公開待ちは5分間隔で有限待機する。"""
         now = datetime.now(timezone.utc)
         for pid, item in self.state['records'].items():
             if item['status'] != 'saved' or now < datetime.fromisoformat(item['post_at']) + timedelta(minutes=15):
+                continue
+            if item.get('next_result_check_at') and now < datetime.fromisoformat(item['next_result_check_at']):
                 continue
             response = self.client.get('/jra/predictions/' + pid); response.raise_for_status()
             require(response.json()['prediction']['generated_before_result'], 'shadow_saved_prediction_missing')
             key = item['race_id']; course = learning.reuse.COURSES[int(key[8:10])]
             response = self.client.post(f'/jra/meetings/{self.target.isoformat()}/{course}/races/{int(key[10:])}/result/save')
-            if response.status_code == 400 and 'not finalized' in response.text.lower():
-                item['last_result_state'] = 'not_finalized'
-                continue
+            if response.status_code in (400, 404):
+                try:
+                    body = response.json()
+                except ValueError:
+                    body = {}
+                waiting = pending_result(response.status_code, body, self.target, course, int(key[10:]), now)
+                item['last_result_response'] = {'status_code': response.status_code, 'body': body}
+                if waiting:
+                    item['last_result_state'] = waiting
+                    item['next_result_check_at'] = (now + timedelta(minutes=5)).isoformat()
+                    continue
             response.raise_for_status()
             require(response.json()['race_id'] == key, 'shadow_result_identity')
             eid = 'eval-' + pid
@@ -204,6 +215,9 @@ class Watcher:
                 require(virtual and virtual['status'] == 'available' and virtual['virtual_stake_yen'] == item['virtual_stake_yen'], 'shadow_virtual_evaluation_missing')
                 item['research_simulation'] = virtual
             item |= {'status': 'evaluated', 'evaluation_id': eid}
+            item.pop('next_result_check_at', None)
+            item['last_result_state'] = 'evaluated'
+            self.consecutive_errors = 0
             save(self.folder / (eid + '-readback.json'), actual)
             print('evaluation_saved', pid, eid, flush=True)
 

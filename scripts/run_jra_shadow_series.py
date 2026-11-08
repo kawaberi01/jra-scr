@@ -15,6 +15,7 @@ from datetime import date, datetime, timedelta, timezone
 import json
 from pathlib import Path
 import subprocess
+import shutil
 import sys
 import time
 
@@ -39,7 +40,10 @@ def fixed_sources():
              RESEARCH / 'independent-verification.json', ROOT / 'scripts/start_jra_shadow_series.ps1',
              ROOT / 'tests/test_jra_shadow_series.py', ROOT / 'scripts/audit_jra_forward_capture.py',
              ROOT / 'src/jra_srb/service.py', ROOT / 'src/jra_srb/models.py',
-             ROOT / 'src/jra_srb/analysis_store.py', ROOT / 'src/jra_srb/storage.py'] + list(daily.MODELS.values())
+             ROOT / 'src/jra_srb/analysis_store.py', ROOT / 'src/jra_srb/storage.py',
+             ROOT / 'src/jra_srb/jra_research_result_wait.py', ROOT / 'tests/test_jra_result_wait.py',
+             ROOT / 'tests/test_jra_shadow_recovery.py',
+             SPECS / '456-前向き結果待機と保存済み予想の復旧.md'] + list(daily.MODELS.values())
     return {str(p.relative_to(ROOT)): sha(p) for p in paths}
 
 
@@ -88,9 +92,54 @@ def aggregate(folder, contract, state):
                 rows['S0_T30_P01_TURF'].append(series.turf_overlay(item, payload, contract['frozen_at'], date.fromisoformat(contract['first_date'])))
     summaries = {key: daily.learning.policy.summary(sorted(rr, key=lambda r: r['race_id'])) for key, rr in rows.items()}
     content = {'updated_at': datetime.now(timezone.utc).isoformat(), 'models': summaries,
-               'rows': rows, 'actual_purchase_yen': 0, 'purchase_adoption': False}
+               'rows': rows, 'actual_purchase_yen': 0, 'purchase_adoption': False,
+               'prospective_only': True, 'interim_assessment': daily.learning.policy.assess(rows, historical=False)}
     daily.write_state(folder / 'aggregate', content)
     return summaries
+
+
+def migrate(folder, previous, contract):
+    """停止済み監督の予想ID・原本・候補凍結時刻を新runへ明示移行する。"""
+    previous = previous.resolve()
+    require(previous.is_relative_to(ROOT / 'artifacts/jra_research'), 'series_migration_source_outside_research')
+    old = read(previous / 'protocol.json')
+    state = read(previous / 'state.json')
+    require(state['status'] == 'failed' and old['models_sha256'] == contract['models_sha256']
+            and old['policies'] == contract['policies'] and old['turf_overlay'] == contract['turf_overlay']
+            and old['first_date'] == contract['first_date'] and old['last_date'] == contract['last_date'], 'series_migration_contract')
+    preservation = read(ROOT / 'artifacts/jra_research/shadow_recovery_20261108/preservation.json')
+    require(not any(preservation['old_processes_alive'].values()), 'series_migration_old_process_still_running')
+    contract['frozen_at'] = old['frozen_at']
+    contract['restarted_at'] = datetime.now(timezone.utc).isoformat()
+    mapping = {}
+    for day, status in state['days'].items():
+        src = previous / day
+        dest = folder / day; dest.mkdir(exist_ok=False)
+        for path in src.iterdir():
+            require(path.is_file(), 'series_migration_unexpected_directory')
+            name = path.name
+            if name in ('protocol.json', 'worker.stdout.log', 'worker.stderr.log'):
+                name = 'pre-recovery-' + name
+            target = dest / name
+            require(not target.exists(), 'series_migration_duplicate')
+            shutil.copyfile(path, target)
+            require(sha(target) == sha(path), 'series_migration_copy_mismatch')
+            mapping[str(path.relative_to(ROOT))] = {'target': str(target.relative_to(ROOT)), 'sha256': sha(path)}
+        if status['status'] == 'running':
+            state['days'][day]['status'] = 'resume_pending'
+    save(folder / 'migration.json', {'source': str(previous.relative_to(ROOT)),
+         'source_protocol_sha256': sha(previous / 'protocol.json'), 'source_state_sha256': sha(previous / 'state.json'),
+         'candidate_frozen_at_preserved': contract['frozen_at'], 'copied': mapping,
+         'old_errors': state['errors'], 'new_predictions_from_old_results': False})
+    state['pid'] = os.getpid(); state['status'] = 'starting'; state['errors'] = []
+    return state
+
+
+def heartbeat_recent(heartbeat, started_at, now):
+    """再開時は新しい子の起動時刻を基準にし、旧heartbeatで即停止しない。"""
+    began = datetime.fromisoformat(started_at)
+    effective = max(datetime.fromisoformat(heartbeat), began) if heartbeat else began
+    return (now - effective).total_seconds() < 600
 
 
 def execute(args):
@@ -102,13 +151,15 @@ def execute(args):
         return
     folder = args.output.resolve()
     require(folder.is_relative_to(ROOT / 'artifacts/jra_research'), 'series_output_outside_research')
-    require(datetime.now(series.JST).date() < args.first, 'series_must_freeze_before_start_day')
+    require(args.resume_from or datetime.now(series.JST).date() < args.first, 'series_must_freeze_before_start_day')
     folder.mkdir(parents=True, exist_ok=False)
     (folder / 'aggregate').mkdir()
     contract['frozen_at'] = datetime.now(timezone.utc).isoformat()
-    save(folder / 'protocol.json', contract)
     state = {'pid': os.getpid(), 'status': 'starting', 'days': {}, 'errors': [],
              'first_date': args.first.isoformat(), 'last_date': args.last.isoformat(), 'actual_purchase_yen': 0}
+    if args.resume_from:
+        state = migrate(folder, args.resume_from, contract)
+    save(folder / 'protocol.json', contract)
     child = None
     try:
         aggregate(folder, contract, state)
@@ -121,7 +172,8 @@ def execute(args):
             require(fixed_sources() == contract['source_sha256'], 'series_frozen_source_changed')
             if current == 'finished':
                 break
-            if current == 'waiting' or now.date().isoformat() in state['days']:
+            existing_day = state['days'].get(now.date().isoformat())
+            if current == 'waiting' or (existing_day and existing_day['status'] != 'resume_pending'):
                 time.sleep(30)
                 continue
             day = now.date().isoformat()
@@ -139,7 +191,11 @@ def execute(args):
                 state['days'][day] = {'status': 'api_unavailable', 'actual_purchase_yen': 0}
                 daily.write_state(folder, state)
                 continue
-            run = folder / day; run.mkdir(exist_ok=False)
+            run = folder / day
+            if existing_day:
+                require(existing_day['status'] == 'resume_pending' and (run / 'state.json').exists(), 'series_resume_day_state')
+            else:
+                run.mkdir(exist_ok=False)
             with (run / 'worker.stdout.log').open('x', encoding='utf-8') as stdout, (run / 'worker.stderr.log').open('x', encoding='utf-8') as stderr:
                 child = subprocess.Popen([sys.executable, '-X', 'utf8', str(Path(daily.__file__)), '--date', day,
                     '--output', str(run)], cwd=ROOT, stdout=stdout, stderr=stderr,
@@ -153,7 +209,7 @@ def execute(args):
                     if (run / 'state.json').exists():
                         worker = read(run / 'state.json')
                         heartbeat = worker.get('heartbeat_at')
-                        require(not heartbeat or (datetime.now(timezone.utc) - datetime.fromisoformat(heartbeat)).total_seconds() < 600,
+                        require(heartbeat_recent(heartbeat, state['days'][day]['started_at'], datetime.now(timezone.utc)),
                                 'series_child_stalled')
                     time.sleep(30)
                 require(child.returncode == 0, 'series_daily_worker_failed')
@@ -184,4 +240,5 @@ if __name__ == '__main__':
     parser.add_argument('--first', type=date.fromisoformat, default=date(2026, 11, 8))
     parser.add_argument('--last', type=date.fromisoformat, default=date(2026, 11, 21))
     parser.add_argument('--check-only', action='store_true')
+    parser.add_argument('--resume-from', type=Path)
     execute(parser.parse_args())

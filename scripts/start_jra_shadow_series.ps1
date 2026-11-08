@@ -5,6 +5,8 @@
 日付・モデル・実装のcheck-onlyを先に実行し、起動PIDとログを保存する。
 .PARAMETER OutputDirectory
 未作成の専用成果物フォルダー。
+.PARAMETER ResumeFrom
+停止済み監督runを同一候補・同一予想IDのまま新runへ移行する場合だけ指定する。
 .INPUTS
 固定済みspec454/455、uv、共通SQL設定、既存APIと収集。
 .OUTPUTS
@@ -16,7 +18,10 @@ rtk powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start_jra_shadow
 注意事項: 実購入0円。2026-11-21の18時JSTに停止。恒久タスク・API再起動なし。
 #>
 [CmdletBinding()]
-param([string]$OutputDirectory = 'artifacts/jra_research/shadow_series_20261108_20261121')
+param(
+    [string]$OutputDirectory = 'artifacts/jra_research/shadow_series_20261108_20261121',
+    [string]$ResumeFrom = ''
+)
 $ErrorActionPreference = 'Stop'
 $projectDirectory = Split-Path -Parent $PSScriptRoot
 $targetDirectory = [IO.Path]::GetFullPath((Join-Path $projectDirectory $OutputDirectory))
@@ -37,6 +42,10 @@ if ((Test-Path -LiteralPath ($logPrefix + '.stdout.log')) -or (Test-Path -Litera
 }
 $arguments = @('run', '--frozen', '--extra', 'ml', 'python', '-X', 'utf8',
     'scripts/run_jra_shadow_series.py', '--output', ('"' + $targetDirectory + '"'))
+if ($ResumeFrom) {
+    $sourceDirectory = (Resolve-Path -LiteralPath (Join-Path $projectDirectory $ResumeFrom)).Path
+    $arguments += @('--resume-from', ('"' + $sourceDirectory + '"'))
+}
 $seriesProcess = Start-Process -FilePath $uvPath -ArgumentList $arguments -WorkingDirectory $projectDirectory `
     -WindowStyle Hidden -RedirectStandardOutput ($logPrefix + '.stdout.log') `
     -RedirectStandardError ($logPrefix + '.stderr.log') -PassThru
