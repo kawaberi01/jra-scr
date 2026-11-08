@@ -1,4 +1,14 @@
+"""概要: 既存の収集・集計を共通backendの保存済みデータに対して実行する。
+作成日: 不明
+入力: 従来のCLI引数、JRA_SRB_STORAGE_BACKENDとSQL接続設定。
+出力: 従来の保存・集計・明示export。SQL運用時の業務正本はSQL Server。
+実行例: uv run python scripts/run_v90_2024_jra_collection.py
+注意事項: 取得処理は外部通信を行う。旧SQLiteへの自動fallbackは行わない。
+"""
+
 from __future__ import annotations
+
+from jra_srb.storage import build_analysis_store, open_analysis_read
 
 import sqlite3
 import subprocess
@@ -27,22 +37,26 @@ AUDIT = Path(".workstate/jra-srb/prediction-v1-validation/audit_v90_2024_externa
 
 
 def result_count(from_date: str, to_date: str) -> int:
-    with sqlite3.connect(DB) as conn:
+    """指定期間に保存した公式結果の件数を返す。"""
+    with open_analysis_read(DB) as conn:
         return conn.execute("select count(*) from race_results rr join races r on r.race_id=rr.race_id where r.race_date>=? and r.race_date<=?", (from_date, to_date)).fetchone()[0]
 
 
 def race_count(from_date: str, to_date: str) -> int:
-    with sqlite3.connect(DB) as conn:
+    """指定期間に保存したレースの件数を返す。"""
+    with open_analysis_read(DB) as conn:
         return conn.execute("select count(*) from races where race_date>=? and race_date<=?", (from_date, to_date)).fetchone()[0]
 
 
 def missing_runner_count(from_date: str, to_date: str) -> int:
-    with sqlite3.connect(DB) as conn:
+    """指定期間の出走馬が不足するレース件数を返す。"""
+    with open_analysis_read(DB) as conn:
         return conn.execute("select count(*) from races r where r.race_date>=? and r.race_date<=? and not exists (select 1 from runners ru where ru.race_id=r.race_id)", (from_date, to_date)).fetchone()[0]
 
 
 def missing_result_count(from_date: str, to_date: str) -> int:
-    with sqlite3.connect(DB) as conn:
+    """指定期間の公式結果が不足するレース件数を返す。"""
+    with open_analysis_read(DB) as conn:
         return conn.execute(
             """select count(*) from races r
                where r.race_date>=? and r.race_date<=?
@@ -52,7 +66,8 @@ def missing_result_count(from_date: str, to_date: str) -> int:
 
 
 def missing_result_runner_count(from_date: str, to_date: str) -> int:
-    with sqlite3.connect(DB) as conn:
+    """指定期間の結果と出走馬の結合不足件数を返す。"""
+    with open_analysis_read(DB) as conn:
         return conn.execute(
             """select count(*) from runners ru join races r on r.race_id=ru.race_id
                left join result_entries re on re.race_id=ru.race_id and re.horse_no=ru.horse_no
@@ -81,18 +96,21 @@ def recover_missing_results(from_date: str, to_date: str) -> None:
 
 
 def target_jra_is_complete() -> bool:
-    with sqlite3.connect(DB) as conn:
+    """対象期間のレース・出走馬・結果の必要件数が揃うか確認する。"""
+    with open_analysis_read(DB) as conn:
         races, results, missing_runners, missing_result_runners = conn.execute(
             """
-            select count(*),
-                   sum(case when exists (select 1 from race_results rr where rr.race_id=r.race_id) then 1 else 0 end),
-                   sum(case when not exists (select 1 from runners ru where ru.race_id=r.race_id) then 1 else 0 end),
-                   sum(case when exists (
+            select count(*),sum(has_result),sum(missing_runner),sum(missing_result_runner)
+            from (
+              select case when exists (select 1 from race_results rr where rr.race_id=r.race_id) then 1 else 0 end as has_result,
+                   case when not exists (select 1 from runners ru where ru.race_id=r.race_id) then 1 else 0 end as missing_runner,
+                   case when exists (
                        select 1 from runners ru left join result_entries re
                        on re.race_id=ru.race_id and re.horse_no=ru.horse_no
                        where ru.race_id=r.race_id and re.race_id is null
-                   ) then 1 else 0 end)
+                   ) then 1 else 0 end as missing_result_runner
             from races r where r.race_date between ? and ?
+            ) as coverage
             """,
             (TARGET_FROM, TARGET_TO),
         ).fetchone()
@@ -100,7 +118,8 @@ def target_jra_is_complete() -> bool:
 
 
 def missing_netkeiba_races() -> int:
-    with sqlite3.connect(DB) as conn:
+    """対象期間のnetkeiba補完が不足するレース件数を返す。"""
+    with open_analysis_read(DB) as conn:
         return conn.execute(
             """
             select count(*)

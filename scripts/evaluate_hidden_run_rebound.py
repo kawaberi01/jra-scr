@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from jra_srb.storage import build_analysis_store, open_analysis_read
+
 import argparse
 import json
 import sqlite3
@@ -66,8 +68,8 @@ def _pair(value: str) -> tuple[str, str] | None:
 
 
 def load_data(db: Path):
-    conn = sqlite3.connect(db)
-    conn.row_factory = sqlite3.Row
+    """従来の引数と取得条件に従い、選択backendで収集・集計を実行する。"""
+    conn = open_analysis_read(db)
     try:
         rows = [
             dict(row)

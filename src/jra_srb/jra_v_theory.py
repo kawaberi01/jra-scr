@@ -1,9 +1,18 @@
+"""概要: 保存済み履歴を使って既存の開催場別shadow予想を組み立てる。
+作成日: 不明
+入力: 対象日、場、出馬表、オッズ、選択backendの過去結果。
+出力: shadow順位・候補と状態。
+実行例: uv run jra-srb --help
+注意事項: 取得・保存を呼ぶ操作は外部通信やDB更新を伴う。SQL障害時に旧SQLiteへ切り替えない。
+"""
+
 from __future__ import annotations
 
 from collections import defaultdict
 from datetime import UTC, date, datetime, timedelta, timezone
 from pathlib import Path
 import sqlite3
+from .storage import open_analysis_read
 import re
 
 from .jra_history_dataset import COURSE_CODES
@@ -356,9 +365,9 @@ def _route(course: str) -> dict:
 
 
 def _load_history(db_path: str | Path, target_date: date) -> dict:
+    """対象日より前の公式結果を選択backendから読み込む。"""
     path = Path(db_path).resolve()
-    conn = sqlite3.connect(f"file:{path.as_posix()}?mode=ro", uri=True)
-    conn.row_factory = sqlite3.Row
+    conn = open_analysis_read(path)
     try:
         rows = conn.execute(
             """

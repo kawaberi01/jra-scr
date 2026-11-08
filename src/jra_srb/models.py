@@ -39,6 +39,7 @@ class BetType(StrEnum):
 class ResultStorageKind(StrEnum):
     jsonl = "jsonl"
     sqlite = "sqlite"
+    sqlserver = "sqlserver"
 
 
 class ResultCollectionJobStatus(StrEnum):

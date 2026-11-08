@@ -1,4 +1,14 @@
+"""概要: 既存の収集・集計を共通backendの保存済みデータに対して実行する。
+作成日: 不明
+入力: 従来のCLI引数、JRA_SRB_STORAGE_BACKENDとSQL接続設定。
+出力: 従来の保存・集計・明示export。SQL運用時の業務正本はSQL Server。
+実行例: uv run python scripts/jra_day_retrospective.py
+注意事項: 取得処理は外部通信を行う。旧SQLiteへの自動fallbackは行わない。
+"""
+
 from __future__ import annotations
+
+from jra_srb.storage import build_analysis_store, open_analysis_read
 
 import json
 from pathlib import Path
@@ -10,8 +20,8 @@ OUT = Path("data/live/2026-07-11-retrospective.json")
 
 
 def main() -> None:
-    with sqlite3.connect(DB) as conn:
-        conn.row_factory = sqlite3.Row
+    """従来の引数と取得条件に従い、選択backendで収集・集計を実行する。"""
+    with open_analysis_read(DB) as conn:
         summary = dict(conn.execute(
             "select count(*) races, sum(hit) hit_races, sum(total_bet) total_bet, sum(total_payout) total_payout "
             "from evaluations where race_id like '20260711%'"

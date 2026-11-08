@@ -1,3 +1,11 @@
+"""概要: 保存済み補完データからラップ・位置取り特徴量を生成する。
+作成日: 不明
+入力: 選択backendの補完データと特徴量record。
+出力: 補完特徴量を追加したrecord。
+実行例: uv run jra-srb --help
+注意事項: 取得・保存を呼ぶ操作は外部通信やDB更新を伴う。SQL障害時に旧SQLiteへ切り替えない。
+"""
+
 from __future__ import annotations
 
 from collections import defaultdict
@@ -7,6 +15,7 @@ import math
 from pathlib import Path
 import re
 import sqlite3
+from .storage import open_analysis_read
 
 
 LAP_STYLE_FEATURE_NAMES = [
@@ -119,8 +128,9 @@ def append_lap_style_features(records: list[dict], db_path: str | Path) -> tuple
 
 
 def _load_extras(db_path: str | Path) -> dict[tuple[str, str], dict]:
+    """選択backendからコーナー・上がり・ラップの補完データを読む。"""
     path = Path(db_path).resolve()
-    with sqlite3.connect(f"file:{path.as_posix()}?mode=ro", uri=True) as connection:
+    with open_analysis_read(path) as connection:
         rows = connection.execute(
             """
             select m.jra_race_id, ne.horse_no, ne.corner_order, ne.final_3f, rr.race_laps_json

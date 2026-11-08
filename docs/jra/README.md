@@ -46,6 +46,8 @@
 
 ## 運用ルール
 
+- SQL Serverの設定・経路・切替・復旧: [30_SQLServer_API切替と復旧.md](30_SQLServer_API切替と復旧.md)
+
 - API を追加したら、まず [05_API仕様.md](/D:/develop/jra-scr/docs/jra/05_API仕様.md) を更新する
 - CLI を追加したら、まず [06_CLI仕様.md](/D:/develop/jra-scr/docs/jra/06_CLI仕様.md) を更新する
 - MCP の接続方法、公開ツール、入力契約を変更したら、まず [28_MCP利用者導入ガイド.md](/D:/develop/jra-scr/docs/jra/28_MCP利用者導入ガイド.md) を更新する

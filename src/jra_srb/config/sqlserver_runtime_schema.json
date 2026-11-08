@@ -1,0 +1,2503 @@
+{
+  "version": 1,
+  "schema": "api_runtime",
+  "tables": [
+    {
+      "name": "collection_runs",
+      "columns": [
+        {
+          "name": "run_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "from_date",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "to_date",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "courses_json",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "include_card",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "include_odds",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "include_results",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "odds_timing",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "finished_at",
+          "type": "text",
+          "nullable": true
+        }
+      ],
+      "primary_key": [
+        "run_id"
+      ],
+      "unique": [],
+      "indexes": [],
+      "foreign_keys": [],
+      "hash_columns": [
+        "run_id"
+      ],
+      "source": {
+        "schema": "ops",
+        "table": "collection_runs",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "races",
+      "columns": [
+        {
+          "name": "race_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "race_date",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "course",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "meeting_no",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "meeting_day",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "race_no",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "race_name",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "race_grade",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "start_time",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "surface",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "surface_label",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "distance",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "weather",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "weather_label",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "track_condition",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "track_condition_label",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "source",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "fetched_at",
+          "type": "text",
+          "nullable": true
+        }
+      ],
+      "primary_key": [
+        "race_id"
+      ],
+      "unique": [],
+      "indexes": [
+        [
+          "race_date",
+          "course",
+          "race_no"
+        ]
+      ],
+      "foreign_keys": [],
+      "hash_columns": [
+        "race_id",
+        "race_date",
+        "course"
+      ],
+      "source": {
+        "schema": "live",
+        "table": "races",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "runners",
+      "columns": [
+        {
+          "name": "race_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "horse_no",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "frame_no",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "horse_name",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "sex_age",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "weight_carried",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "jockey",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "trainer",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "horse_weight",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "horse_weight_diff",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "card_odds",
+          "type": "real",
+          "nullable": true
+        },
+        {
+          "name": "card_popularity",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "nullable": false,
+          "default": "'active'"
+        },
+        {
+          "name": "status_source",
+          "type": "text",
+          "nullable": true
+        }
+      ],
+      "primary_key": [
+        "race_id",
+        "horse_no"
+      ],
+      "unique": [],
+      "indexes": [],
+      "foreign_keys": [],
+      "hash_columns": [
+        "race_id",
+        "horse_no"
+      ],
+      "source": {
+        "schema": "live",
+        "table": "runners",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "race_card_snapshots",
+      "columns": [
+        {
+          "name": "card_snapshot_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "race_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "race_date",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "course",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "meeting_no",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "meeting_day",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "race_no",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "race_name",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "start_time",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "surface",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "surface_label",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "distance",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "weather",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "weather_label",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "track_condition",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "track_condition_label",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "source",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "source_kind",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "runner_set_status",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "runner_set_reason",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "runner_count",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "fetched_at",
+          "type": "text",
+          "nullable": false
+        }
+      ],
+      "primary_key": [
+        "card_snapshot_id"
+      ],
+      "unique": [],
+      "indexes": [
+        [
+          "race_id"
+        ]
+      ],
+      "foreign_keys": [],
+      "hash_columns": [
+        "card_snapshot_id",
+        "race_id"
+      ],
+      "source": {
+        "schema": "live",
+        "table": "race_card_snapshots",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "race_card_snapshot_runners",
+      "columns": [
+        {
+          "name": "card_snapshot_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "race_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "horse_no",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "frame_no",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "horse_name",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "sex_age",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "weight_carried",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "jockey",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "trainer",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "horse_weight",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "horse_weight_diff",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "card_odds",
+          "type": "real",
+          "nullable": true
+        },
+        {
+          "name": "card_popularity",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "status_source",
+          "type": "text",
+          "nullable": true
+        }
+      ],
+      "primary_key": [
+        "card_snapshot_id",
+        "horse_no"
+      ],
+      "unique": [],
+      "indexes": [
+        [
+          "race_id"
+        ]
+      ],
+      "foreign_keys": [
+        {
+          "columns": [
+            "card_snapshot_id"
+          ],
+          "parent_table": "race_card_snapshots",
+          "parent_columns": [
+            "card_snapshot_id"
+          ]
+        }
+      ],
+      "hash_columns": [
+        "card_snapshot_id",
+        "race_id",
+        "horse_no"
+      ],
+      "source": {
+        "schema": "live",
+        "table": "race_card_snapshot_runners",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "odds_snapshots",
+      "columns": [
+        {
+          "name": "snapshot_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "race_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "bet_type",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "odds_timing",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "fetched_at",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "source",
+          "type": "text",
+          "nullable": false
+        }
+      ],
+      "primary_key": [
+        "snapshot_id"
+      ],
+      "unique": [],
+      "indexes": [
+        [
+          "race_id",
+          "bet_type",
+          "odds_timing",
+          "fetched_at"
+        ]
+      ],
+      "foreign_keys": [],
+      "hash_columns": [
+        "snapshot_id",
+        "race_id",
+        "bet_type",
+        "odds_timing",
+        "fetched_at"
+      ],
+      "source": {
+        "schema": "live",
+        "table": "odds_snapshots",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "odds_entries",
+      "columns": [
+        {
+          "name": "snapshot_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "race_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "bet_type",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "combination",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "combination_json",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "odds",
+          "type": "real",
+          "nullable": true
+        },
+        {
+          "name": "odds_min",
+          "type": "real",
+          "nullable": true
+        },
+        {
+          "name": "odds_max",
+          "type": "real",
+          "nullable": true
+        },
+        {
+          "name": "popularity",
+          "type": "integer",
+          "nullable": true
+        }
+      ],
+      "primary_key": [],
+      "unique": [],
+      "indexes": [
+        [
+          "race_id",
+          "bet_type"
+        ],
+        [
+          "bet_type",
+          "odds"
+        ],
+        [
+          "bet_type",
+          "popularity"
+        ],
+        [
+          "snapshot_id"
+        ]
+      ],
+      "foreign_keys": [],
+      "hash_columns": [
+        "snapshot_id",
+        "race_id",
+        "bet_type"
+      ],
+      "source": {
+        "schema": "live",
+        "table": "odds_entries",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "race_results",
+      "columns": [
+        {
+          "name": "race_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "race_name",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "fetched_at",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "source",
+          "type": "text",
+          "nullable": false
+        }
+      ],
+      "primary_key": [
+        "race_id"
+      ],
+      "unique": [],
+      "indexes": [],
+      "foreign_keys": [],
+      "hash_columns": [
+        "race_id"
+      ],
+      "source": {
+        "schema": "live",
+        "table": "race_results",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "result_entries",
+      "columns": [
+        {
+          "name": "race_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "rank",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "horse_no",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "horse_name",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "jockey",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "finish_time",
+          "type": "text",
+          "nullable": true
+        }
+      ],
+      "primary_key": [
+        "race_id",
+        "rank",
+        "horse_no"
+      ],
+      "unique": [],
+      "indexes": [],
+      "foreign_keys": [],
+      "hash_columns": [
+        "race_id",
+        "horse_no"
+      ],
+      "source": {
+        "schema": "live",
+        "table": "result_entries",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "payouts",
+      "columns": [
+        {
+          "name": "race_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "bet_type",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "combination",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "payout",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "popularity",
+          "type": "integer",
+          "nullable": true
+        }
+      ],
+      "primary_key": [],
+      "unique": [],
+      "indexes": [
+        [
+          "race_id",
+          "bet_type"
+        ]
+      ],
+      "foreign_keys": [],
+      "hash_columns": [
+        "race_id",
+        "bet_type"
+      ],
+      "source": {
+        "schema": "live",
+        "table": "payouts",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "netkeiba_race_results",
+      "columns": [
+        {
+          "name": "netkeiba_race_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "jra_race_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "race_date",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "course",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "race_no",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "race_name",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "surface",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "distance",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "direction",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "weather",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "track_condition",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "race_laps_json",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "source",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "fetched_at",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "raw_json",
+          "type": "text",
+          "nullable": true
+        }
+      ],
+      "primary_key": [
+        "netkeiba_race_id"
+      ],
+      "unique": [],
+      "indexes": [
+        [
+          "jra_race_id"
+        ],
+        [
+          "race_date",
+          "course",
+          "race_no"
+        ]
+      ],
+      "foreign_keys": [],
+      "hash_columns": [
+        "netkeiba_race_id",
+        "jra_race_id",
+        "race_date",
+        "course"
+      ],
+      "source": {
+        "schema": "live",
+        "table": "netkeiba_race_results",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "netkeiba_result_entries",
+      "columns": [
+        {
+          "name": "netkeiba_race_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "jra_race_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "rank",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "frame_no",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "horse_no",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "horse_name",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "sex_age",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "weight_carried",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "jockey",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "trainer",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "horse_weight",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "horse_weight_diff",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "finish_time",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "margin",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "corner_order",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "final_3f",
+          "type": "real",
+          "nullable": true
+        },
+        {
+          "name": "win_odds",
+          "type": "real",
+          "nullable": true
+        },
+        {
+          "name": "popularity",
+          "type": "integer",
+          "nullable": true
+        }
+      ],
+      "primary_key": [
+        "netkeiba_race_id",
+        "rank",
+        "horse_no"
+      ],
+      "unique": [],
+      "indexes": [
+        [
+          "jra_race_id"
+        ]
+      ],
+      "foreign_keys": [],
+      "hash_columns": [
+        "netkeiba_race_id",
+        "jra_race_id",
+        "horse_no"
+      ],
+      "source": {
+        "schema": "live",
+        "table": "netkeiba_result_entries",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "netkeiba_payouts",
+      "columns": [
+        {
+          "name": "netkeiba_race_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "jra_race_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "bet_type",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "combination",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "payout",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "popularity",
+          "type": "integer",
+          "nullable": true
+        }
+      ],
+      "primary_key": [],
+      "unique": [],
+      "indexes": [
+        [
+          "netkeiba_race_id",
+          "bet_type"
+        ],
+        [
+          "jra_race_id"
+        ]
+      ],
+      "foreign_keys": [],
+      "hash_columns": [
+        "netkeiba_race_id",
+        "jra_race_id",
+        "bet_type"
+      ],
+      "source": {
+        "schema": "live",
+        "table": "netkeiba_payouts",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "netkeiba_odds_entries",
+      "columns": [
+        {
+          "name": "netkeiba_race_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "jra_race_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "bet_type",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "combination",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "combination_json",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "odds",
+          "type": "real",
+          "nullable": true
+        },
+        {
+          "name": "odds_min",
+          "type": "real",
+          "nullable": true
+        },
+        {
+          "name": "odds_max",
+          "type": "real",
+          "nullable": true
+        },
+        {
+          "name": "popularity",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "fetched_at",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "source",
+          "type": "text",
+          "nullable": false
+        }
+      ],
+      "primary_key": [
+        "netkeiba_race_id",
+        "bet_type",
+        "combination"
+      ],
+      "unique": [],
+      "indexes": [
+        [
+          "jra_race_id"
+        ]
+      ],
+      "foreign_keys": [],
+      "hash_columns": [
+        "netkeiba_race_id",
+        "jra_race_id",
+        "bet_type",
+        "combination"
+      ],
+      "source": {
+        "schema": "live",
+        "table": "netkeiba_odds_entries",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "netkeiba_race_mappings",
+      "columns": [
+        {
+          "name": "jra_race_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "netkeiba_race_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "race_date",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "course",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "race_no",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "mapping_status",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "mapping_note",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "text",
+          "nullable": false
+        }
+      ],
+      "primary_key": [
+        "jra_race_id"
+      ],
+      "unique": [],
+      "indexes": [
+        [
+          "race_date",
+          "course",
+          "race_no"
+        ],
+        [
+          "mapping_status"
+        ],
+        [
+          "netkeiba_race_id"
+        ]
+      ],
+      "foreign_keys": [],
+      "hash_columns": [
+        "jra_race_id",
+        "netkeiba_race_id",
+        "race_date",
+        "course",
+        "mapping_status"
+      ],
+      "source": {
+        "schema": "live",
+        "table": "netkeiba_race_mappings",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "collection_errors",
+      "columns": [
+        {
+          "name": "error_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "run_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "race_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "race_date",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "course",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "race_no",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "stage",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "error_type",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "error_message",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "text",
+          "nullable": false
+        }
+      ],
+      "primary_key": [
+        "error_id"
+      ],
+      "unique": [],
+      "indexes": [
+        [
+          "run_id"
+        ],
+        [
+          "race_id"
+        ]
+      ],
+      "foreign_keys": [],
+      "hash_columns": [
+        "error_id",
+        "run_id",
+        "race_id"
+      ],
+      "source": {
+        "schema": "ops",
+        "table": "collection_errors",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "theory_versions",
+      "columns": [
+        {
+          "name": "theory_version",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "parent_version",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "theory_yaml",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "promoted_at",
+          "type": "text",
+          "nullable": true
+        }
+      ],
+      "primary_key": [
+        "theory_version"
+      ],
+      "unique": [],
+      "indexes": [],
+      "foreign_keys": [],
+      "hash_columns": [
+        "theory_version"
+      ],
+      "source": {
+        "schema": "ops",
+        "table": "theory_versions",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "predictions",
+      "columns": [
+        {
+          "name": "prediction_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "race_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "theory_version",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "mode",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "budget",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "pre_race_snapshot_json",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "prediction_json",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "text",
+          "nullable": false
+        }
+      ],
+      "primary_key": [
+        "prediction_id"
+      ],
+      "unique": [],
+      "indexes": [
+        [
+          "race_id"
+        ]
+      ],
+      "foreign_keys": [],
+      "hash_columns": [
+        "prediction_id",
+        "race_id"
+      ],
+      "source": {
+        "schema": "prediction",
+        "table": "predictions",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "prediction_tickets",
+      "columns": [
+        {
+          "name": "ticket_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "prediction_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "race_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "bucket",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "bet_type",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "selection",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "selection_json",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "amount",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "nullable": true
+        }
+      ],
+      "primary_key": [
+        "ticket_id"
+      ],
+      "unique": [],
+      "indexes": [
+        [
+          "prediction_id"
+        ],
+        [
+          "race_id"
+        ]
+      ],
+      "foreign_keys": [],
+      "hash_columns": [
+        "ticket_id",
+        "prediction_id",
+        "race_id"
+      ],
+      "source": {
+        "schema": "prediction",
+        "table": "prediction_tickets",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "evaluations",
+      "columns": [
+        {
+          "name": "evaluation_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "prediction_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "race_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "theory_version",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "total_bet",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "total_payout",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "return_rate",
+          "type": "real",
+          "nullable": false
+        },
+        {
+          "name": "hit",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "gami",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "axis_in_top3",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "middle_hole_in_top3",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "firework_hit",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "max_odds_selected",
+          "type": "real",
+          "nullable": true
+        },
+        {
+          "name": "evaluation_json",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "text",
+          "nullable": false
+        }
+      ],
+      "primary_key": [
+        "evaluation_id"
+      ],
+      "unique": [],
+      "indexes": [
+        [
+          "prediction_id"
+        ],
+        [
+          "race_id"
+        ]
+      ],
+      "foreign_keys": [],
+      "hash_columns": [
+        "evaluation_id",
+        "prediction_id",
+        "race_id"
+      ],
+      "source": {
+        "schema": "prediction",
+        "table": "evaluations",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "evaluation_ticket_results",
+      "columns": [
+        {
+          "name": "ticket_result_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "evaluation_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "ticket_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "bucket",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "bet_type",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "selection",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "amount",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "hit",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "payout",
+          "type": "integer",
+          "nullable": false
+        }
+      ],
+      "primary_key": [
+        "ticket_result_id"
+      ],
+      "unique": [],
+      "indexes": [
+        [
+          "evaluation_id"
+        ]
+      ],
+      "foreign_keys": [],
+      "hash_columns": [
+        "ticket_result_id",
+        "evaluation_id"
+      ],
+      "source": {
+        "schema": "prediction",
+        "table": "evaluation_ticket_results",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "bet_records",
+      "columns": [
+        {
+          "name": "bet_record_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "race_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "prediction_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "theory_version",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "decision_source",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "purchased_at",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "total_amount",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "note",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "text",
+          "nullable": false
+        }
+      ],
+      "primary_key": [
+        "bet_record_id"
+      ],
+      "unique": [],
+      "indexes": [
+        [
+          "race_id"
+        ],
+        [
+          "prediction_id"
+        ]
+      ],
+      "foreign_keys": [],
+      "hash_columns": [
+        "bet_record_id",
+        "race_id",
+        "prediction_id"
+      ],
+      "source": {
+        "schema": "prediction",
+        "table": "bet_records",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "bet_record_tickets",
+      "columns": [
+        {
+          "name": "bet_ticket_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "bet_record_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "race_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "prediction_ticket_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "bucket",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "bet_type",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "selection",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "selection_json",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "amount",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "odds_at_buy",
+          "type": "real",
+          "nullable": true
+        },
+        {
+          "name": "is_box_expanded",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "text",
+          "nullable": false
+        }
+      ],
+      "primary_key": [
+        "bet_ticket_id"
+      ],
+      "unique": [],
+      "indexes": [
+        [
+          "bet_record_id"
+        ],
+        [
+          "race_id",
+          "bet_type",
+          "selection"
+        ]
+      ],
+      "foreign_keys": [],
+      "hash_columns": [
+        "bet_ticket_id",
+        "bet_record_id",
+        "race_id",
+        "bet_type",
+        "selection"
+      ],
+      "source": {
+        "schema": "prediction",
+        "table": "bet_record_tickets",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "bet_record_results",
+      "columns": [
+        {
+          "name": "bet_record_result_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "bet_record_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "race_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "total_bet",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "total_payout",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "return_rate",
+          "type": "real",
+          "nullable": false
+        },
+        {
+          "name": "hit",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "settled_at",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "result_json",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "text",
+          "nullable": false
+        }
+      ],
+      "primary_key": [
+        "bet_record_result_id"
+      ],
+      "unique": [
+        [
+          "bet_record_id"
+        ]
+      ],
+      "indexes": [
+        [
+          "race_id"
+        ]
+      ],
+      "foreign_keys": [],
+      "hash_columns": [
+        "bet_record_result_id",
+        "bet_record_id",
+        "race_id"
+      ],
+      "source": {
+        "schema": "prediction",
+        "table": "bet_record_results",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "daily_prediction_log_imports",
+      "columns": [
+        {
+          "name": "import_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "source_path",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "log_date",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "venue",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "imported_at",
+          "type": "text",
+          "nullable": false
+        }
+      ],
+      "primary_key": [
+        "import_id"
+      ],
+      "unique": [
+        [
+          "source_path",
+          "log_date"
+        ]
+      ],
+      "indexes": [],
+      "foreign_keys": [],
+      "hash_columns": [
+        "import_id",
+        "source_path",
+        "log_date"
+      ],
+      "source": {
+        "schema": "ops",
+        "table": "daily_prediction_log_imports",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "daily_prediction_log_entries",
+      "columns": [
+        {
+          "name": "entry_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "import_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "race_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "race_date",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "course",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "race_no",
+          "type": "integer",
+          "nullable": true
+        },
+        {
+          "name": "entry_timestamp",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "entry_type",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "topic",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "prediction_mode",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "raw_markdown",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "payload_json",
+          "type": "text",
+          "nullable": false
+        }
+      ],
+      "primary_key": [
+        "entry_id"
+      ],
+      "unique": [],
+      "indexes": [
+        [
+          "import_id"
+        ],
+        [
+          "race_date",
+          "course",
+          "race_no"
+        ],
+        [
+          "race_id"
+        ]
+      ],
+      "foreign_keys": [],
+      "hash_columns": [
+        "entry_id",
+        "import_id",
+        "race_id",
+        "race_date",
+        "course"
+      ],
+      "source": {
+        "schema": "ops",
+        "table": "daily_prediction_log_entries",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "jra_scout_runs",
+      "columns": [
+        {
+          "name": "run_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "race_date",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "observed_at",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "phase",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "race_count",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "analyzed_count",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "candidates_json",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "errors_json",
+          "type": "text",
+          "nullable": false
+        }
+      ],
+      "primary_key": [
+        "run_id"
+      ],
+      "unique": [],
+      "indexes": [],
+      "foreign_keys": [],
+      "hash_columns": [
+        "run_id"
+      ],
+      "source": {
+        "schema": "ops",
+        "table": "jra_scout_runs",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "jra_scout_entries",
+      "columns": [
+        {
+          "name": "run_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "race_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "course",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "race_no",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "grade",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "entry_json",
+          "type": "text",
+          "nullable": false
+        }
+      ],
+      "primary_key": [
+        "run_id",
+        "race_id"
+      ],
+      "unique": [],
+      "indexes": [
+        [
+          "run_id",
+          "grade"
+        ],
+        [
+          "race_id"
+        ]
+      ],
+      "foreign_keys": [
+        {
+          "columns": [
+            "run_id"
+          ],
+          "parent_table": "jra_scout_runs",
+          "parent_columns": [
+            "run_id"
+          ]
+        }
+      ],
+      "hash_columns": [
+        "run_id",
+        "race_id",
+        "grade"
+      ],
+      "source": {
+        "schema": "ops",
+        "table": "jra_scout_entries",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "jra_live_shadow_observations",
+      "columns": [
+        {
+          "name": "observation_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "run_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "race_id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "race_date",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "course",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "race_no",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "observed_at",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "model_version",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "policy_version",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "decision_status",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "ticket_status",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "payload_json",
+          "type": "text",
+          "nullable": false
+        }
+      ],
+      "primary_key": [
+        "observation_id"
+      ],
+      "unique": [
+        [
+          "run_id",
+          "race_id"
+        ]
+      ],
+      "indexes": [
+        [
+          "race_id",
+          "observed_at"
+        ]
+      ],
+      "foreign_keys": [
+        {
+          "columns": [
+            "run_id"
+          ],
+          "parent_table": "jra_scout_runs",
+          "parent_columns": [
+            "run_id"
+          ]
+        }
+      ],
+      "hash_columns": [
+        "observation_id",
+        "run_id",
+        "race_id",
+        "observed_at"
+      ],
+      "source": {
+        "schema": "ops",
+        "table": "jra_live_shadow_observations",
+        "key": "analysis-current"
+      }
+    },
+    {
+      "name": "result_collection_jobs",
+      "columns": [
+        {
+          "name": "job_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "from_date",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "to_date",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "courses_json",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "storage",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "output",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "retries",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "started_at",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "finished_at",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "message",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "error",
+          "type": "text",
+          "nullable": true
+        }
+      ],
+      "primary_key": [
+        "job_id"
+      ],
+      "unique": [],
+      "indexes": [],
+      "foreign_keys": [],
+      "hash_columns": [
+        "job_id"
+      ],
+      "source": {
+        "schema": "ops",
+        "table": "result_collection_jobs",
+        "key": "jobs-current"
+      }
+    },
+    {
+      "name": "cache_entries",
+      "columns": [
+        {
+          "name": "cache_key",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "value_blob",
+          "type": "blob",
+          "nullable": false
+        },
+        {
+          "name": "expires_at",
+          "type": "text",
+          "nullable": false
+        }
+      ],
+      "primary_key": [
+        "cache_key"
+      ],
+      "unique": [],
+      "indexes": [],
+      "foreign_keys": [],
+      "hash_columns": [
+        "cache_key"
+      ]
+    },
+    {
+      "name": "stored_race_results",
+      "columns": [
+        {
+          "name": "storage_namespace",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "race_id",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "race_date",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "course",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "race_no",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "result_json",
+          "type": "text",
+          "nullable": false
+        }
+      ],
+      "primary_key": [
+        "storage_namespace",
+        "race_id"
+      ],
+      "unique": [],
+      "indexes": [
+        [
+          "storage_namespace",
+          "race_date",
+          "course"
+        ],
+        [
+          "race_id"
+        ]
+      ],
+      "foreign_keys": [],
+      "hash_columns": [
+        "storage_namespace",
+        "race_id",
+        "race_date",
+        "course"
+      ]
+    }
+  ]
+}

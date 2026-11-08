@@ -1,6 +1,15 @@
-"""Persist pre-race Tokyo/Nakayama v89 shadow predictions and actual odds."""
+"""概要: 東京・中山のV89発走前shadow予想を共通backendへ保存する。
+作成日: 不明
+入力: 対象日、互換用DBパス、共通backend/SQL接続設定。
+出力: 保存済み予想と実オッズ、実行レポート。
+実行例: uv run python scripts/jra_major_venue_shadow_day.py --date 2026-10-17
+注意事項: 実行時は外部取得とDB書込を行う。SQLの保存済み判定に旧SQLiteを要求しない。
+"""
 
 from __future__ import annotations
+
+from jra_srb.storage import build_analysis_store, open_analysis_read
+from jra_srb.storage_config import storage_backend
 
 import argparse
 import asyncio
@@ -8,9 +17,7 @@ from datetime import date, datetime
 import json
 from pathlib import Path
 import re
-import sqlite3
 
-from jra_srb.analysis_store import AnalysisSQLiteStore
 from jra_srb.jra_prediction_service import JraPredictionService
 from jra_srb.jra_v_theory import build_v_theory_prediction_record
 from jra_srb.service import JraService
@@ -30,9 +37,10 @@ def _race_time(target_date: date, value: str | None) -> datetime | None:
 
 
 def _already_saved(db_path: Path, race_id: str) -> bool:
-    if not db_path.exists():
+    """SQLでは旧ファイルの存在に依存せず、同じ理論版の保存済み予想を確認する。"""
+    if storage_backend() == "sqlite" and not db_path.exists():
         return False
-    with sqlite3.connect(f"file:{db_path.resolve().as_posix()}?mode=ro", uri=True) as conn:
+    with open_analysis_read(db_path) as conn:
         row = conn.execute(
             "select 1 from predictions where race_id = ? and theory_version = ? limit 1",
             (race_id, THEORY_VERSION),
@@ -41,9 +49,10 @@ def _already_saved(db_path: Path, race_id: str) -> bool:
 
 
 async def run(target_date: date, db_path: Path, min_lead_minutes: int = 10) -> dict:
+    """従来の引数と取得条件に従い、選択backendで収集・集計を実行する。"""
     jra = JraService()
     prediction_service = JraPredictionService(jra)
-    store = AnalysisSQLiteStore(db_path)
+    store = build_analysis_store(db_path)
     report = {
         "date": target_date.isoformat(),
         "theory_version": THEORY_VERSION,

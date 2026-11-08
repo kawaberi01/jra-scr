@@ -1,4 +1,14 @@
+"""概要: 既存の収集・集計を共通backendの保存済みデータに対して実行する。
+作成日: 不明
+入力: 従来のCLI引数、JRA_SRB_STORAGE_BACKENDとSQL接続設定。
+出力: 従来の保存・集計・明示export。SQL運用時の業務正本はSQL Server。
+実行例: uv run python scripts/jra_review_evaluations.py
+注意事項: 取得処理は外部通信を行う。旧SQLiteへの自動fallbackは行わない。
+"""
+
 from __future__ import annotations
+
+from jra_srb.storage import build_analysis_store, open_analysis_read
 
 import json
 from pathlib import Path
@@ -11,8 +21,9 @@ DB_PATH = Path("data/db/analysis.sqlite")
 
 
 def main() -> None:
-    store = AnalysisSQLiteStore(DB_PATH)
-    with sqlite3.connect(DB_PATH) as conn:
+    """従来の引数と取得条件に従い、選択backendで収集・集計を実行する。"""
+    store = build_analysis_store(DB_PATH)
+    with open_analysis_read(DB_PATH) as conn:
         rows = conn.execute(
             "select prediction_id, race_id, evaluation_json from evaluations "
             "where race_id like '20260711%' order by race_id"

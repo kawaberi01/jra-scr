@@ -1,3 +1,11 @@
+"""概要: 分析Storeの業務保存・読取と旧SQLite backendを実装する。
+作成日: 不明
+入力: 取得済み出馬表・オッズ・結果・予想・購入・評価。
+出力: 選択backendの保存データと既存応答モデル。
+実行例: uv run jra-srb --help
+注意事項: 取得・保存を呼ぶ操作は外部通信やDB更新を伴う。SQL障害時に旧SQLiteへ切り替えない。
+"""
+
 from __future__ import annotations
 
 from datetime import UTC, date, datetime
@@ -49,6 +57,10 @@ from .models import (
 
 class AnalysisSQLiteStore:
     def __init__(self, path: str | Path) -> None:
+        """旧backendのStoreを初期化し、SQL運用中の直接SQLite writerを拒否する。"""
+        from .storage_config import storage_backend
+        if storage_backend() == "sqlserver":
+            raise RuntimeError("SQLite analysis writer is disabled; use build_analysis_store for SQL Server")
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.init_db()
@@ -620,7 +632,8 @@ class AnalysisSQLiteStore:
         limit: int = 100,
         offset: int = 0,
     ) -> JraLiveShadowObservationPage:
-        with self._connect() as conn:
+        """レースごとの保存済みshadow観測を時刻順のページで返す。"""
+        with self._connect(read_only=True) as conn:
             known_race = conn.execute(
                 """
                 select 1 from races where race_id = ?
@@ -743,6 +756,7 @@ class AnalysisSQLiteStore:
             )
 
     def write_card(self, target_date: date, course: str, race_no: int, card: RaceCard) -> None:
+        """取得済み出馬表を保存し、完全な発走前snapshotと取消状態を保持する。"""
         meeting_no, meeting_day = _parse_meeting_fields_from_race_id(card.race_id)
         horse_numbers = [runner.horse_no for runner in card.runners]
         structurally_complete = (
@@ -808,6 +822,11 @@ class AnalysisSQLiteStore:
             }
 
         with self._connect() as conn:
+            if not self._accept_write(conn, "race_card", card.race_id, {
+                "date": target_date.isoformat(), "course": str(course), "race_no": race_no,
+                "card": card.model_dump(mode="json"),
+            }):
+                return
             conn.execute(
                 """
                 insert into races
@@ -1011,8 +1030,13 @@ class AnalysisSQLiteStore:
             )
 
     def write_odds(self, odds: RaceOdds, bet_type: str | None = None, odds_timing: str = "final_or_near_final") -> None:
+        """券種・観測時点を保持して取得済みオッズと明細を原子的に保存する。"""
         entries_by_type = _odds_entries_by_type(odds, bet_type)
         with self._connect() as conn:
+            if not self._accept_write(conn, "odds", odds.race_id, {
+                "bet_type": bet_type, "odds_timing": odds_timing, "odds": odds.model_dump(mode="json"),
+            }):
+                return
             for current_bet_type, entries in entries_by_type.items():
                 snapshot_id = (
                     f"{odds.race_id}:{current_bet_type}:{odds_timing}:{uuid4().hex}"
@@ -1055,7 +1079,10 @@ class AnalysisSQLiteStore:
                     )
 
     def write_result(self, result: RaceResult) -> None:
+        """取得済みの結果・払戻をレース単位で原子的に更新する。"""
         with self._connect() as conn:
+            if not self._accept_write(conn, "race_result", result.race_id, result.model_dump(mode="json")):
+                return
             conn.execute(
                 """
                 insert into race_results (race_id, race_name, fetched_at, source)
@@ -1101,7 +1128,8 @@ class AnalysisSQLiteStore:
                 )
 
     def has_card(self, race_id: str) -> bool:
-        with self._connect() as conn:
+        """出走馬を含む保存済み出馬表の有無を返す。"""
+        with self._connect(read_only=True) as conn:
             row = conn.execute(
                 """
                 select 1
@@ -1119,7 +1147,8 @@ class AnalysisSQLiteStore:
         return row is not None
 
     def has_result(self, race_id: str) -> bool:
-        with self._connect() as conn:
+        """明細と払戻を含む保存済み確定結果の有無を返す。"""
+        with self._connect(read_only=True) as conn:
             row = conn.execute(
                 """
                 select 1
@@ -1142,7 +1171,8 @@ class AnalysisSQLiteStore:
         return row is not None
 
     def has_odds_snapshot(self, race_id: str, bet_type: str, odds_timing: str = "final_or_near_final") -> bool:
-        with self._connect() as conn:
+        """指定した券種と観測時点の保存済みオッズ明細の有無を返す。"""
+        with self._connect(read_only=True) as conn:
             row = conn.execute(
                 """
                 select 1
@@ -1162,7 +1192,8 @@ class AnalysisSQLiteStore:
         return row is not None
 
     def has_netkeiba_result(self, netkeiba_race_id: str) -> bool:
-        with self._connect() as conn:
+        """保存済みnetkeiba結果・出走明細・払戻の有無を返す。"""
+        with self._connect(read_only=True) as conn:
             row = conn.execute(
                 """
                 select 1
@@ -1284,8 +1315,9 @@ class AnalysisSQLiteStore:
                 )
 
     def has_netkeiba_odds_entry(self, netkeiba_race_id: str, bet_type: str, combination: list[str]) -> bool:
+        """指定したnetkeibaレースと券種の保存済みオッズの有無を返す。"""
         stored_combination = "-".join(_normalize_combination_items(combination))
-        with self._connect() as conn:
+        with self._connect(read_only=True) as conn:
             row = conn.execute(
                 """
                 select 1
@@ -1378,12 +1410,13 @@ class AnalysisSQLiteStore:
         to_date: date,
         limit: int | None = None,
     ) -> list[dict]:
+        """指定状態と期間の保存済みレース対応を返す。"""
         params: list[object] = [from_date.isoformat(), to_date.isoformat()]
         limit_sql = ""
         if limit is not None:
             limit_sql = "limit ?"
             params.append(limit)
-        with self._connect() as conn:
+        with self._connect(read_only=True) as conn:
             rows = conn.execute(
                 f"""
                 select jra_race_id, netkeiba_race_id, race_date, course, race_no,
@@ -1398,6 +1431,7 @@ class AnalysisSQLiteStore:
         return [_row_to_dict(row) for row in rows]
 
     def upsert_prediction_record(self, payload: dict) -> dict[str, object]:
+        """入力snapshotと理論版を固定し、予想と買い目を原子的に保存する。"""
         prediction_id = str(payload["prediction_id"])
         race_id = str(payload["race_id"])
         theory_version = str(payload["theory_version"])
@@ -1410,6 +1444,12 @@ class AnalysisSQLiteStore:
         race_context = _extract_prediction_race_context(payload, race_id)
 
         with self._connect() as conn:
+            if not self._accept_write(conn, "prediction_record", race_id, payload):
+                return {
+                    "prediction_id": prediction_id, "race_id": race_id,
+                    "predictions": _scalar(conn, "select count(*) from predictions where prediction_id=?", (prediction_id,)),
+                    "prediction_tickets": _scalar(conn, "select count(*) from prediction_tickets where prediction_id=?", (prediction_id,)),
+                }
             if race_context is not None:
                 _upsert_race_context(conn, race_context)
             conn.execute(
@@ -1472,6 +1512,7 @@ class AnalysisSQLiteStore:
         }
 
     def evaluate_prediction_record(self, payload: dict) -> dict[str, object]:
+        """保存予想と確定結果を照合し、対応する予測対象と保存買い目だけを評価・保存する。"""
         prediction_id = str(payload["prediction_id"])
         evaluation_id = str(payload.get("evaluation_id") or f"eval-{prediction_id}")
         created_at = _coerce_datetime_text(payload.get("created_at")) or _now()
@@ -1693,7 +1734,8 @@ class AnalysisSQLiteStore:
         }
 
     def get_prediction_record(self, prediction_id: str) -> PredictionRecord:
-        with self._connect() as conn:
+        """保存した入力snapshotと買い目を含む予想を読み戻す。"""
+        with self._connect(read_only=True) as conn:
             return self._get_prediction_record(conn, prediction_id)
 
     def _get_prediction_record(self, conn: sqlite3.Connection, prediction_id: str) -> PredictionRecord:
@@ -1754,6 +1796,7 @@ class AnalysisSQLiteStore:
         limit: int = 100,
         offset: int = 0,
     ) -> PredictionRecordPage:
+        """指定条件の予想を既存の安定順とページングで返す。"""
         where: list[str] = []
         params: list[object] = []
         if race_id is not None:
@@ -1773,7 +1816,7 @@ class AnalysisSQLiteStore:
             params.append(mode)
         where_sql = f"where {' and '.join(where)}" if where else ""
 
-        with self._connect() as conn:
+        with self._connect(read_only=True) as conn:
             total = int(
                 conn.execute(
                     f"""
@@ -1800,7 +1843,8 @@ class AnalysisSQLiteStore:
         return PredictionRecordPage(items=items, total=total, limit=limit, offset=offset)
 
     def get_evaluation_record(self, evaluation_id: str) -> EvaluationRecord:
-        with self._connect() as conn:
+        """買い目別の結果を含む保存済み評価を読み戻す。"""
+        with self._connect(read_only=True) as conn:
             return self._get_evaluation_record(conn, evaluation_id)
 
     def _get_evaluation_record(self, conn: sqlite3.Connection, evaluation_id: str) -> EvaluationRecord:
@@ -1874,6 +1918,7 @@ class AnalysisSQLiteStore:
         limit: int = 100,
         offset: int = 0,
     ) -> EvaluationRecordPage:
+        """指定条件の評価を既存の安定順とページングで返す。"""
         where, params = _evaluation_filters(
             prediction_id=prediction_id,
             race_id=race_id,
@@ -1882,7 +1927,7 @@ class AnalysisSQLiteStore:
             theory_version=theory_version,
         )
         where_sql = f"where {' and '.join(where)}" if where else ""
-        with self._connect() as conn:
+        with self._connect(read_only=True) as conn:
             total = int(
                 conn.execute(
                     f"""
@@ -1914,13 +1959,14 @@ class AnalysisSQLiteStore:
         to_date: date | None = None,
         theory_version: str | None = None,
     ) -> EvaluationSummary:
+        """指定条件の保存済み評価から的中・回収額を集計する。"""
         where, params = _evaluation_filters(
             from_date=from_date,
             to_date=to_date,
             theory_version=theory_version,
         )
         where_sql = f"where {' and '.join(where)}" if where else ""
-        with self._connect() as conn:
+        with self._connect(read_only=True) as conn:
             row = conn.execute(
                 f"""
                 select count(1) as evaluation_count,
@@ -1986,6 +2032,7 @@ class AnalysisSQLiteStore:
         )
 
     def create_bet_record(self, request: BetRecordCreateRequest | dict) -> BetRecord:
+        """購入額と買い目を検証して保存し、保存した購入記録を返す。"""
         request = BetRecordCreateRequest.model_validate(request)
         expanded_tickets = _expand_bet_record_tickets(request)
         total_amount = sum(ticket["amount"] for ticket in expanded_tickets)
@@ -1994,9 +2041,11 @@ class AnalysisSQLiteStore:
                 f"total_amount mismatch: request={request.total_amount} expanded={total_amount}"
             )
 
-        bet_record_id = str(uuid4())
+        bet_record_id = self._entity_id("bet_record", request.race_id)
         now = _now()
         with self._connect() as conn:
+            if not self._accept_write(conn, "bet_record", request.race_id, request.model_dump(mode="json")):
+                return self.get_bet_record(bet_record_id)
             conn.execute(
                 """
                 insert into bet_records
@@ -2045,7 +2094,8 @@ class AnalysisSQLiteStore:
         return self.get_bet_record(bet_record_id)
 
     def get_bet_record(self, bet_record_id: str) -> BetRecord:
-        with self._connect() as conn:
+        """保存した購入記録を関連する予想・買い目・精算結果とともに返す。"""
+        with self._connect(read_only=True) as conn:
             record = conn.execute(
                 "select * from bet_records where bet_record_id = ?",
                 (bet_record_id,),
@@ -2151,6 +2201,7 @@ class AnalysisSQLiteStore:
         limit: int = 100,
         offset: int = 0,
     ) -> BetRecordPage:
+        """指定条件の購入記録を既存の安定順とページングで返す。"""
         where: list[str] = []
         params: list[object] = []
         if from_date is not None:
@@ -2173,7 +2224,7 @@ class AnalysisSQLiteStore:
             params.append(decision_source)
         where_sql = f"where {' and '.join(where)}" if where else ""
 
-        with self._connect() as conn:
+        with self._connect(read_only=True) as conn:
             total = int(
                 conn.execute(
                     f"""
@@ -2348,10 +2399,11 @@ class AnalysisSQLiteStore:
         odds_timing: str | None = None,
         as_of: datetime | None = None,
     ) -> StoredPreRaceSnapshot:
+        """観測時刻を超えない出馬表・出走馬・券種別オッズ版を読み戻す。"""
         if as_of is not None and as_of.tzinfo is None:
             raise ValueError("as_of must include a timezone offset")
         as_of_text = _dt(as_of)
-        with self._connect() as conn:
+        with self._connect(read_only=True) as conn:
             race_exists = conn.execute(
                 "select 1 from races where race_id = ?",
                 (race_id,),
@@ -2501,7 +2553,7 @@ class AnalysisSQLiteStore:
 
     def list_pre_race_race_ids(self, target_date: date) -> list[str]:
         """Return races that have a complete locally stored pre-race card."""
-        with self._connect() as conn:
+        with self._connect(read_only=True) as conn:
             rows = conn.execute(
                 """
                 select r.race_id
@@ -2526,7 +2578,8 @@ class AnalysisSQLiteStore:
         bet_type: str,
         combination: list[str] | None = None,
     ) -> StoredOddsTimeline:
-        with self._connect() as conn:
+        """指定券種と正規化した組合せの観測履歴を返す。"""
+        with self._connect(read_only=True) as conn:
             race = conn.execute(
                 "select 1 from races where race_id = ?",
                 (race_id,),
@@ -2579,9 +2632,10 @@ class AnalysisSQLiteStore:
         )
 
     def count_rows(self, table: str) -> int:
+        """妥当性を検査した業務表の保存件数を返す。"""
         if not re.fullmatch(r"[a-z_]+", table):
             raise ValueError(f"invalid table name={table}")
-        with self._connect() as conn:
+        with self._connect(read_only=True) as conn:
             return int(conn.execute(f"select count(*) from {table}").fetchone()[0])
 
     def replace_daily_prediction_log_entries(
@@ -2664,12 +2718,13 @@ class AnalysisSQLiteStore:
         to_date: date,
         limit: int | None = None,
     ) -> list[dict]:
+        """netkeiba対応表の生成に使う保存済みレースを返す。"""
         params: list[object] = [from_date.isoformat(), to_date.isoformat()]
         limit_sql = ""
         if limit is not None:
             limit_sql = "limit ?"
             params.append(limit)
-        with self._connect() as conn:
+        with self._connect(read_only=True) as conn:
             rows = conn.execute(
                 f"""
                 select race_id, race_date, course, race_no
@@ -2690,6 +2745,7 @@ class AnalysisSQLiteStore:
         only_missing: bool,
         limit: int | None = None,
     ):
+        """出走馬の補完対象となる保存済みレースを返す。"""
         from .analysis_maintenance import AnalysisRaceTarget
 
         where = ["r.race_date >= ?", "r.race_date <= ?"]
@@ -2714,7 +2770,7 @@ class AnalysisSQLiteStore:
             order by r.race_date, r.course, r.race_no
             {limit_sql}
         """
-        with self._connect() as conn:
+        with self._connect(read_only=True) as conn:
             rows = conn.execute(sql, params).fetchall()
         return [
             AnalysisRaceTarget(
@@ -2728,10 +2784,11 @@ class AnalysisSQLiteStore:
         ]
 
     def verify_analysis_joins(self, from_date: date, to_date: date, sample_size: int):
+        """保存済みのレース・出走馬・結果・払戻の結合状態を集計する。"""
         from .analysis_maintenance import AnalysisJoinSample, AnalysisJoinVerification
 
         params = (from_date.isoformat(), to_date.isoformat())
-        with self._connect() as conn:
+        with self._connect(read_only=True) as conn:
             counts = {
                 "races": _scalar(
                     conn,
@@ -2890,7 +2947,16 @@ class AnalysisSQLiteStore:
             samples=samples,
         )
 
-    def _connect(self) -> sqlite3.Connection:
+    def _accept_write(self, conn, operation: str, race_id: str, payload: dict) -> bool:
+        """旧backendでは既存の追記規則を維持する。SQL版は受領冪等性を実装する。"""
+        return True
+
+    def _entity_id(self, kind: str, identity: str) -> str:
+        """旧backendの新規作成IDを生成する。SQL版は明示再試行キーに対応する。"""
+        return str(uuid4())
+
+    def _connect(self, *, read_only: bool = False) -> sqlite3.Connection:
+        """旧backendの操作用接続を返す。read_onlyは共通Store呼出しの互換引数。"""
         conn = sqlite3.connect(self.path)
         conn.row_factory = sqlite3.Row
         return conn
@@ -3225,6 +3291,10 @@ def _upsert_race_context(conn: sqlite3.Connection, context: dict[str, object]) -
                 _parse_int(_stringify_optional(runner.get("popularity"))),
             ),
         )
+
+
+
+
 
 
 def _extract_predicted_top3(prediction_json: dict) -> list[dict]:

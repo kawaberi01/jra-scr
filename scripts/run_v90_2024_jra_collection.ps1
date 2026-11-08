@@ -27,8 +27,8 @@ foreach ($item in $batches) {
     $previous = -1
     for ($attempt = 1; $attempt -le 120; $attempt++) {
         $countCode = @"
-import sqlite3
-connection = sqlite3.connect(r'$Db')
+from jra_srb.storage import open_analysis_read
+connection = open_analysis_read(r'$Db')
 print(connection.execute("select count(*) from race_results rr join races r on r.race_id=rr.race_id where r.race_date>=? and r.race_date<=?", ("$($item.From)", "$($item.To)")).fetchone()[0])
 "@
         $count = (& rtk uv run python -X utf8 -c $countCode)
