@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "profile_id": "cross_pool_sql_masked_v2",
+  "source_policy": {"policy_id": "frozen_prediction_v1", "source_key": "prediction-full-20261008", "snapshot_id": 31, "build_identity_sha256": "def6b7db5b8715fe53bf594a56c53ff3cea5a38738c67983d1211fed4bc00301"},
+  "date_from": "2025-01-05",
+  "date_through": "2025-01-11",
+  "horizon": "T30",
+  "splits": {"train": ["2025-01-05", "2025-01-05"], "dev": ["2025-01-06", "2025-01-06"], "evaluation": ["2025-01-11", "2025-01-11"]},
+  "seed": 42,
+  "model": {"C": 1.0, "solver": "lbfgs", "max_iter": 1000},
+  "ticket": {"stake_yen": 100, "odds_min": 2.0, "odds_max": 30.0, "min_expected_return": 1.05, "max_tickets_per_race": 1},
+  "quality": {"availability": "research_only", "require_atomic_snapshot": false},
+  "limits": {"batch_races": 500, "fetch_rows": 10000, "query_timeout_seconds": 30, "memory_bytes": 2147483648, "max_candidate_rows": 1500000, "max_label_scan_rows": 1500000}
+}

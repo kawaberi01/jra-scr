@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "profile_id": "runtime_receipt_v1",
+  "configuration_status": "example_only",
+  "source_policy": {
+    "policy_id": "runtime_receipt_v1",
+    "source_key": "analysis-current",
+    "snapshot_id": 34
+  },
+  "id_map": {
+    "source_snapshot_id": 34,
+    "source_relation": "live.races",
+    "source_original_id": "202610120811"
+  },
+  "request": {
+    "api_race_id": "202610120811",
+    "source": "official",
+    "operation": "race_result",
+    "knowledge_cutoff": "2026-10-12T12:00:00+00:00",
+    "decision_cutoff": null,
+    "bet_type": null,
+    "odds_timing": null,
+    "race_date": "2026-10-12",
+    "course": "kyoto",
+    "race_no": 11
+  },
+  "limits": {
+    "max_receipt_rows": 9999,
+    "memory_bytes": 2147483648
+  }
+}

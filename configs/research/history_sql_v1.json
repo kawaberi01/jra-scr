@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "profile_id": "history_sql_v1",
+  "source_policy": {"source_key": "analysis-current", "snapshot_id": 34},
+  "date_through": "2026-10-12",
+  "validation_fraction": 0.2,
+  "limits": {"fetch_rows": 10000, "query_timeout_seconds": 30, "memory_bytes": 2147483648, "max_candidate_rows": 1500000}
+}

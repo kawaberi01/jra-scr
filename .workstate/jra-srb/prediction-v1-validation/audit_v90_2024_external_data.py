@@ -1,7 +1,16 @@
+"""概要: 通常収集workerから呼ばれる過去入力監査を共通readerで実行する。
+作成日: 不明
+入力: 従来CLI引数と共通backend設定。
+出力: 既存の入力監査集計。
+実行例: uv run jra-srb --help
+注意事項: 取得・保存を呼ぶ操作は外部通信やDB更新を伴う。SQL障害時に旧SQLiteへ切り替えない。
+"""
+
 from __future__ import annotations
 
 import argparse
 import sqlite3
+from jra_srb.storage import open_analysis_read
 from pathlib import Path
 
 
@@ -10,6 +19,7 @@ def scalar(conn: sqlite3.Connection, query: str, params: tuple[str, str]) -> int
 
 
 def main() -> int:
+    """従来の引数と取得条件に従い、選択backendで収集・集計を実行する。"""
     parser = argparse.ArgumentParser(description="Audit the fixed 2024 Jul-Aug v90 external-evaluation inputs.")
     parser.add_argument("--db", type=Path, default=Path("data/db/analysis.sqlite"))
     parser.add_argument("--from-date", default="2024-07-01")
@@ -17,7 +27,7 @@ def main() -> int:
     args = parser.parse_args()
     dates = (args.from_date, args.to_date)
 
-    with sqlite3.connect(args.db) as conn:
+    with open_analysis_read(args.db) as conn:
         races = scalar(conn, "select count(*) from races where race_date between ? and ?", dates)
         official_results = scalar(
             conn,
