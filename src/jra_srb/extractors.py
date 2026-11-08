@@ -99,7 +99,13 @@ def _parse_field(node: Tag, rule: dict[str, Any]) -> str | None:
 
 
 def _runner_status(row: Tag) -> tuple[RunnerStatus, RunnerStatusSource | None]:
-    row_text = row.get_text(" ", strip=True)
+    """過去走セルを除いた現在欄の明示取消・除外だけを判定する。"""
+    cells = row.find_all(["td", "th"], recursive=False)
+    current_cells = [cell for cell in cells if "past" not in cell.get("class", [])]
+    row_text = (
+        " ".join(cell.get_text(" ", strip=True) for cell in current_cells)
+        if cells else row.get_text(" ", strip=True)
+    )
     if any(marker in row_text for marker in ("出走取消", "競走除外", "取消", "除外")):
         return RunnerStatus.withdrawn, RunnerStatusSource.explicit
     return RunnerStatus.active, None
