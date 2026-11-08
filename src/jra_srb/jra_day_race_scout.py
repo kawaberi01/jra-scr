@@ -1,3 +1,11 @@
+"""概要: 当日レースを共通履歴の1回取得・集計で比較する。
+作成日: 不明
+入力: 対象日、当日カード/オッズ、履歴モデルと共通backend。
+出力: 候補順位・欠測・エラーを含むスカウト記録。
+実行例: uv run pytest -q tests/test_jra_day_race_scout.py
+注意事項: 履歴共有は1回のrun内のみ。カード・オッズはレースごとに取得する。
+"""
+
 from __future__ import annotations
 
 import asyncio
@@ -7,6 +15,7 @@ from uuid import uuid4
 
 from .analysis_store import AnalysisSQLiteStore
 from .jra_betting_decision import build_win_betting_decision
+from .jra_history_dataset import LiveHistoryContext
 from .jra_history_model import build_artifact_live_records, load_model_artifact, score_live_records
 from .jra_prediction_engine import build_prediction_record
 from .jra_prediction_service import JraPredictionService
@@ -74,6 +83,8 @@ def sort_scout_entries(entries: list[JraDayRaceScoutEntry]) -> list[JraDayRaceSc
 
 
 class JraDayRaceScout:
+    """同じ実行内だけ共通履歴を共有して当日の各レースを評価する。"""
+
     def __init__(
         self,
         *,
@@ -94,6 +105,7 @@ class JraDayRaceScout:
         refresh: bool = False, max_concurrency: int = 3,
         mode: str = "quick", time_budget_seconds: float = 45.0,
     ) -> JraDayRaceScoutResult:
+        """実行ごとに独立した履歴contextを作り、カードと評価結果を収集する。"""
         if mode not in {"quick", "deep"}:
             raise ValueError(f"unsupported scout mode={mode}")
         if time_budget_seconds <= 0:
@@ -102,8 +114,8 @@ class JraDayRaceScout:
         run_id = f"jra-scout-{target_date:%Y%m%d}-{uuid4().hex[:12]}"
         local_race_ids = self.store.list_pre_race_race_ids(target_date)
         if local_race_ids:
-            return self._run_from_local_snapshots(
-                target_date, run_id, observed_at, local_race_ids, max_candidates,
+            return await asyncio.to_thread(
+                self._run_from_local_snapshots, target_date, run_id, observed_at, local_race_ids, max_candidates,
             )
         meetings = await self.jra_service.get_meetings_for_date(target_date)
         race_count = sum(len(meeting.races) for meeting in meetings)
@@ -132,11 +144,13 @@ class JraDayRaceScout:
             self.store.save_jra_scout_result(result)
             return result
 
+        history_context = LiveHistoryContext(self.analysis_db_path, target_date=target_date)
         semaphore = asyncio.Semaphore(max_concurrency)
         errors: list[dict[str, object]] = []
         observations: list[JraLiveShadowObservation] = []
 
         async def analyze(meeting, race):
+            """レースの最新材料を取得し、履歴はrun共通contextで評価する。"""
             if meeting.meeting_no is None or meeting.meeting_day is None:
                 errors.append({"race_id": race.race_id, "error_type": "meeting_coordinates_unavailable"})
                 return self._x_entry(meeting.course, race.race_no, race.race_id, race.race_name,
@@ -177,8 +191,9 @@ class JraDayRaceScout:
                             race_id = bundle.race_id
                             race_name = bundle.card.race_name
                             start_time = bundle.card.start_time or race.start_time
-                records = build_artifact_live_records(
-                    artifact, self.analysis_db_path, target_date=target_date, course=meeting.course, card=card,
+                records = await asyncio.to_thread(
+                    build_artifact_live_records, artifact, self.analysis_db_path,
+                    target_date=target_date, course=meeting.course, card=card, history_context=history_context,
                 )
                 history = score_live_records(artifact, records)
                 decision = build_win_betting_decision(
@@ -267,7 +282,7 @@ class JraDayRaceScout:
         race_ids: list[str],
         max_candidates: int,
     ) -> JraDayRaceScoutResult:
-        """Score already-collected races without waiting on public web sources."""
+        """保存済みカードを評価し、同じ実行内の共通履歴を再取得しない。"""
         try:
             artifact = load_model_artifact(self.history_model_path)
             if str(artifact.get("trained_through") or "") >= target_date.isoformat():
@@ -281,6 +296,7 @@ class JraDayRaceScout:
             self.store.save_jra_scout_result(result)
             return result
 
+        history_context = LiveHistoryContext(self.analysis_db_path, target_date=target_date)
         entries: list[JraDayRaceScoutEntry] = []
         errors: list[dict[str, object]] = []
         for race_id in race_ids:
@@ -295,6 +311,7 @@ class JraDayRaceScout:
                 odds = _race_odds_from_snapshot(snapshot)
                 records = build_artifact_live_records(
                     artifact, self.analysis_db_path, target_date=target_date, course=race.course, card=card,
+                    history_context=history_context,
                 )
                 history = score_live_records(artifact, records)
                 decision = build_win_betting_decision(race.race_name, history, [], odds)

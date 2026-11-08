@@ -1,10 +1,13 @@
-"""概要：保存済みCatBoost v3で当日利用可能な通常戦を相対比較する。
-作成日：2026-10-04
-入力：対象日、保存済みモデル、SQLite、任意で未収集カードを逐次補完。
-出力：時刻付きスカウトJSON、標準出力の分析件数・順位・欠損。
-実行例：rtk uv run --with catboost python scripts/scout_jra_catboost_day.py --date 2026-10-04 --ranker-model model.cbm --fill-missing --max-fetches 5
-注意事項：買い目は作成しない。外部取得は逐次実行・件数制限付き。保存カードから再開できる。
+"""概要: 保存済みCatBoost v3で当日レースを比較し、共通履歴を1回だけ取得する。
+作成日: 不明
+入力: 対象日、保存済みモデル、共通backend設定、任意のカード逐次補完。
+出力: 時刻付きスカウトJSON、分析件数・順位・欠損の標準出力。
+実行例: uv run --extra ml --with catboost python scripts/scout_jra_catboost_day.py --date 2026-10-18 --ranker-model model.cbm --fill-missing --max-fetches 5
+注意事項: 外部取得は逐次・件数制限付き。履歴共有は1回の実行内のみ。
+    買い目を作成せず、SQL障害時に旧SQLiteへfallbackしない。
 """
+
+from jra_srb.storage import build_analysis_store, open_analysis_read
 
 from datetime import date, datetime, timezone, timedelta
 import argparse
@@ -14,7 +17,7 @@ from pathlib import Path
 import httpx
 from jra_srb.analysis_store import AnalysisSQLiteStore
 from jra_srb.jra_day_race_scout import _race_card_from_snapshot
-from jra_srb.jra_history_dataset import build_history_dataset
+from jra_srb.jra_history_dataset import LiveHistoryContext, build_history_dataset
 from jra_srb.jra_history_model import build_artifact_live_records, load_model_artifact
 from jra_srb.jra_lap_style_dataset import append_lap_style_features
 from jra_srb.models import RaceCard
@@ -57,6 +60,7 @@ def main():
         1回の取得件数と1リクエストの待ち時間を制限する。
         失敗はレース別に記録し、成功カードを保存して次の実行で再利用する。
         対象当日の結果はモデル特徴に使わない。スコア差を確率と呼ばない。
+        生涯・近走の履歴を初回だけ取得/集計し、後段のdatasetにも同じ行を使う。
     """
     parser = argparse.ArgumentParser(description="CatBoost v3の逐次補完スカウト")
     parser.add_argument("--date", type=date.fromisoformat, required=True)
@@ -75,12 +79,13 @@ def main():
     if args.cache_max_age < 0:
         parser.error("キャッシュ有効秒数は0以上")
     target, db = args.date, args.db
+    history_context = LiveHistoryContext(db, target_date=target)
     output_dir = args.output_dir or Path("data/live/catboost_scout") / target.isoformat()
     output_dir.mkdir(parents=True, exist_ok=True)
     observed = datetime.now(timezone.utc)
     artifact = load_model_artifact(args.history_model)
     model = load_ranker(args.ranker_model)
-    store = AnalysisSQLiteStore(db)
+    store = build_analysis_store(db)
     client = httpx.Client(base_url=args.api_base, timeout=args.request_timeout)
     schedule_response = client.get("/search/races", params={"date": target.isoformat(), "limit": 100})
     schedule_response.raise_for_status()
@@ -125,13 +130,17 @@ def main():
         if start <= datetime.now(timezone.utc):
             excluded.append({**race, "reason": "取得中に発走"})
             continue
-        records = build_artifact_live_records(artifact, db, target_date=target, course=race["course"], card=card)
+        records = build_artifact_live_records(
+            artifact, db, target_date=target, course=race["course"], card=card, history_context=history_context,
+        )
         if len(records) < 2 or any(len(r["features"]) != 49 for r in records):
             raise ValueError("直近成績特徴量49列・出走馬2頭以上が必要")
         cards[card.race_id] = {"race": race, "card": card.model_dump(mode="json")}
         live.extend(records)
     client.close()
-    history, _ = build_history_dataset(db, through_date=target - timedelta(days=1)) if live else ([], {})
+    history, _ = build_history_dataset(
+        db, through_date=target - timedelta(days=1), history_context=history_context,
+    ) if live else ([], {})
     history = [{**r, "features": [0.0]*49} for r in history]
     featured, _ = append_lap_style_features([*history, *live], db) if live else ([], {})
     today = [r for r in featured if r["race_date"] == target.isoformat()]

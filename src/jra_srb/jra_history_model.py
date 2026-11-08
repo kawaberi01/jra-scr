@@ -1,3 +1,11 @@
+"""概要: 保存履歴モデルで推論し、当日共通履歴を実行内で再利用する。
+作成日: 不明
+入力: 保存モデル、当日カード、DBパス、任意の実行単位の履歴context。
+出力: 馬ごとの特徴量・推論結果、明示的な学習/保存処理の成果物。
+実行例: uv run pytest -q tests/test_jra_history_model.py
+注意事項: 推論では対象日前の履歴だけを使う。contextは永続cacheではない。
+"""
+
 from __future__ import annotations
 
 from collections import defaultdict
@@ -7,7 +15,7 @@ import json
 import math
 from pathlib import Path
 
-from .jra_history_dataset import FEATURE_NAMES, build_live_feature_records
+from .jra_history_dataset import FEATURE_NAMES, LiveHistoryContext, build_live_feature_records
 from .jra_recent_form_dataset import (
     RECENT_FORM_SCHEMA, append_recent_form_live_features,
 )
@@ -162,12 +170,19 @@ def score_live_records(artifact: dict, records: list[dict]) -> list[dict]:
     )
 
 
-def build_artifact_live_records(artifact: dict, db_path: str | Path, *, target_date, course, card) -> list[dict]:
-    records = build_live_feature_records(db_path, target_date=target_date, course=course, card=card)
+def build_artifact_live_records(
+    artifact: dict, db_path: str | Path, *, target_date, course, card,
+    history_context: LiveHistoryContext | None = None,
+) -> list[dict]:
+    """43/49列の特徴を作り、生涯・近走の両方で同じ履歴contextを共有する。"""
+    context = history_context or LiveHistoryContext(db_path, target_date=target_date)
+    records = build_live_feature_records(
+        db_path, target_date=target_date, course=course, card=card, history_context=context,
+    )
     if artifact["feature_names"] == FEATURE_NAMES:
         return records
     if artifact["feature_names"] == RECENT_FORM_SCHEMA:
-        return append_recent_form_live_features(records, db_path, target_date=target_date)
+        return append_recent_form_live_features(records, db_path, target_date=target_date, history_context=context)
     raise ValueError("history model feature schema does not match this application")
 
 

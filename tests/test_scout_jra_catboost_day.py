@@ -44,7 +44,7 @@ def test_timeout_counts_toward_batch_limit_and_empty_input(tmp_path, monkeypatch
 
     client = SimpleNamespace(get=get, close=lambda: None)
     monkeypatch.setattr(scout.httpx, "Client", lambda **kwargs: client)
-    monkeypatch.setattr(scout, "AnalysisSQLiteStore", lambda db: SimpleNamespace(
+    monkeypatch.setattr(scout, "build_analysis_store", lambda db: SimpleNamespace(
         list_pre_race_race_ids=lambda day: []))
     monkeypatch.setattr(scout, "load_model_artifact", lambda path: {})
     monkeypatch.setattr(scout, "load_ranker", lambda path: SimpleNamespace())
