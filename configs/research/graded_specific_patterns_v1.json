@@ -1,0 +1,32 @@
+{
+  "protocol": "graded-specific-240-v1.1-alias-fix",
+  "minimum_prior_races": 5,
+  "shrinkage": 20,
+  "development": [2008, 2020],
+  "confirmation": [2021, 2025],
+  "bootstrap_repeats": 5000,
+  "bootstrap_seed": 240,
+  "specific_fraction": 0.6666666666666666,
+  "series": {
+    "fukushima": {
+      "name": "福島記念", "aliases": ["福島記念", "農林水産省賞典　福島記念"],
+      "distance": 2000, "venues": ["03", "04"], "grade": "C", "weight_rule": "1",
+      "groups": {
+        "F1 前哨戦": ["prep_grade", "prep_distance"],
+        "F2 ハンデ": ["handicap", "handicap_change"],
+        "F3 近況": ["last_rank", "layoff"],
+        "F4 適性": ["fukushima_2000", "small_course_middle"]
+      }
+    },
+    "mile": {
+      "name": "マイルチャンピオンシップ", "aliases": ["マイルチャンピオンシップ"],
+      "distance": 1600, "venues": ["08", "09"], "grade": "A", "weight_rule": "4",
+      "groups": {
+        "M1 前哨戦経路": ["prep_route", "prep_grade"],
+        "M2 距離とマイル実績": ["prep_distance", "mile_graded"],
+        "M3 近況": ["last_rank", "layoff"],
+        "M4 舞台と頂点実績": ["same_stage", "mile_g1"]
+      }
+    }
+  }
+}

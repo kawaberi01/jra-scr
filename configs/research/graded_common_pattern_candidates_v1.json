@@ -1,0 +1,203 @@
+{
+  "schema_version": 1,
+  "created_on": "2026-11-14",
+  "availability": "research_only",
+  "evidence_series": [
+    "elizabeth",
+    "musashino",
+    "daily2"
+  ],
+  "evaluation_period": "2008-2025",
+  "current_results_used": false,
+  "candidates": [
+    {
+      "id": "route",
+      "role": "four_template_comparison_winner",
+      "groups": [
+        1,
+        2
+      ],
+      "group_weights": [
+        0,
+        1,
+        1,
+        0,
+        0
+      ],
+      "score_scale": 1,
+      "shrinkage": 20,
+      "quality_definition": false,
+      "cap": null
+    },
+    {
+      "id": "frozen_v2",
+      "role": "separate_frozen_transfer_reference",
+      "groups": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "group_weights": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "score_scale": 4,
+      "shrinkage": 20,
+      "quality_definition": true,
+      "cap": 0.05,
+      "cap_baseline": "balanced_scale1",
+      "part_of_four_template_temporal_selection": false
+    }
+  ],
+  "brier_skill_vs_uniform": {
+    "route": {
+      "elizabeth": 0.03037112865363434,
+      "musashino": 0.013501102417294408,
+      "daily2": 0.024399209411986922
+    },
+    "frozen_v2": {
+      "elizabeth": 0.05329266330687177,
+      "musashino": 0.01689488963050778,
+      "daily2": 0.03977843256508806
+    }
+  },
+  "external_series_selection": {
+    "series": {
+      "elizabeth": {
+        "uniform": {
+          "races": 13,
+          "runners": 223,
+          "brier": 0.14416710630440518,
+          "logloss": 0.4630941173593964,
+          "top1_top3_hit": 0.17565987933634994,
+          "top3_captured": 0.5269796380090498
+        },
+        "balanced": {
+          "races": 13,
+          "runners": 223,
+          "brier": 0.1411269096011987,
+          "logloss": 0.45251886355630455,
+          "top1_top3_hit": 0.3076923076923077,
+          "top3_captured": 0.9615384615384616
+        },
+        "frozen_v2": {
+          "races": 13,
+          "runners": 223,
+          "brier": 0.13697246423890877,
+          "logloss": 0.4380500966409732,
+          "top1_top3_hit": 0.3076923076923077,
+          "top3_captured": 1.0384615384615385
+        },
+        "selected": {
+          "races": 13,
+          "runners": 223,
+          "brier": 0.140057417565392,
+          "logloss": 0.44811656136147304,
+          "top1_top3_hit": 0.2692307692307692,
+          "top3_captured": 0.7051282051282051
+        }
+      },
+      "musashino": {
+        "uniform": {
+          "races": 13,
+          "runners": 205,
+          "brier": 0.15399825783972124,
+          "logloss": 0.4864088076685569,
+          "top1_top3_hit": 0.190521978021978,
+          "top3_captured": 0.571565934065934
+        },
+        "balanced": {
+          "races": 13,
+          "runners": 205,
+          "brier": 0.1525955777289035,
+          "logloss": 0.48202603871324995,
+          "top1_top3_hit": 0.3076923076923077,
+          "top3_captured": 1.0769230769230769
+        },
+        "frozen_v2": {
+          "races": 13,
+          "runners": 205,
+          "brier": 0.15011313837472642,
+          "logloss": 0.4749946131262953,
+          "top1_top3_hit": 0.3076923076923077,
+          "top3_captured": 1.0
+        },
+        "selected": {
+          "races": 13,
+          "runners": 205,
+          "brier": 0.1517156232274029,
+          "logloss": 0.47929193348846705,
+          "top1_top3_hit": 0.15384615384615385,
+          "top3_captured": 0.9230769230769231
+        }
+      },
+      "daily2": {
+        "uniform": {
+          "races": 13,
+          "runners": 125,
+          "brier": 0.21079480519480517,
+          "logloss": 0.6116959275785853,
+          "top1_top3_hit": 0.32437562437562434,
+          "top3_captured": 0.9731268731268732
+        },
+        "balanced": {
+          "races": 13,
+          "runners": 125,
+          "brier": 0.20752317001761444,
+          "logloss": 0.6036824985564225,
+          "top1_top3_hit": 0.5384615384615384,
+          "top3_captured": 1.3846153846153846
+        },
+        "frozen_v2": {
+          "races": 13,
+          "runners": 125,
+          "brier": 0.20153530978597625,
+          "logloss": 0.5898322869940175,
+          "top1_top3_hit": 0.5384615384615384,
+          "top3_captured": 1.4615384615384615
+        },
+        "selected": {
+          "races": 13,
+          "runners": 125,
+          "brier": 0.20451514212094296,
+          "logloss": 0.5968694744758173,
+          "top1_top3_hit": 0.5,
+          "top3_captured": 1.5384615384615385
+        }
+      }
+    },
+    "macro_skill_vs_uniform": 0.024373100691112943,
+    "macro_skill_interval95": [
+      0.012350641921652325,
+      0.0345781482784272
+    ],
+    "years": [
+      "2013",
+      "2014",
+      "2015",
+      "2016",
+      "2017",
+      "2018",
+      "2019",
+      "2020",
+      "2021",
+      "2022",
+      "2023",
+      "2024",
+      "2025"
+    ],
+    "bootstrap_unit": "calendar_year_block"
+  },
+  "limitations": [
+    "three_series_only",
+    "retrospective_attributes_and_incomplete_overseas_local_history",
+    "frozen_v2_was_discovered_using_elizabeth_history",
+    "not_live_prediction_or_default_model_registration",
+    "uncalibrated_top3_marginals"
+  ]
+}

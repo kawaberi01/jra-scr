@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "profile_id": "three-graded-known-patterns-v1",
+  "source_snapshot_id": 31,
+  "first_year": 2003,
+  "last_year": 2025,
+  "warmup_races": 5,
+  "selection_years": 5,
+  "shrinkage": 20,
+  "patterns": [
+    {"id": "route", "groups": [1, 2]},
+    {"id": "aptitude", "groups": [3, 4]},
+    {"id": "attributes", "groups": [0, 2, 3]},
+    {"id": "balanced", "groups": [0, 1, 2, 3, 4]}
+  ],
+  "series": [
+    {"id": "elizabeth", "name": "エリザベス女王杯", "aliases": ["エリザベス女王杯"], "distance": 2200, "surface": "turf"},
+    {"id": "musashino", "name": "武蔵野ステークス", "aliases": ["東京中日スポーツ杯武蔵野ステークス", "武蔵野ステークス"], "distance": 1600, "surface": "dirt"},
+    {"id": "daily2", "name": "デイリー杯２歳ステークス", "aliases": ["デイリー杯２歳ステークス"], "distance": 1600, "surface": "turf"}
+  ],
+  "bootstrap_repeats": 5000,
+  "bootstrap_seed": 20261114
+}
