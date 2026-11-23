@@ -1,0 +1,290 @@
+{
+  "observed_at_utc": "2026-11-08T03:58:14.136409+00:00",
+  "scope": "visible metadata and coverage only; not full completeness audit",
+  "database": "jra_unified",
+  "raw_coverage": [
+    {
+      "record_type": "H1",
+      "first_period": "2003/division=5",
+      "last_period": "2026/division=5",
+      "coverage_rows": 33
+    },
+    {
+      "record_type": "H6",
+      "first_period": "2004/division=5",
+      "last_period": "2026/division=5",
+      "coverage_rows": 32
+    },
+    {
+      "record_type": "HR",
+      "first_period": "2003/division=2",
+      "last_period": "2026/division=2",
+      "coverage_rows": 25
+    },
+    {
+      "record_type": "JG",
+      "first_period": "unknown/division=1",
+      "last_period": "unknown/division=1",
+      "coverage_rows": 1
+    },
+    {
+      "record_type": "O1",
+      "first_period": "2003/division=1",
+      "last_period": "2026/division=9",
+      "coverage_rows": 130
+    },
+    {
+      "record_type": "O2",
+      "first_period": "2003/division=1",
+      "last_period": "2026/division=9",
+      "coverage_rows": 130
+    },
+    {
+      "record_type": "O3",
+      "first_period": "2003/division=5",
+      "last_period": "2026/division=9",
+      "coverage_rows": 36
+    },
+    {
+      "record_type": "O4",
+      "first_period": "2003/division=5",
+      "last_period": "2026/division=9",
+      "coverage_rows": 36
+    },
+    {
+      "record_type": "O5",
+      "first_period": "2003/division=5",
+      "last_period": "2026/division=9",
+      "coverage_rows": 36
+    },
+    {
+      "record_type": "O6",
+      "first_period": "2004/division=5",
+      "last_period": "2026/division=9",
+      "coverage_rows": 35
+    },
+    {
+      "record_type": "RA",
+      "first_period": "1987/division=7",
+      "last_period": "unknown/division=B",
+      "coverage_rows": 82561
+    },
+    {
+      "record_type": "SE",
+      "first_period": "1986/division=7",
+      "last_period": "unknown/division=B",
+      "coverage_rows": 65
+    },
+    {
+      "record_type": "WF",
+      "first_period": "unknown/division=7",
+      "last_period": "unknown/division=9",
+      "coverage_rows": 2
+    }
+  ],
+  "relevant_columns": [
+    {
+      "schema_name": "api_runtime",
+      "table_name": "netkeiba_result_entries",
+      "column_name": "weight_carried"
+    },
+    {
+      "schema_name": "api_runtime",
+      "table_name": "netkeiba_result_entries",
+      "column_name": "jockey"
+    },
+    {
+      "schema_name": "api_runtime",
+      "table_name": "netkeiba_result_entries",
+      "column_name": "trainer"
+    },
+    {
+      "schema_name": "api_runtime",
+      "table_name": "netkeiba_result_entries",
+      "column_name": "horse_weight"
+    },
+    {
+      "schema_name": "api_runtime",
+      "table_name": "netkeiba_result_entries",
+      "column_name": "horse_weight_diff"
+    },
+    {
+      "schema_name": "api_runtime",
+      "table_name": "race_card_snapshot_runners",
+      "column_name": "weight_carried"
+    },
+    {
+      "schema_name": "api_runtime",
+      "table_name": "race_card_snapshot_runners",
+      "column_name": "jockey"
+    },
+    {
+      "schema_name": "api_runtime",
+      "table_name": "race_card_snapshot_runners",
+      "column_name": "trainer"
+    },
+    {
+      "schema_name": "api_runtime",
+      "table_name": "race_card_snapshot_runners",
+      "column_name": "horse_weight"
+    },
+    {
+      "schema_name": "api_runtime",
+      "table_name": "race_card_snapshot_runners",
+      "column_name": "horse_weight_diff"
+    },
+    {
+      "schema_name": "api_runtime",
+      "table_name": "result_entries",
+      "column_name": "jockey"
+    },
+    {
+      "schema_name": "api_runtime",
+      "table_name": "runners",
+      "column_name": "weight_carried"
+    },
+    {
+      "schema_name": "api_runtime",
+      "table_name": "runners",
+      "column_name": "jockey"
+    },
+    {
+      "schema_name": "api_runtime",
+      "table_name": "runners",
+      "column_name": "trainer"
+    },
+    {
+      "schema_name": "api_runtime",
+      "table_name": "runners",
+      "column_name": "horse_weight"
+    },
+    {
+      "schema_name": "api_runtime",
+      "table_name": "runners",
+      "column_name": "horse_weight_diff"
+    },
+    {
+      "schema_name": "history",
+      "table_name": "entries",
+      "column_name": "horse_id"
+    },
+    {
+      "schema_name": "live",
+      "table_name": "netkeiba_result_entries",
+      "column_name": "weight_carried"
+    },
+    {
+      "schema_name": "live",
+      "table_name": "netkeiba_result_entries",
+      "column_name": "jockey"
+    },
+    {
+      "schema_name": "live",
+      "table_name": "netkeiba_result_entries",
+      "column_name": "trainer"
+    },
+    {
+      "schema_name": "live",
+      "table_name": "netkeiba_result_entries",
+      "column_name": "horse_weight"
+    },
+    {
+      "schema_name": "live",
+      "table_name": "netkeiba_result_entries",
+      "column_name": "horse_weight_diff"
+    },
+    {
+      "schema_name": "live",
+      "table_name": "race_card_snapshot_runners",
+      "column_name": "weight_carried"
+    },
+    {
+      "schema_name": "live",
+      "table_name": "race_card_snapshot_runners",
+      "column_name": "jockey"
+    },
+    {
+      "schema_name": "live",
+      "table_name": "race_card_snapshot_runners",
+      "column_name": "trainer"
+    },
+    {
+      "schema_name": "live",
+      "table_name": "race_card_snapshot_runners",
+      "column_name": "horse_weight"
+    },
+    {
+      "schema_name": "live",
+      "table_name": "race_card_snapshot_runners",
+      "column_name": "horse_weight_diff"
+    },
+    {
+      "schema_name": "live",
+      "table_name": "result_entries",
+      "column_name": "jockey"
+    },
+    {
+      "schema_name": "live",
+      "table_name": "runners",
+      "column_name": "weight_carried"
+    },
+    {
+      "schema_name": "live",
+      "table_name": "runners",
+      "column_name": "jockey"
+    },
+    {
+      "schema_name": "live",
+      "table_name": "runners",
+      "column_name": "trainer"
+    },
+    {
+      "schema_name": "live",
+      "table_name": "runners",
+      "column_name": "horse_weight"
+    },
+    {
+      "schema_name": "live",
+      "table_name": "runners",
+      "column_name": "horse_weight_diff"
+    }
+  ],
+  "core_tables": [
+    {
+      "schema_name": "history",
+      "table_name": "entries",
+      "estimated_rows": 1161480
+    },
+    {
+      "schema_name": "history",
+      "table_name": "payouts",
+      "estimated_rows": 2953368
+    },
+    {
+      "schema_name": "history",
+      "table_name": "races",
+      "estimated_rows": 82508
+    },
+    {
+      "schema_name": "prediction",
+      "table_name": "features_asof",
+      "estimated_rows": 2227344
+    },
+    {
+      "schema_name": "raw",
+      "table_name": "master_contents",
+      "estimated_rows": 39861897
+    },
+    {
+      "schema_name": "raw",
+      "table_name": "master_coverage",
+      "estimated_rows": 83122
+    },
+    {
+      "schema_name": "raw",
+      "table_name": "year_raw_records",
+      "estimated_rows": 1506594
+    }
+  ],
+  "status": "completed"
+}

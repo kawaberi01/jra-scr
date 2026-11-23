@@ -1,0 +1,18 @@
+{
+  "hash_definitions": [
+    {
+      "schema_name": "history",
+      "table_name": "entries",
+      "name": "__unified_race_sha256",
+      "definition": "(CONVERT([binary](32),hashbytes('SHA2_256',CONVERT([varbinary](max),[race_key]))))"
+    },
+    {
+      "schema_name": "history",
+      "table_name": "races",
+      "name": "__unified_race_sha256",
+      "definition": "(CONVERT([binary](32),hashbytes('SHA2_256',CONVERT([varbinary](max),[race_key]))))"
+    }
+  ],
+  "status": "failed",
+  "error_type": "OperationalError"
+}

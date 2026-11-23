@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "weighted_feature_checks": 25164,
+  "max_group_delta_difference": 0.0,
+  "refinement_probability_checks": 21390,
+  "refinement_race_predictions": 1242,
+  "stability_race_predictions": 130,
+  "chronological_candidate_selections": 91,
+  "all_metrics_and_file_hashes": "passed",
+  "method": "independent CSV/JSON arithmetic, no predictor import"
+}

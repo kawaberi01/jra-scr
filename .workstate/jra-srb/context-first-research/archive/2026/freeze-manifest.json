@@ -1,0 +1,156 @@
+{
+  "frozen_date": "2026-11-20",
+  "scope": "2026 closed three graded races; administrative freeze; no original changes",
+  "files": [
+    {
+      "path": ".workstate/jra-srb/context-first-research/archive/2026/daily2.md",
+      "sha256": "59bc7a5578c47672623d9ab3e102dd9c16dbb9a04562b9e7d373fd5eddd6e1dc",
+      "bytes": 2216
+    },
+    {
+      "path": ".workstate/jra-srb/context-first-research/archive/2026/elizabeth.md",
+      "sha256": "1265bc01eadc19b8c106a7da815279209b391317186f95f78fc010883e2c8ced",
+      "bytes": 2632
+    },
+    {
+      "path": ".workstate/jra-srb/context-first-research/archive/2026/musashino.md",
+      "sha256": "8c54501391acc55581e1ec8585a198cd6d8c3fcb41c893065c568e6694efd618",
+      "bytes": 2105
+    },
+    {
+      "path": ".workstate/jra-srb/context-first-research/archive/2026/README.md",
+      "sha256": "24a51ddce3cca1085dbbfb58799d1b0ce4593bc6ed29e8070b1a7aeb221f3bfd",
+      "bytes": 1918
+    },
+    {
+      "path": ".workstate/jra-srb/context-first-research/progress/016-当日二重賞研究v2予想.md",
+      "sha256": "766b1a4022ac4a9109bc52f28fd95b5192fa80d4b6ad05cd01d31c380a40bea2",
+      "bytes": 3820
+    },
+    {
+      "path": ".workstate/jra-srb/context-first-research/progress/017-二重賞研究v2結果検証.md",
+      "sha256": "c73c19b20885e066bc637b43fcdd6e8b3c6cac716e61566b2c5806d109ab8164",
+      "bytes": 1858
+    },
+    {
+      "path": ".workstate/jra-srb/context-first-research/progress/022-当日馬体重と重馬場の再検討.md",
+      "sha256": "0b23375e8576ab3deb0d6ab84313fc233c073721623f65087f68971f4fc24423",
+      "bytes": 2945
+    },
+    {
+      "path": ".workstate/jra-srb/context-first-research/progress/023-女王杯公式結果と回顧.md",
+      "sha256": "4767709aa478e82d25ff681a70b05684b6bc2cac60659a7fde07f15e59b4034d",
+      "bytes": 2837
+    },
+    {
+      "path": ".workstate/jra-srb/context-first-research/progress/024-三重賞失敗を踏まえた検証方針の再確認.md",
+      "sha256": "ded0a98c85cd12c0e8dc023c6c57c661a89307ea2d607316fd8ee9fc58d671dd",
+      "bytes": 2459
+    },
+    {
+      "path": "artifacts/jra_research/elizabeth_20261120_result_review/evaluation.json",
+      "sha256": "24cb0d9bbf693ffa4e9dd98fbfed0b8f738988d4bc654e0c32f14f0f8d6b88e5",
+      "bytes": 21543
+    },
+    {
+      "path": "artifacts/jra_research/elizabeth_20261120_result_review/official-detail.json",
+      "sha256": "b9405c3ae3541c6c499b7e4cc92b63dd806d2f29abeb6f8a43c1202206692d31",
+      "bytes": 7247
+    },
+    {
+      "path": "artifacts/jra_research/elizabeth_20261120_result_review/official-result.html",
+      "sha256": "ca1f4af7d21a2fd3097b9d6ca8af203db4ca4a4a804bcd4b465f15b01d73c433",
+      "bytes": 107297
+    },
+    {
+      "path": "artifacts/jra_research/elizabeth_20261120_result_review/report.md",
+      "sha256": "02277ad4dba0d7d2e86dc6b26e1567488dbc4e10af46991cfa14e92ba9dd3b5a",
+      "bytes": 7004
+    },
+    {
+      "path": "artifacts/jra_research/elizabeth_20261120_result_review/result-response.json",
+      "sha256": "c5c881855f690e301ea13d328e8f8356cecf7ce537171fcf1cf4523146f2a4c7",
+      "bytes": 5174
+    },
+    {
+      "path": "artifacts/jra_research/elizabeth_20261120_result_review/sql-readback.json",
+      "sha256": "569ad883bf0ac05170c6ffd9081d1b75ff4ad89da572cac3cb11f00a56581f76",
+      "bytes": 5854
+    },
+    {
+      "path": "artifacts/jra_research/elizabeth_20261120_result_review/sql-save-response.json",
+      "sha256": "f29a00ad4690e747558dd13e448557d2868174b9eaf56d104b7bfa9c94535d91",
+      "bytes": 171
+    },
+    {
+      "path": "artifacts/jra_research/elizabeth_20261120_result_review/verification.json",
+      "sha256": "5d79ab9e440e2aa977ca4e7b1a3ad87bb79776a212b341dd654ff46b16ad0e3e",
+      "bytes": 1670
+    },
+    {
+      "path": "artifacts/jra_research/elizabeth_live_20261115_weight_review_v1/body-track-review.json",
+      "sha256": "490393d8502c9fe04a5a660b2b752f1bd385141ebe7240c62f90531a890ccd8a",
+      "bytes": 14635
+    },
+    {
+      "path": "artifacts/jra_research/elizabeth_live_20261115_weight_review_v1/manifest.json",
+      "sha256": "52594b879206952b047d919bab3220f3567d80e72c10b52b20f478362a08a4d3",
+      "bytes": 4266
+    },
+    {
+      "path": "artifacts/jra_research/elizabeth_live_20261115_weight_review_v1/prediction.json",
+      "sha256": "4e12b2ebbf49e408f15ba8ccd75ba586d9ac6f3c27875621098051b88a1b759d",
+      "bytes": 540447
+    },
+    {
+      "path": "artifacts/jra_research/elizabeth_live_20261115_weight_review_v1/presentation.md",
+      "sha256": "caf129037d57cf8f0ec902c151cfd32e2f9d90509a3f1b297dfcf0c89fd9b19b",
+      "bytes": 8139
+    },
+    {
+      "path": "artifacts/jra_research/graded_live_20261114_evaluation_20261115/daily2-official-result.json",
+      "sha256": "7f643da14db9474141dec7756bf75a016fc2a575c70c0bc12904acf2fa67fb4f",
+      "bytes": 3907
+    },
+    {
+      "path": "artifacts/jra_research/graded_live_20261114_evaluation_20261115/daily2-sql-save-verification.json",
+      "sha256": "127f2136d8ea2936e05e7e4d859a98743c20134712c4b291c36636c5c179d3e3",
+      "bytes": 244
+    },
+    {
+      "path": "artifacts/jra_research/graded_live_20261114_evaluation_20261115/diagnosis.md",
+      "sha256": "8a9c951de9a712f9e5c86b351b974646367d37761d0d38980ccbccf8e49bf319",
+      "bytes": 5075
+    },
+    {
+      "path": "artifacts/jra_research/graded_live_20261114_evaluation_20261115/evaluate.py",
+      "sha256": "7e7baea7844063b4a762d39d89c5341d8a54ecb6191340c8b031b6c69a3ba5af",
+      "bytes": 11596
+    },
+    {
+      "path": "artifacts/jra_research/graded_live_20261114_evaluation_20261115/evaluation.json",
+      "sha256": "ca037747f8036cf247b670d1baef3f190b3d7a877d69bd8d1aa86905fac01b5d",
+      "bytes": 38889
+    },
+    {
+      "path": "artifacts/jra_research/graded_live_20261114_evaluation_20261115/musashino-official-result.json",
+      "sha256": "f3acb14e7c1604df143a723ba90655fc4ff0865652241f759d8c462a3bf03a42",
+      "bytes": 4405
+    },
+    {
+      "path": "artifacts/jra_research/graded_live_20261114_evaluation_20261115/musashino-sql-save-verification.json",
+      "sha256": "1a4cb1d98aa213ffae696075607a558841b8b5635e60f09fd6142a8db90f9adc",
+      "bytes": 244
+    },
+    {
+      "path": "artifacts/jra_research/graded_live_20261114_evaluation_20261115/report.md",
+      "sha256": "af7fa2effcf3b96bb8275911394aa15e7f77386a3edb9b88adb48fe1bc1caf99",
+      "bytes": 4960
+    },
+    {
+      "path": "artifacts/jra_research/graded_live_20261114_evaluation_20261115/verification.json",
+      "sha256": "c336398a6aa76bca57d8f7401b33bca5f83f0eb2d1e5d42a77aca6d8c4c65db8",
+      "bytes": 666
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "status": "failed",
+  "operation": "read_only_additional_history_attributes_sample",
+  "requested_horse_ids": 1,
+  "through": "2025-12-31",
+  "preflight": "passed_before_history_query",
+  "error_type": "ResearchError",
+  "reason": "sql_query_failed",
+  "observed_call": "ConditionsReader.horse_history",
+  "source_unchanged": true,
+  "additional_attributes_confirmed": false,
+  "next_step": "inspect existing indexed query plan or saved schema before another query; do not repeat this route blindly"
+}

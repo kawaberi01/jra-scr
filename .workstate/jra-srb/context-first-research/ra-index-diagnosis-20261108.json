@@ -1,0 +1,20 @@
+{
+  "indexes": [
+    {
+      "name": "PK_07b0e6211822",
+      "column_name": "__migration_row_id",
+      "key_ordinal": 1
+    },
+    {
+      "name": "UX_07b0e6211822_source_row",
+      "column_name": "__migration_source_snapshot_id",
+      "key_ordinal": 1
+    },
+    {
+      "name": "UX_07b0e6211822_source_row",
+      "column_name": "__migration_source_rowid",
+      "key_ordinal": 2
+    }
+  ],
+  "computed": []
+}

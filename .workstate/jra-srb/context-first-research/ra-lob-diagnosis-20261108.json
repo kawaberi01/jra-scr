@@ -1,0 +1,43 @@
+{
+  "types": [
+    {
+      "name": "record_type",
+      "type_name": "nvarchar",
+      "max_length": -1
+    },
+    {
+      "name": "race_key",
+      "type_name": "nvarchar",
+      "max_length": -1
+    },
+    {
+      "name": "sha256",
+      "type_name": "nvarchar",
+      "max_length": -1
+    },
+    {
+      "name": "payload",
+      "type_name": "varbinary",
+      "max_length": -1
+    }
+  ],
+  "scalar": {
+    "elapsed": 0.016,
+    "row": true,
+    "types": [
+      "str",
+      "int",
+      "str"
+    ],
+    "payload_bytes": null
+  },
+  "fixed_payload": {
+    "elapsed": 0.0,
+    "row": true,
+    "types": [
+      "str",
+      "bytes"
+    ],
+    "payload_bytes": 1272
+  }
+}

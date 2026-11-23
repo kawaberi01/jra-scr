@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "target_rows": 392,
+  "evaluated_races": 18,
+  "evaluated_runners": 310,
+  "condition_evidence_checks": 4194,
+  "brier": 0.14064768434539152,
+  "logloss": 0.4515540819418109,
+  "top1_top3_hits": 6,
+  "top3_captured_total": 18,
+  "artifact_and_code_hashes": "passed",
+  "method": "independent CSV/JSON arithmetic; no predictor import and no SQL"
+}

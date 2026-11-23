@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "patterns": 32,
+  "evaluated_races": 18,
+  "race_pattern_pairs": 576,
+  "runner_probabilities_checked": 9920,
+  "max_probability_difference": 1.3877787807814457e-16,
+  "chronological_selections_checked": 13,
+  "metrics_and_manifest_hashes": "passed",
+  "method": "independent saved CSV/JSON arithmetic; no prediction module imported"
+}

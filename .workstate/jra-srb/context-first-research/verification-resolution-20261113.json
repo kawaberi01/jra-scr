@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "feature_value_checks": 43568,
+  "probability_checks": 7440,
+  "chronological_selections": 13,
+  "capped_brier": 0.13693908421306755,
+  "baseline_brier": 0.1411269096011987,
+  "relative_improvement": 0.0296741804944588,
+  "improved_years": 10,
+  "independent_interval95": [
+    -0.007835185094472497,
+    -0.00036108544909994997
+  ],
+  "leave_one_outer_year_out_differences": [
+    -0.004589737157591839,
+    -0.004221577209418169,
+    -0.004103009286719356,
+    -0.004329993350621174,
+    -0.003767647174152713,
+    -0.00337480647369613,
+    -0.0033055690197044928,
+    -0.0038228843419806625,
+    -0.005252714663985423,
+    -0.00442648499698825,
+    -0.004193384843645417,
+    -0.005216631800890951,
+    -0.0038323487229070708
+  ],
+  "all_leave_one_out_mean_improvements": true,
+  "hashes": "passed",
+  "method": "independent raw-history feature generation and CSV/JSON arithmetic; no predictor import"
+}

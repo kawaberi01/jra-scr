@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "robust_probability_checks": 4030,
+  "race_predictions": 234,
+  "chronological_selections": 13,
+  "all_stage_files_and_codes": "hashes_passed",
+  "ast_files": 11,
+  "documented_definitions": 48,
+  "method": "independent saved arithmetic; no predictor import"
+}

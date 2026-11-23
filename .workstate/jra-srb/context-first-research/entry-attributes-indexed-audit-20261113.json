@@ -1,0 +1,258 @@
+{
+  "status": "complete",
+  "route": "existing_verified_race_hash_join",
+  "target_races": 1,
+  "rows": 16,
+  "attribute_keys": [
+    "age",
+    "frame_no",
+    "horse_id_raw",
+    "horse_id_status",
+    "horse_name",
+    "jockey",
+    "sex",
+    "status",
+    "trainer",
+    "weight_carried_raw"
+  ],
+  "queries": [
+    {
+      "query_id": "conditions:identity",
+      "parameter_count": 0,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.016
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.015
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.016
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.015
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.016
+    },
+    {
+      "query_id": "conditions:permissions",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:source",
+      "parameter_count": 1,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "query_id": "conditions:targets",
+      "parameter_count": 3,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 2.25
+    },
+    {
+      "query_id": "conditions:target_entries",
+      "parameter_count": 2,
+      "phase": "fetch_or_consume",
+      "status": "passed",
+      "elapsed_seconds": 0.141
+    }
+  ]
+}

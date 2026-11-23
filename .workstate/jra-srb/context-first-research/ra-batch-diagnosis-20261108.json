@@ -1,0 +1,12 @@
+{
+  "fixed": {
+    "rows": 250,
+    "elapsed": 0.0,
+    "all_payload_1272": true
+  },
+  "lob": {
+    "rows": 250,
+    "elapsed": 0.015,
+    "all_payload_1272": true
+  }
+}
