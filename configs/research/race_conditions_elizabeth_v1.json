@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "profile_id": "elizabeth-known-conditions-v1",
+  "race_name": "エリザベス女王杯",
+  "source_key": "prediction-full-20261008",
+  "snapshot_id": 31,
+  "first_year": 2003,
+  "last_year": 2025,
+  "minimum_prior_races": 5,
+  "shrinkage": 20,
+  "groups": {
+    "基本属性": ["age", "frame"],
+    "前哨戦経路": ["previous_race", "previous_grade", "previous_weight_rule", "previous_symbol"],
+    "直近成績と間隔": ["previous_rank", "interval"],
+    "条件変更": ["previous_distance", "distance_change", "weight_change"],
+    "過去実績": ["repeat_top3", "course_distance_top3", "graded_top3"]
+  },
+  "limits": {
+    "query_timeout_seconds": 30,
+    "max_history_rows": 20000,
+    "max_raw_rows": 20000,
+    "max_ra_metadata_rows": 100000
+  }
+}

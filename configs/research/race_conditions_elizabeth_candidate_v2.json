@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "profile_id": "elizabeth-resolution-capped-research-v2",
+  "availability": "research_only",
+  "created_on": "2026-11-13",
+  "base_profile": "elizabeth-known-conditions-v1",
+  "selection_protocol": "elizabeth-known-resolution-v1",
+  "selection_rule": "previous_validation_races_only_minimum_5_runner_weighted_brier",
+  "candidate_definitions": {
+    "previous_rank_split_bit": 1,
+    "graded_experience_quality_bit": 2,
+    "experience_within_365_days_bit": 4,
+    "definition_masks": [0, 1, 2, 3, 4, 5, 6, 7],
+    "score_scales": [1, 2, 4]
+  },
+  "frozen_next_reference_setting": {
+    "selected_pattern": "R2-S4",
+    "definition_mask": 2,
+    "score_scale": 4,
+    "group_weights": [1, 1, 1, 1, 1],
+    "shrinkage": 20,
+    "half_life": null,
+    "pooling": "hierarchical",
+    "probability_change_cap": 0.05,
+    "baseline": "original_five_groups_v1",
+    "projection": "add_common_offset_then_clip_to_baseline_plus_minus_cap_and_0_1_sum_3"
+  },
+  "selection_data_through": "2025-11-16",
+  "historical_evaluation": {
+    "policy": "chronologically_selected_24_candidates_then_cap_0.05",
+    "races": 13,
+    "runners": 223,
+    "baseline_brier": 0.1411269096011987,
+    "candidate_brier": 0.13693908421306755,
+    "relative_brier_improvement": 0.0296741804944588,
+    "improved_races": 10,
+    "brier_difference_interval95": [-0.007835185094472497, -0.00036108544909994997],
+    "bootstrap_repeats": 5000,
+    "bootstrap_seed": 20261113
+  },
+  "limitations": [
+    "historical_policy_score_is_not_the_score_of_R2_S4_frozen_for_every_past_year",
+    "repeated_use_of_known_history_not_independent_unseen_test",
+    "not_probability_calibrated_or_market_or_profit_validated",
+    "existing_predict_cli_and_default_model_not_switched"
+  ]
+}
