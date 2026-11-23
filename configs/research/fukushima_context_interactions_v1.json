@@ -1,0 +1,15 @@
+{
+  "protocol": "fukushima-grade-rank-rematch-weight-v1",
+  "lookback_days": 730,
+  "distance_tolerance_m": 200,
+  "weight_band_kg": 1.0,
+  "addition_scale": 0.5,
+  "development": [2008, 2020],
+  "confirmation": [2021, 2025],
+  "bootstrap_repeats": 5000,
+  "bootstrap_seed": 240,
+  "evaluation_status": "exploratory_reuse_of_seen_years",
+  "class_group": {"C 格×着順": ["class_rank"]},
+  "weight_group": {"W 再対戦斤量": ["lost_relative_weight", "won_relative_weight"]},
+  "primary_comparisons": [["general+class", "general"], ["general+weight", "general"], ["general+class+weight", "general"], ["general+h2h+class+weight", "general+h2h"]]
+}

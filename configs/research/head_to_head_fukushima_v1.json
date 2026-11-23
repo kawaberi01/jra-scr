@@ -1,0 +1,13 @@
+{
+  "protocol": "fukushima-head-to-head-v1",
+  "lookback_days": 730,
+  "distance_tolerance_m": 200,
+  "head_to_head_scale": 0.5,
+  "groups": {"H 直接対決": ["h2h_all_turf", "h2h_near_distance"]},
+  "comparisons": [["general+h2h", "general"], ["near+h2h", "near"]],
+  "development": [2008, 2020],
+  "confirmation": [2021, 2025],
+  "bootstrap_repeats": 5000,
+  "bootstrap_seed": 240,
+  "evaluation_status": "exploratory_reuse_of_seen_confirmation_years"
+}
