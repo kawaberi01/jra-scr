@@ -1,0 +1,13 @@
+{
+  "protocol": "mile-rule-integration-v1",
+  "development": [2008, 2020],
+  "confirmation": [2021, 2025],
+  "rule_count": 25,
+  "method_count": 51,
+  "minimum_support": 20,
+  "minimum_editions": 5,
+  "shrinkage": 20,
+  "addition_scale": 0.5,
+  "purchase_approved": false,
+  "independent_validation": false
+}

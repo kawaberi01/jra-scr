@@ -1,0 +1,16 @@
+{
+  "protocol": "mile-specific-hcw-v1",
+  "lookback_days": 730,
+  "distance_tolerance_m": 200,
+  "weight_band_kg": 1.0,
+  "addition_scale": 0.5,
+  "development": [2008, 2020],
+  "confirmation": [2021, 2025],
+  "bootstrap_repeats": 5000,
+  "bootstrap_seed": 240,
+  "groups": {
+    "H": {"直接対決": ["h2h_all_turf", "h2h_near_distance"]},
+    "C": {"格着順": ["class_rank"]},
+    "W": {"相対斤量": ["lost_relative_weight", "won_relative_weight"]}
+  }
+}
